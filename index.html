@@ -2854,9 +2854,14 @@ const $$ = s => [...document.querySelectorAll(s)];
 /* --- la partie -------------------------------------------------------- */
 let P = null;
 let idPens = 1;
+/* La version de la sauvegarde. On la monte d'un cran quand le contenu
+   change au point qu'une vieille partie n'a plus de sens (nouveau roster
+   du portail, par exemple) : au prochain chargement, tout le monde
+   repart à zéro, une seule fois. */
+const VERSION_SAUVE = 2;
 function partieNeuve(){
   return {
-    v: 1, creeLe: Date.now(), vuLe: Date.now(),
+    v: VERSION_SAUVE, creeLe: Date.now(), vuLe: Date.now(),
     pensionnaires: [],
     sacs: {sous: 80, baies: 3, tickets: 3},
     ults: {},                       // parchemins non appris, par type
@@ -2873,7 +2878,13 @@ function charger(){
   try {
     const brut = localStorage.getItem('pension_sauve');
     if(brut){
-      P = JSON.parse(brut); idPens = P.prochainId || 1;
+      const vieille = JSON.parse(brut);
+      if(vieille.v !== VERSION_SAUVE){       // remise à neuf : le contenu a changé
+        localStorage.removeItem('pension_sauve');
+        P = partieNeuve();
+        return;
+      }
+      P = vieille; idPens = P.prochainId || 1;
       if(P.sacs.tickets === undefined) P.sacs.tickets = 0;
       if(!P.invasion) P.invasion = {};
       if(!P.invasion.zone)
@@ -3621,7 +3632,7 @@ function majConseil(){
     if(i < P.invasion.slots){
       const aide = aidesValides()[i];
       if(aide){
-        c.innerHTML = '<img src="' + urlPortrait(aide.espece) + '" alt="">' + aide.espece;
+        c.innerHTML = '<img src="' + urlPortrait(aide.espece).url + '" alt="">' + aide.espece;
         c.onclick = () => { P.invasion.aides = P.invasion.aides.filter(id => id !== aide.id); sauver(); majConseil(); };
         c.title = 'retirer';
       } else {
@@ -3662,7 +3673,7 @@ function montrerChoixAide(){
   for(const p of dispo){
     const c = document.createElement('div');
     c.className = 'caseAide';
-    c.innerHTML = '<img src="' + urlPortrait(p.espece) + '" alt="">' + p.espece;
+    c.innerHTML = '<img src="' + urlPortrait(p.espece).url + '" alt="">' + p.espece;
     c.onclick = () => {
       if(P.invasion.aides.length >= P.invasion.slots) return;
       P.invasion.aides.push(p.id);
@@ -3998,6 +4009,8 @@ function importerCode(code){
   try {
     const obj = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
     if(!obj || !Array.isArray(obj.pensionnaires) || !obj.sacs) throw new Error('pas une sauvegarde');
+    if(obj.v !== VERSION_SAUVE)
+      return direJeu('Ce code vient d\'une ancienne version du jeu — le portail a changé depuis.');
     localStorage.setItem('pension_sauve', JSON.stringify(obj));
     location.reload();
   } catch(e){
