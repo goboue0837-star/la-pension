@@ -1424,9 +1424,21 @@ async function lancerInvasion(def, defenseurs, positions){
     if(!solEn(e.x, e.y)){ e.x = W / 2; e.y = H * 0.65; }
     D.ents.push(e);
   }
+  /* LE CRISTAL DE LA PENSION : le trésor à protéger, au cœur du domaine */
+  let cx = W / 2, cy = H / 2 + 0.5;
+  for(let r = 0; r < 6 && !solEn(cx, cy); r++){ cx += entre(-1.5, 1.5); cy += entre(-1, 1); }
+  D.ents.push({
+    id: idEnt++, espece: 'Cristal', camp: 'equipe', cristal: true,
+    def: {types: ['normal'], carac: 'docile', base: {}, sig: {}},
+    niveau: 1, pv: def.cristalPv || 220, pvMax: def.cristalPv || 220,
+    atq: 0, defs: def.cristalDef || 8, vit: 0,
+    x: cx, y: cy, dir: 0, anim: 'Idle', animT: 0, verrou: 0,
+    cd: 9999, etat: {}, flash: 0, taille: 1.25, ko: false,
+    sig: {cd: 9999, puiss: 0, type: 'normal', por: 0}
+  });
   D.cam.x = W / 2; D.cam.y = H / 2;
   D.enAttente = 2.5;
-  banniereD('⚔ ' + def.nom + ' — défends la pension !', '#ef6b6b');
+  banniereD('⚔ ' + def.nom + ' — protège le CRISTAL !', '#ef6b6b');
   D.actif = true;
 }
 
@@ -1461,9 +1473,11 @@ async function lancerVague(){
       const elite = def.elites.length && D.vague >= 2 && rngD() < 0.2;
       const espece = elite ? parmi(def.elites) : parmi(def.sbires);
       const br = parmi(D.breches);
+      /* les PILLEURS foncent droit sur le cristal — à intercepter ! */
+      const pilleur = rngD() < (elite ? 0.3 : 0.4);
       promesses.push(creerEnt(espece, 'ennemi',
         br.x + entre(-1.4, 1.4), br.y + entre(-0.6, 0.6),
-        def.niv + D.vague + (elite ? 2 : 0), {elite, eveille: true}));
+        def.niv + D.vague + (elite ? 2 : 0), {elite, eveille: true, pilleur}));
     }
     /* à mi-invasion, l'ÉCLAIREUR mène l'assaut */
     if(def.miniBoss && D.vague === Math.ceil(D.vaguesTotal / 2)){
@@ -1662,7 +1676,10 @@ function bougerVers(e, tx, ty, dt, vitesse){
     e.coince = (e.coince || 0) + dt;
     if(e.coince > 0.45){
       e.coince = 0;
-      e.detour = {t: 0.55, px: -(ty - e.y), py: tx - e.x, sens: rngD() < 0.5 ? 1 : -1};
+      /* toujours le MÊME côté pour cette entité : elle contourne vraiment,
+         au lieu de zigzaguer sans fin devant l'obstacle */
+      if(!e.detSens) e.detSens = rngD() < 0.5 ? 1 : -1;
+      e.detour = {t: 0.9, px: -(ty - e.y), py: tx - e.x, sens: e.detSens};
     }
   } else e.coince = 0;
 }
@@ -1703,6 +1720,21 @@ function iaEquipe(e, dt){
       bougerVers(e, D.ralliement.x + ((e.id % 4) - 1.5) * 0.7,
                  D.ralliement.y + (((e.id / 4) | 0) % 3 - 1) * 0.7, dt, e.vit * 1.15);
       return;
+    }
+  }
+  /* LE CRISTAL EN DANGER : pas de combat en cours à côté ? ON RENTRE LE DÉFENDRE */
+  if(D.invasion){
+    const cr = D.ents.find(o => o.cristal && !o.ko);
+    if(cr){
+      const menaces = ennemisDe(e).filter(o => Math.hypot(o.x - cr.x, o.y - cr.y) < 2.2);
+      if(menaces.length && dist(e, cr) > 2.4){
+        const prox = proche(e, ennemisDe(e));
+        if(!prox || dist(e, prox) > (e.sig.por || 1) + 0.6){
+          e.cible = proche(cr, menaces);
+          bougerVers(e, cr.x + ((e.id % 4) - 1.5) * 0.8, cr.y + 0.9, dt, e.vit * 1.1);
+          return;
+        }
+      }
     }
   }
   /* GENTIL : soigner d'abord ceux qui souffrent */
@@ -1782,6 +1814,11 @@ function iaEquipe(e, dt){
 function ciblePourEnnemi(e){
   const adv = ennemisDe(e);
   if(!adv.length) return null;
+  /* le PILLEUR ne pense qu'au cristal */
+  if(e.pilleur && D.invasion){
+    const cr = adv.find(o => o.cristal);
+    if(cr) return cr;
+  }
   if(e.role === 'assassin')
     return adv.reduce((m, o) => o.pv < m.pv ? o : m, adv[0]);
   let best = null, bs = 1e9;
@@ -1840,9 +1877,12 @@ function iaEnnemi(e, dt){
       D.secousse = 0.4;
       const s = D.salles[D.salles.length - 1];
       (async () => {
-        for(let k = 0; k < 4; k++){
-          const sb = await creerEnt(parmi(D.def.sbires), 'ennemi',
-            entre(s.x + 1, s.x + s.w - 1), entre(s.y + 1, s.y + 3),
+        const nApp = D.invasion ? 3 : 4;
+        for(let k = 0; k < nApp; k++){
+          let ax, ay;
+          if(D.invasion){ const br = parmi(D.breches); ax = br.x + entre(-1, 1); ay = br.y + entre(-0.5, 0.5); }
+          else { ax = entre(s.x + 1, s.x + s.w - 1); ay = entre(s.y + 1, s.y + 3); }
+          const sb = await creerEnt(parmi(D.def.sbires), 'ennemi', ax, ay,
             D.def.niv + 2, {eveille: true});
           sb.flash = 0.3;
           D.ents.push(sb);
@@ -2041,7 +2081,7 @@ function lancerUlt(e){
 /* la baie : soigne le plus mal en point de l'équipe */
 function donnerBaie(){
   if(P.sacs.baies <= 0) return false;
-  const equipe = D.ents.filter(e => e.camp === 'equipe' && !e.ko);
+  const equipe = D.ents.filter(e => e.camp === 'equipe' && !e.ko && !e.cristal);
   if(!equipe.length) return false;
   const e = equipe.sort((a, b) => a.pv / a.pvMax - b.pv / b.pvMax)[0];
   P.sacs.baies--;
@@ -2085,7 +2125,7 @@ function tickDonjon(dt){
       /* pendant l'accalmie entre deux vagues d'invasion : on souffle */
       if(D.invasion && D.enAttente > 0)
         e.pv = Math.min(e.pvMax, e.pv + e.pvMax * 0.05 * dt);
-      iaEquipe(e, dt);
+      if(!e.cristal) iaEquipe(e, dt);
     } else iaEnnemi(e, dt);
   }
   D.ents = D.ents.filter(e => !e.ko || e.mortT > 0 || e.camp === 'equipe');
@@ -2104,7 +2144,16 @@ function tickDonjon(dt){
   }
   D.sols = D.sols.filter(s => !s.pris);
 
-  const vivants = D.ents.filter(e => e.camp === 'equipe' && !e.ko);
+  /* le cristal brisé = la défaite immédiate */
+  if(D.invasion){
+    const cr = D.ents.find(e => e.cristal);
+    if(cr && cr.ko){
+      banniereD('💥 LE CRISTAL EST BRISÉ !!', '#ef6b6b');
+      D.secousse = 0.9;
+      finDonjon(false); return;
+    }
+  }
+  const vivants = D.ents.filter(e => e.camp === 'equipe' && !e.ko && !e.cristal);
   if(!vivants.length){ finDonjon(false); return; }
   const restants = D.ents.filter(e => e.camp === 'ennemi' && !e.ko);
 
@@ -2241,7 +2290,29 @@ function rendreDonjon(cv){
     if(e.ko){ ctx.globalAlpha = Math.max(0, e.mortT * 2); }
     const ech = (T / 26) * e.taille;
     if(e.enrage) e.flash = Math.max(e.flash, Math.sin(performance.now() / 120) > 0.6 ? 0.05 : 0);
-    dessinerSprite(ctx, e, ex, ey + T * 0.1, ech);
+    if(e.cristal){
+      /* LE CRISTAL : un joyau qui palpite au cœur du domaine */
+      const g = Math.sin(performance.now() / 300) * 0.15 + 0.85;
+      const h = T * 0.95;
+      ctx.save();
+      ctx.translate(ex, ey - h * 0.35);
+      ctx.globalAlpha = 0.22 * g;
+      ctx.fillStyle = '#8fd8ff';
+      ctx.beginPath(); ctx.arc(0, 0, h * 0.8, 0, 7); ctx.fill();
+      ctx.globalAlpha = e.flash > 0 ? 0.65 : 1;
+      ctx.fillStyle = e.pv / e.pvMax > 0.4 ? '#bfeaff' : '#ffb3a3';
+      ctx.beginPath();
+      ctx.moveTo(0, -h * 0.55); ctx.lineTo(h * 0.38, 0);
+      ctx.lineTo(0, h * 0.55); ctx.lineTo(-h * 0.38, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#5fb8e8'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.beginPath();
+      ctx.moveTo(0, -h * 0.5); ctx.lineTo(h * 0.15, -h * 0.08); ctx.lineTo(-h * 0.12, -h * 0.04);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    } else dessinerSprite(ctx, e, ex, ey + T * 0.1, ech);
     ctx.globalAlpha = 1;
     /* la barre de vie */
     if(!e.ko){
@@ -2260,6 +2331,11 @@ function rendreDonjon(cv){
       if(e.shiny){
         ctx.font = Math.round(T * 0.3) + 'px sans-serif';
         ctx.fillText('✨', ex + bw / 2 + 5, hy + 3);
+      }
+      if(e.pilleur){
+        ctx.font = Math.round(T * 0.3) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⛏', ex - bw / 2 - 6, hy + 4);
       }
     }
   }
@@ -2374,7 +2450,7 @@ function partieNeuve(){
     sacs: {sous: 80, baies: 3, tickets: 3},
     ults: {},                       // parchemins non appris, par type
     avancee: {tuto: 0, tutoFini: false, bienvenue: false},
-    invasion: {compteur: 0, due: false, victoires: 0},
+    invasion: {jauge: 0, due: false, victoires: 0, faits: {}},
     prochainId: 1
   };
 }
@@ -2388,7 +2464,9 @@ function charger(){
     if(brut){
       P = JSON.parse(brut); idPens = P.prochainId || 1;
       if(P.sacs.tickets === undefined) P.sacs.tickets = 0;
-      if(!P.invasion) P.invasion = {compteur: 0, due: false, victoires: 0};
+      if(!P.invasion) P.invasion = {jauge: 0, due: false, victoires: 0, faits: {}};
+      if(P.invasion.jauge === undefined) P.invasion.jauge = 0;
+      if(!P.invasion.faits) P.invasion.faits = {};
       return;
     }
   } catch(e){}
@@ -2540,6 +2618,8 @@ async function majPension(){
     else if(p.niveau < NIVEAU_MAX && P.sacs.sous >= coutNiveau(p.niveau))
       alertes.push('⬆ ' + p.espece + ' peut monter (' + coutNiveau(p.niveau) + ' 🪙)');
   }
+  if(P.avancee.tutoFini && P.invasion && !P.invasion.due && P.invasion.jauge > 0)
+    alertes.unshift('🔥 Vengeance du Pré : ' + P.invasion.jauge + '%');
   const b = $('#coupDoeil');
   if(b) b.textContent = alertes.length ? alertes.slice(0, 3).join(' · ')
     : P.pensionnaires.length + ' pensionnaire(s) — glisse pour te balader, tape pour la fiche.';
@@ -2961,8 +3041,11 @@ function majPupitre(){
            froid.textContent = Math.round(e.charge) + '%'; }
   });
   $('#dTitre').textContent = D.def ? D.def.nom : '';
+  const crD = D.invasion ? D.ents.find(e => e.cristal) : null;
   $('#dInfo').textContent = D.invasion
-    ? ('🛡 Vague ' + D.vague + '/' + D.vaguesTotal + (D.phase === 'boss' ? ' — 👑 LE VENGEUR !' : ''))
+    ? ('🛡 Vague ' + D.vague + '/' + D.vaguesTotal
+       + (crD ? ' · 💎 ' + Math.max(0, Math.round(crD.pv / crD.pvMax * 100)) + '%' : '')
+       + (D.phase === 'boss' ? ' — 👑 LE VENGEUR !' : ''))
     : D.phase === 'vagues' ? ('Vague ' + D.vague + '/' + D.vaguesTotal)
     : D.phase === 'boss' ? '👑 LE BOSS !'
     : 'salle ' + Math.min(D.salleIdx + 1, D.salles.length) + '/' + D.salles.length;
@@ -2970,6 +3053,22 @@ function majPupitre(){
 }
 
 /* --- l'invasion : lancement et fin ------------------------------------ */
+/* un donjon vaincu chauffe la zone : +8 la première fois, puis 12, 18,
+   24, 30, 30… par re-passage — le farm déclenche la revanche, pas la
+   simple visite. À 100 %, l'invasion est DUE. */
+function chargerVengeance(cle){
+  if(!P.avancee.tutoFini || P.invasion.due) return null;
+  const deja = P.invasion.faits[cle] || 0;
+  const gain = deja === 0 ? 8 : Math.min(30, 12 + 6 * (deja - 1));
+  P.invasion.faits[cle] = deja + 1;
+  P.invasion.jauge = Math.min(100, (P.invasion.jauge || 0) + gain);
+  if(P.invasion.jauge >= 100){
+    P.invasion.due = true;
+    return ['🔥 VENGEANCE À SON COMBLE', 'la zone attaque — file à la pension !'];
+  }
+  return ['🔥 Vengeance du Pré', P.invasion.jauge + '%'
+    + (deja ? '' : ' (repasser un donjon la chauffe bien plus)')];
+}
 async function lancerModeInvasion(){
   if(!P.invasion || !P.invasion.due) return;
   if(P.pensionnaires.length < 4)
@@ -2982,6 +3081,8 @@ async function lancerModeInvasion(){
   const def = {
     nom: src.nom, sbires: src.sbires, elites: src.elites, miniBoss: src.miniBoss,
     niv, vagues: 6 + Math.min(3, P.invasion.victoires),
+    cristalPv: Math.round(150 + moy * 12),
+    cristalDef: Math.round(moy * 0.8),
     boss: Object.assign({}, src.boss,
       {niv: niv + 5, force: 0.6 + P.invasion.victoires * 0.08})
   };
@@ -2994,9 +3095,10 @@ async function lancerModeInvasion(){
 function finInvasion(r){
   const gagne = r.victoire;
   const lignes = [];
+  const cr = r.equipe.find(e => e.cristal);
   if(gagne){
     P.invasion.victoires++;
-    P.invasion.due = false; P.invasion.compteur = 0;
+    P.invasion.due = false; P.invasion.jauge = 0;
     P.sacs.sous += r.butin.sous;
     P.sacs.baies += r.butin.baies;
     P.sacs.tickets += 3;
@@ -3004,6 +3106,12 @@ function finInvasion(r){
     lignes.push(['🪙 Pièces ramassées', '+' + r.butin.sous]);
     if(r.butin.baies) lignes.push(['🫐 Baies', '+' + r.butin.baies]);
     lignes.push(['🎟 Tickets de spin', '+3']);
+    if(cr && cr.pv / cr.pvMax > 0.9){
+      P.sacs.tickets++;
+      lignes.push(['💎 Cristal INTACT', '+1 ticket bonus !']);
+    } else if(cr){
+      lignes.push(['💎 Le cristal a tenu', Math.round(cr.pv / cr.pvMax * 100) + '% restants']);
+    }
     if(r.butin.xp){
       const parts = Math.max(1, r.equipe.length);
       for(const e of r.equipe){
@@ -3021,6 +3129,7 @@ function finInvasion(r){
   } else {
     const garde = Math.round(r.butin.sous / 2);
     P.sacs.sous += garde;
+    if(cr && cr.ko) lignes.push(['💥 LE CRISTAL EST BRISÉ', 'ils sont repartis avec sa lumière…']);
     lignes.push(['💨 L\'invasion se retire…', 'elle reviendra !']);
     if(garde) lignes.push(['🪙 Pièces sauvées', '+' + garde]);
     lignes.push(['🛡 Retente quand tu veux', 'l\'alerte reste à la pension']);
@@ -3059,14 +3168,10 @@ function finExpedition(r){
         lignes.push(['🗝 CLÉ obtenue', DONJONS[idx + 1].nom + ' s\'ouvre !']);
       }
     } else lignes.push(['👑 Donjon rejoué', 'bien joué !']);
-    /* LA REVANCHE couve : la zone n'oublie pas qu'on la pille */
-    if(P.avancee.tutoFini && !P.invasion.due){
-      P.invasion.compteur++;
-      if(P.invasion.compteur >= INVASION_TOUS_LES){
-        P.invasion.due = true;
-        lignes.push(['🛡 La zone prépare sa REVANCHE', 'file voir la pension…']);
-      }
-    }
+    /* LA JAUGE DE VENGEANCE : un premier passage chauffe à peine la zone —
+       c'est le FARM qui la met en rage. Plus tu repasses, plus ça charge. */
+    const ligneV = chargerVengeance(DONJONS[idx].cle);
+    if(ligneV) lignes.push(ligneV);
     if(Math.random() < 0.35 && !DONJONS[idx].final){
       P.sacs.tickets++;
       lignes.push(['🎟 Ticket de spin', '+1 !']);
@@ -3225,6 +3330,8 @@ function majCompte(){
     + '<div>Ults apprises<b>' + ults + '</b></div>'
     + '<div>Pièces<b>🪙 ' + P.sacs.sous + '</b></div>'
     + '<div>Tickets · Baies<b>🎟 ' + P.sacs.tickets + ' · 🫐 ' + P.sacs.baies + '</b></div>'
+    + '<div>Invasions repoussées<b>🛡 ' + ((P.invasion && P.invasion.victoires) || 0) + '</b></div>'
+    + '<div>Vengeance de la zone<b>🔥 ' + ((P.invasion && P.invasion.jauge) || 0) + '%</b></div>'
     + '<div style="grid-column:1/-1;">Compte créé il y a<b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b></div>';
   majJetons();
 }
