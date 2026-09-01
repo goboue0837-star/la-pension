@@ -1231,6 +1231,18 @@ const parmi = t => t[(rngD() * t.length) | 0];
 /* --- la génération : des salles empilées, du bas vers le haut --------- */
 function construireCarte(def){
   const salles = [];
+  /* LE DONJON FINAL D'UNE ZONE : pas de couloirs, pas d'étages —
+     UNE SEULE GRANDE ARÈNE où tout se joue d'un bloc. */
+  if(def.final){
+    const W = 24, H = 30;
+    const carte = new Uint8Array(W * H);
+    const x0 = 2, y0 = 2, w = W - 4, h = H - 4;
+    for(let y = y0; y < y0 + h; y++)
+      for(let x = x0; x < x0 + w; x++) carte[y * W + x] = 1;
+    salles.push({x: x0, y: y0, w, h, boss: true, vue: true, faite: false,
+                 cx: x0 + w / 2, cy: y0 + h / 2, arene: true});
+    return {carte, W, H, salles};
+  }
   const n = def.salles + 1;                     // + la salle du boss
   const W = 22;
   let y = 0;
@@ -1496,12 +1508,12 @@ async function peuplerSalle(i){
          boss qui entre en dernier — la vraie épreuve de la zone.
          Ici tu n'as que ton trio : le flot se cale sur lui. */
       const nEq = Math.max(1, D.ents.filter(e => e.camp === 'equipe' && !e.ko).length);
-      const tot = 16 + nEq * 8 + (def.salles || 3) * 2;
-      banniereD('⚠ La grande salle — ils arrivent sans fin !', '#ef6b6b');
+      const tot = 45 + nEq * 15 + (def.salles || 3) * 3;
+      banniereD('⚠ L\'ARÈNE — ils arrivent sans fin !', '#ef6b6b');
       D.secousse = 0.6;
       ouvrirAssaut(reserveDe(def.sbires, def.elites, def.niv, tot, {montee: 3}),
-                   {cap: Math.max(5, nEq * 2), cadence: 1.25, parSalve: 2,
-                    delai: 1.4, durete: 1.35});
+                   {cap: Math.max(6, Math.round(nEq * 2.6)), cadence: 1.15, parSalve: 2,
+                    delai: 1.4, durete: 1.35, respirs: true});
       return;
     }
     D.phase = 'vagues'; D.vague = 0; D.vaguesTotal = def.vagues || 3;
@@ -1559,10 +1571,17 @@ function ouvrirAssaut(reserve, opts){
   D.palierVu = null;
   D.bossEnRoute = 0;
   D.durete = o.durete || 1;
+  D.repos = 0;
+  D.respirs = o.respirs ? [0.72, 0.48, 0.24].map(f => Math.round(reserve.length * f)) : [];
 }
 function pointsEntree(){
   if(D.breches) return D.breches;
   const s = D.salles[D.salles.length - 1];
+  if(s.arene) return [
+    {x: s.cx, y: s.y + 1.2}, {x: s.x + 2, y: s.y + 1.5}, {x: s.x + s.w - 2, y: s.y + 1.5},
+    {x: s.x + 1.5, y: s.cy}, {x: s.x + s.w - 1.5, y: s.cy},
+    {x: s.x + 2.5, y: s.y + s.h - 2}, {x: s.x + s.w - 2.5, y: s.y + s.h - 2}
+  ];
   return [{x: s.cx, y: s.y + 1}, {x: s.x + 2, y: s.y + 1.5}, {x: s.x + s.w - 2, y: s.y + 1.5}];
 }
 async function goutteAssaut(){
@@ -1589,6 +1608,20 @@ function tickAssaut(dt){
     D.secousse = 0.35;
   }
   if(D.reserve.length){
+    /* L'ACCALMIE : entre deux paquets, l'arène reprend son souffle —
+       les derniers arrivés finissent de tomber, l'équipe se refait. */
+    if(D.respirs.length && D.reserve.length <= D.respirs[0]){
+      D.respirs.shift();
+      D.repos = 5;
+      banniereD('Une accalmie… ils reviennent vite !', '#8ff0a4');
+    }
+    if(D.repos > 0){
+      D.repos -= dt;
+      for(const e of D.ents)
+        if(e.camp === 'equipe' && !e.ko && !e.cristal)
+          e.pv = Math.min(e.pvMax, e.pv + e.pvMax * 0.045 * dt);
+      return;
+    }
     D.tSpawn -= dt;
     const capNow = D.reserve.length > D.assautTotal * 0.22
       ? D.capVivants : Math.max(2, Math.ceil(D.capVivants * 0.45));
