@@ -150,7 +150,15 @@
   .article b{ display:block; font-size:13.5px; }
   .article .prix{ color:var(--or); font-weight:800; font-size:13px; display:block; }
   .article span{ font-size:11.5px; color:var(--brume); display:block; }
-  #zoneReset{ margin-top:22px; padding-top:14px; border-top:1px dashed var(--lisiere); text-align:center; }
+  #zoneReset{ text-align:center; }
+  .grilleCompte{ display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
+  .grilleCompte div{ background:#241a10; border:1.5px solid var(--lisiere); border-radius:10px;
+    padding:7px 9px; font-size:12.5px; color:var(--brume); }
+  .grilleCompte b{ display:block; font-size:16px; color:var(--craie); font-family:'Pixelify Sans'; }
+  .noteCompte{ font-size:12.5px; color:var(--brume); margin:6px 0 8px; }
+  #champImport{ width:100%; min-height:74px; background:#241a10; color:var(--craie);
+    border:1.5px solid var(--lisiere); border-radius:10px; padding:8px; font-size:11px;
+    font-family:monospace; margin:6px 0; }
   .btnReset{ background:var(--bois); border:2px solid var(--lisiere); color:var(--craie);
     border-radius:12px; padding:9px 14px; font-family:inherit; font-size:13.5px; cursor:pointer; margin:4px; }
   .btnReset.rouge{ background:#6e2318; border-color:#a03a28; font-weight:800; }
@@ -305,14 +313,43 @@
     </div>
     <div class="corps">
       <div id="rayons"></div>
-      <div id="zoneReset">
-        <button id="btnReset" class="btnReset">🗑 Réinitialiser le compte</button>
-        <div id="confReset" hidden>
-          <p>Tout effacer ? Pokémon, pièces, progression — <b>irréversible</b>.</p>
-          <button id="btnResetOui" class="btnReset rouge">Oui, tout effacer</button>
-          <button id="btnResetNon" class="btnReset">Annuler</button>
+    </div>
+  </section>
+
+  <!-- ============ ÉCRAN COMPTE ============ -->
+  <section class="ecran" data-nom="compte">
+    <div class="statut">
+      <span class="titre">Compte</span>
+      <span class="jeton">🪙 <b class="jSous">0</b></span>
+    </div>
+    <div class="corps">
+      <div class="panneau">
+        <h3>Mon élevage</h3>
+        <div id="statsCompte" class="grilleCompte"></div>
+      </div>
+      <div class="panneau">
+        <h3>Sauvegarde</h3>
+        <p class="noteCompte">Ta partie est sauvegardée automatiquement sur cet appareil, à chaque action.
+        Pour la transférer sur un autre téléphone, copie le code ici et colle-le là-bas.</p>
+        <button id="btnExporter" class="btnReset">📋 Copier mon code de sauvegarde</button>
+        <button id="btnMontrerImport" class="btnReset">📥 Importer un code</button>
+        <div id="zoneImport" hidden>
+          <textarea id="champImport" placeholder="Colle le code de sauvegarde ici…"></textarea>
+          <button id="btnImporter" class="btnReset rouge">Remplacer ma partie par ce code</button>
         </div>
       </div>
+      <div class="panneau">
+        <h3>Zone dangereuse</h3>
+        <div id="zoneReset">
+          <button id="btnReset" class="btnReset rouge">🗑 Réinitialiser le compte</button>
+          <div id="confReset" hidden>
+            <p>Tout effacer ? Pokémon, pièces, progression — <b>irréversible</b>.</p>
+            <button id="btnResetOui" class="btnReset rouge">Oui, tout effacer</button>
+            <button id="btnResetNon" class="btnReset">Annuler</button>
+          </div>
+        </div>
+      </div>
+      <p class="noteCompte" style="text-align:center;">La Pension · sprites PMD Sprite Collab</p>
     </div>
   </section>
 
@@ -322,6 +359,7 @@
     <button data-vers="equipe"><span class="ico">⚔</span>Équipe</button>
     <button data-vers="spins"><span class="ico">🎰</span>Spins</button>
     <button data-vers="boutique"><span class="ico">🛒</span>Boutique</button>
+    <button data-vers="compte"><span class="ico">👤</span>Compte</button>
   </div>
 
   <div id="voileFiche">
@@ -1252,6 +1290,23 @@ async function creerEnt(espece, camp, x, y, niveau, extra){
        du 3 contre 10 où l'on fauche, pas un combat d'égal à égal */
     e.pv = e.pvMax = Math.max(3, Math.round(e.pvMax * 0.3));
     e.atq *= 0.32; e.defs *= 0.5;
+    if(!e.boss){
+      /* CHACUN SON RÔLE : la meute encercle, le tireur canarde,
+         l'assassin file vers le plus fragile, le soigneur reste derrière */
+      const por = def.sig.por || 1;
+      if(e.elite && (def.sig.soin
+          || def.types.some(t => t === 'fee' || t === 'plante' || t === 'psy')))
+        e.role = 'soigneur';
+      else if(por >= 2.2) e.role = 'tireur';
+      else if(def.base.vit >= 75) e.role = 'assassin';
+      else e.role = 'meute';
+      e.chef = !!e.elite && e.role !== 'soigneur';   // le chef de meute rugit
+      e.slotAng = rngD() * Math.PI * 2;              // sa place autour de la proie
+      e.peureux = e.role === 'meute' && !e.elite && rngD() < 0.25;
+      if(e.eveille === undefined) e.eveille = false; // il rôde en attendant
+      e.spawnX = x; e.spawnY = y;
+      e.tRode = rngD() * 2;
+    }
   }
   if(e.elite){ e.pv = e.pvMax = Math.round(e.pvMax * 3.2); e.atq *= 2.1;
                e.defs *= 1.6; e.taille = 1.18; }
@@ -1330,7 +1385,7 @@ async function lancerVague(){
     const espece = elite ? parmi(def.elites) : parmi(def.sbires);
     promesses.push(creerEnt(espece, 'ennemi',
       entre(s.x + 1, s.x + s.w - 1), entre(s.y + 1, s.y + 3),
-      def.niv + D.vague + (elite ? 2 : 0), {elite}));
+      def.niv + D.vague + (elite ? 2 : 0), {elite, eveille: true}));
   }
   (await Promise.all(promesses)).forEach(e => { e.flash = 0.25; D.ents.push(e); });
 }
@@ -1351,7 +1406,7 @@ async function lancerBoss(){
   for(let i = 0; i < (b.escorte || []).length; i++){
     const g = b.escorte[i];
     const garde = await creerEnt(g.espece, 'ennemi',
-      s.cx - 1.5 + i * 3, s.y + 3, g.niv, {elite: true});
+      s.cx - 1.5 + i * 3, s.y + 3, g.niv, {elite: true, eveille: true});
     garde.flash = 0.35;
     D.ents.push(garde);
   }
@@ -1366,6 +1421,7 @@ function degatsD(att, cible, coup){
   let d = att.atq * (coup.puiss / (att.camp === 'equipe' ? 38 : 58)) * eff * humeur * entre(0.9, 1.1);
   if(att.def.carac === 'mauvais') d *= 1 + (1 - att.pv / att.pvMax);      // la rage
   if(att.def.carac === 'relax') d *= 2.1;                                 // rare mais lourd
+  if(att.camp === 'ennemi' && att.boost > 0) d *= 1.3;   // le cri du chef de meute
   d = Math.max(1, d - cible.defs * 0.45);
   return {d, eff};
 }
@@ -1586,8 +1642,27 @@ function iaEquipe(e, dt){
   }
 }
 
+/* qui viser ? on se RÉPARTIT les proies au lieu du 10-contre-1 —
+   sauf l'assassin, qui file droit sur le plus fragile */
+function ciblePourEnnemi(e){
+  const adv = ennemisDe(e);
+  if(!adv.length) return null;
+  if(e.role === 'assassin')
+    return adv.reduce((m, o) => o.pv < m.pv ? o : m, adv[0]);
+  let best = null, bs = 1e9;
+  for(const o of adv){
+    let n = 0;
+    for(const z of D.ents)
+      if(z.camp === 'ennemi' && !z.ko && z !== e && z.cible === o) n++;
+    const s = dist(e, o) + n * 1.6;
+    if(s < bs){ bs = s; best = o; }
+  }
+  return best;
+}
+
 function iaEnnemi(e, dt){
-  e.cible = (e.cible && !e.cible.ko) ? e.cible : proche(e, ennemisDe(e));
+  e.cible = (e.cible && !e.cible.ko) ? e.cible
+          : (e.boss ? proche(e, ennemisDe(e)) : ciblePourEnnemi(e));
   const c = e.cible;
   if(!c) return;
   if(e.boss){
@@ -1633,7 +1708,7 @@ function iaEnnemi(e, dt){
         for(let k = 0; k < 4; k++){
           const sb = await creerEnt(parmi(D.def.sbires), 'ennemi',
             entre(s.x + 1, s.x + s.w - 1), entre(s.y + 1, s.y + 3),
-            D.def.niv + 2, {});
+            D.def.niv + 2, {eveille: true});
           sb.flash = 0.3;
           D.ents.push(sb);
         }
@@ -1647,10 +1722,138 @@ function iaEnnemi(e, dt){
       D.secousse = 0.6;
     }
   }
+  if(e.boss){
+    /* le boss, lui, garde sa danse : droit sur sa proie */
+    const porB = e.sig.por || 1;
+    const dB = dist(e, c);
+    if(dB > porB + 0.1) bougerVers(e, c.x, c.y, dt, e.vit * 0.95);
+    else if(e.cd <= 0) attaquer(e, c);
+    return;
+  }
+
+  /* ---- LES MOBS ONT UNE VIE --------------------------------------- */
+  if(e.boost) e.boost = Math.max(0, e.boost - dt);
+
+  /* endormi : il RÔDE autour de chez lui jusqu'à ce qu'on l'approche,
+     qu'on le blesse, ou qu'un copain d'à côté parte au combat */
+  if(e.eveille === false){
+    const v = proche(e, ennemisDe(e));
+    const dv = v ? dist(e, v) : 99;
+    if(dv < 3.4 || e.pv < e.pvMax
+       || D.ents.some(o => o !== e && o.camp === 'ennemi' && !o.ko
+                        && o.eveille && !o.boss && dist(e, o) < 2.4)){
+      e.eveille = true; e.flash = 0.15;
+    } else {
+      e.tRode -= dt;
+      if(e.tRode <= 0){
+        e.tRode = 1.2 + rngD() * 2.2;
+        e.butRode = {x: e.spawnX + (rngD() - 0.5) * 3.2,
+                     y: e.spawnY + (rngD() - 0.5) * 3.2};
+      }
+      if(e.butRode && Math.hypot(e.butRode.x - e.x, e.butRode.y - e.y) > 0.3)
+        bougerVers(e, e.butRode.x, e.butRode.y, dt, e.vit * 0.35);
+      return;
+    }
+  }
+
+  /* le PEUREUX blessé détale… puis revient, vexé et un peu plus méchant */
+  if(e.peureux && !e.courageux && e.fuite === undefined && e.pv < e.pvMax * 0.35){
+    e.fuite = 3.2;
+    flotterD(e, '!', '#f2a65e');
+  }
+  if(e.fuite !== undefined){
+    e.fuite -= dt;
+    if(e.fuite <= 0){
+      delete e.fuite; e.courageux = true; e.atq *= 1.15;
+      flotterD(e, 'grr !', '#ef6b6b');
+    } else {
+      const v = proche(e, ennemisDe(e));
+      if(v) bougerVers(e, e.x + (e.x - v.x), e.y + (e.y - v.y), dt, e.vit * 1.15);
+      return;
+    }
+  }
+
+  /* le CHEF DE MEUTE rugit : les sbires autour frappent plus fort */
+  if(e.chef){
+    e.tCri = (e.tCri ?? 3) - dt;
+    if(e.tCri <= 0){
+      const copains = D.ents.filter(o => o.camp === 'ennemi' && !o.ko
+        && !o.boss && o !== e && dist(e, o) < 3.2);
+      if(copains.length >= 2){
+        e.tCri = 8 + rngD() * 3;
+        e.anim = 'Attack'; e.verrou = 0.5; e.animT = 0;
+        banniereD('Le chef de meute rugit !', '#f2a65e');
+        for(const o of copains){ o.boost = 4; o.flash = 0.2; flotterD(o, '+ATQ', '#f2a65e'); }
+      } else e.tCri = 2;
+    }
+  }
+
+  /* le SOIGNEUR répare sa meute en restant derrière — à focus en premier ! */
+  if(e.role === 'soigneur'){
+    const blesse = D.ents.filter(o => o.camp === 'ennemi' && !o.ko && !o.boss
+        && o !== e && o.pv < o.pvMax * 0.7)
+      .sort((a, b) => a.pv / a.pvMax - b.pv / b.pvMax)[0];
+    if(blesse && e.cd <= 0){
+      if(dist(e, blesse) > 2.4){ bougerVers(e, blesse.x, blesse.y, dt); return; }
+      e.cd = (e.sig.cd || 2) * 1.6;
+      e.dir = dirVers(blesse.x - e.x, blesse.y - e.y);
+      e.anim = 'Attack'; e.verrou = 0.3; e.animT = 0;
+      const soin = Math.max(3, Math.round(blesse.pvMax * 0.16));
+      blesse.pv = Math.min(blesse.pvMax, blesse.pv + soin);
+      flotterD(blesse, '+' + soin, '#8ff0a4');
+      poserFxD(blesse.x, blesse.y, 'fee');
+      return;
+    }
+    const v = proche(e, ennemisDe(e));
+    if(v && dist(e, v) < 3){
+      bougerVers(e, e.x + (e.x - v.x), e.y + (e.y - v.y), dt, e.vit * 0.9);
+      return;
+    }
+  }
+
+  /* cible répartie (ou fragile pour l'assassin) */
+  e.cible = (e.cible && !e.cible.ko) ? e.cible : ciblePourEnnemi(e);
+  const cc = e.cible;
+  if(!cc) return;
   const portee = e.sig.por || 1;
-  const d = dist(e, c);
-  if(d > portee + 0.1) bougerVers(e, c.x, c.y, dt, e.vit * (e.boss ? 0.95 : 0.82));
-  else if(e.cd <= 0) attaquer(e, c);
+  const d = dist(e, cc);
+
+  /* la règle d'or vaut aussi pour eux : un adversaire à portée ? on mord */
+  if(e.cd <= 0 && e.role !== 'tireur'){
+    const la = ennemisDe(e).filter(o => dist(e, o) <= portee + 0.15);
+    if(la.length){
+      attaquer(e, proche(e, la));
+      e.strafe = 0.4 + rngD() * 0.4;
+      e.strafeSens = rngD() < 0.5 ? 1 : -1;
+      return;
+    }
+  }
+
+  /* le TIREUR garde ses distances et canarde en reculant */
+  if(e.role === 'tireur'){
+    if(e.cd <= 0 && d <= portee + 0.15){ attaquer(e, cc); return; }
+    if(d < portee * 0.55) bougerVers(e, e.x + (e.x - cc.x), e.y + (e.y - cc.y), dt);
+    else if(d > portee) bougerVers(e, cc.x, cc.y, dt, e.vit * 0.85);
+    return;
+  }
+
+  /* le pas de côté après un coup : la mêlée tourne au lieu de rester figée */
+  if(e.strafe > 0){
+    e.strafe -= dt;
+    const px = -(cc.y - e.y), py = (cc.x - e.x);
+    const l = Math.hypot(px, py) || 1;
+    bougerVers(e, e.x + px / l * e.strafeSens, e.y + py / l * e.strafeSens, dt, e.vit * 0.55);
+    return;
+  }
+
+  /* ENCERCLER : chacun rejoint SA place autour de la proie —
+     fini la file indienne, la meute se referme de tous les côtés */
+  const ray = Math.max(0.65, portee * 0.8);
+  const tx = cc.x + Math.cos(e.slotAng || 0) * ray;
+  const ty = cc.y + Math.sin(e.slotAng || 0) * ray;
+  if(d > portee + 0.1)
+    bougerVers(e, tx, ty, dt, e.vit * (e.role === 'assassin' ? 1.05 : 0.82));
+  else if(e.cd <= 0) attaquer(e, cc);
 }
 
 /* --- l'ULT ------------------------------------------------------------ */
@@ -2764,6 +2967,38 @@ function acheter(quoi, type){
   sauver(); majBoutique();
 }
 
+/* --- l'onglet compte -------------------------------------------------- */
+function majCompte(){
+  const nb = P.pensionnaires.length;
+  const shinies = P.pensionnaires.filter(p => p.shiny).length;
+  const meilleur = P.pensionnaires.reduce((m, p) => Math.max(m, p.niveau), 0);
+  const ults = P.pensionnaires.filter(p => p.ult).length;
+  const donjons = P.avancee.tuto || 0;
+  const jours = Math.max(1, Math.ceil((Date.now() - (P.creeLe || Date.now())) / 86400000));
+  $('#statsCompte').innerHTML =
+      '<div>Pensionnaires<b>' + nb + (shinies ? ' <small>dont ✨' + shinies + '</small>' : '') + '</b></div>'
+    + '<div>Meilleur niveau<b>' + (meilleur || '—') + '</b></div>'
+    + '<div>Donjons finis<b>' + donjons + ' / ' + DONJONS.length + '</b></div>'
+    + '<div>Ults apprises<b>' + ults + '</b></div>'
+    + '<div>Pièces<b>🪙 ' + P.sacs.sous + '</b></div>'
+    + '<div>Tickets · Baies<b>🎟 ' + P.sacs.tickets + ' · 🫐 ' + P.sacs.baies + '</b></div>'
+    + '<div style="grid-column:1/-1;">Compte créé il y a<b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b></div>';
+  majJetons();
+}
+function codeSauvegarde(){
+  return btoa(unescape(encodeURIComponent(JSON.stringify(P))));
+}
+function importerCode(code){
+  try {
+    const obj = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+    if(!obj || !Array.isArray(obj.pensionnaires) || !obj.sacs) throw new Error('pas une sauvegarde');
+    localStorage.setItem('pension_sauve', JSON.stringify(obj));
+    location.reload();
+  } catch(e){
+    direJeu('Ce code ne ressemble pas à une sauvegarde de la Pension…');
+  }
+}
+
 /* --- les écrans ------------------------------------------------------- */
 function montrer(nom){
   $$('.ecran').forEach(e => e.classList.toggle('actif', e.dataset.nom === nom));
@@ -2775,6 +3010,7 @@ function montrer(nom){
   if(nom === 'equipe') majEquipe();
   if(nom === 'spins') majSpins();
   if(nom === 'boutique') majBoutique();
+  if(nom === 'compte') majCompte();
   ECRAN = nom;
 }
 let ECRAN = 'pension';
@@ -2834,6 +3070,25 @@ async function demarrer(){
   $('#btnResetOui').onclick = () => {
     try { localStorage.removeItem('pension_sauve'); } catch(e) {}
     location.reload();
+  };
+  $('#btnExporter').onclick = async () => {
+    const code = codeSauvegarde();
+    try {
+      await navigator.clipboard.writeText(code);
+      direJeu('Code copié ! Colle-le dans « Importer » sur l\'autre appareil.');
+    } catch(e){
+      const z = $('#zoneImport'); z.hidden = false;
+      $('#champImport').value = code;
+      direJeu('Copie le code affiché ci-dessous.');
+    }
+  };
+  $('#btnMontrerImport').onclick = () => {
+    const z = $('#zoneImport'); z.hidden = !z.hidden;
+    if(!z.hidden) $('#champImport').value = '';
+  };
+  $('#btnImporter').onclick = () => {
+    const code = $('#champImport').value;
+    if(code.trim()) importerCode(code);
   };
   $('#voileFiche').addEventListener('click', e => {
     if(e.target === e.currentTarget) fermerFiche();
