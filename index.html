@@ -3,224 +3,350 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#241a14">
+<meta name="theme-color" content="#f4eee2">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icone.png">
 <title>La Pension</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
+  /* =====================================================================
+     LA PENSION — le système de design des menus.
+     Clair, moderne, chaleureux : crème + blanc + or. Une seule couleur
+     d'action (l'or), le rouge réservé au danger, le violet à la zone.
+     Grille de 8 px, cibles tactiles ≥ 48 px, corps de texte ≥ 14 px,
+     police pixel réservée aux grands titres (illisible en dessous de 18).
+     Le donjon, lui, garde sa nuit : c'est la scène, pas un menu.
+     ===================================================================== */
   :root{
-    --nuit:#241a14; --ecran:#2e2216; --bois:#3a2c1c; --lisiere:#5c4830;
-    --or:#f2c14e; --craie:#f4e8d0; --brume:#b39e7e;
-    --ok:#8ff0a4; --mal:#ef6b6b; --eau:#8fc4f0;
+    /* surfaces */
+    --fond:#f4eee2; --carte:#ffffff; --carte2:#faf6ee; --trait:#e5dbc8; --trait2:#efe7d8;
+    /* encre */
+    --encre:#2a2119; --encre2:#6f6353; --encre3:#9a8d7a;
+    /* l'or : l'action */
+    --or:#e8b132; --or-fonce:#a97d14; --or-doux:#fff3d1; --or-trait:#f0d48a;
+    /* les états */
+    --danger:#d84a3a; --danger-doux:#fdeae7; --danger-trait:#f3b8b0;
+    --ok:#2f9e5f; --ok-doux:#e6f6ec;
+    --zone:#8e44c9; --zone-doux:#f1e6fb;
+    --eau:#3b8fd9;
+    --ombre:0 1px 2px rgba(60,40,10,.05), 0 6px 18px rgba(60,40,10,.07);
+    --ombre-haut:0 -6px 24px rgba(60,40,10,.10);
+    --r:16px; --r-petit:12px;
+    /* rétro-compat avec les anciens noms utilisés dans le JS */
+    --nuit:#16100a; --ecran:var(--carte); --bois:var(--carte2); --lisiere:var(--trait);
+    --craie:var(--encre); --brume:var(--encre2); --mal:var(--danger);
   }
   *{ box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
   [hidden]{ display:none !important; }
   html,body{ height:100%; overscroll-behavior:none; }
-  body{ background:var(--nuit); color:var(--craie);
-    font-family:'Nunito',system-ui,sans-serif; user-select:none;
-    display:flex; flex-direction:column;
-    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
-  h1,h2,h3,.px{ font-family:'Pixelify Sans','Nunito',sans-serif; }
+  body{ background:var(--fond); color:var(--encre);
+    font-family:'Nunito',system-ui,sans-serif; font-size:15px; line-height:1.4;
+    user-select:none; display:flex; flex-direction:column;
+    padding:env(safe-area-inset-top) 0 0; }
+  h1,h2,h3,.px{ font-family:'Pixelify Sans','Nunito',sans-serif; font-weight:600; }
+  button{ font-family:inherit; color:inherit; }
+  b, strong{ font-weight:800; }
+  small{ font-size:.85em; }
 
-  .statut{ display:flex; align-items:center; gap:8px; padding:10px 14px 8px;
-    border-bottom:2px solid var(--lisiere); background:linear-gradient(#3a2c1c,#2e2216); }
-  .statut .titre{ font-family:'Pixelify Sans'; font-size:19px; color:var(--or); flex:1;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .jeton{ font-size:13.5px; font-weight:800; background:#241a10; padding:3px 9px;
-    border-radius:99px; border:1.5px solid var(--lisiere); white-space:nowrap; }
-  .jeton b{ color:var(--or); }
+  /* --- l'en-tête d'écran ----------------------------------------------- */
+  .statut{ display:flex; align-items:center; gap:8px; padding:12px 16px 10px;
+    background:var(--fond); }
+  .statut .titre{ font-family:'Pixelify Sans'; font-size:24px; font-weight:600;
+    color:var(--encre); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    letter-spacing:.2px; }
+  .jeton{ font-size:14px; font-weight:800; background:var(--carte); padding:6px 11px;
+    border-radius:99px; border:1.5px solid var(--trait); white-space:nowrap;
+    color:var(--encre2); display:inline-flex; align-items:center; gap:5px; min-height:32px; }
+  .jeton b{ color:var(--encre); }
 
+  /* --- la page : en-tête, corps qui défile, barre d'action sous le pouce - */
   .ecran{ display:none; flex:1; min-height:0; flex-direction:column; }
   .ecran.actif{ display:flex; }
-  .corps{ flex:1; overflow-y:auto; padding:12px; display:flex;
-    flex-direction:column; gap:10px; }
+  .corps{ flex:1; overflow-y:auto; padding:4px 16px 20px; display:flex;
+    flex-direction:column; gap:12px; -webkit-overflow-scrolling:touch; }
+  .barreAction{ display:flex; align-items:center; gap:10px; padding:10px 16px 12px;
+    background:linear-gradient(to top, var(--fond) 70%, transparent);
+    flex:0 0 auto; }
+  .barreAction .btnOr{ flex:1; }
+  .barreAction .compteur{ flex:0 0 auto; min-width:64px; min-height:52px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--carte); border:1.5px solid var(--trait); border-radius:14px;
+    padding:4px 12px; font-size:12px; color:var(--encre2); font-weight:700; line-height:1.15; }
+  .barreAction .compteur b{ font-size:18px; color:var(--encre); }
 
-  #navbas{ display:flex; border-top:2px solid var(--lisiere); background:#241a10; }
-  #navbas button{ flex:1; background:none; border:0; color:var(--brume); cursor:pointer;
-    font-family:'Pixelify Sans'; font-size:13px; padding:8px 0 10px; }
-  #navbas button.actif{ color:var(--or); }
-  #navbas .ico{ display:block; font-size:20px; line-height:1.3; filter:grayscale(.4); }
-  #navbas button.actif .ico{ filter:none; }
+  /* --- les cartes -------------------------------------------------------- */
+  .panneau{ background:var(--carte); border:1px solid var(--trait);
+    border-radius:var(--r); padding:14px; box-shadow:var(--ombre); }
+  .panneau > h3, .panneau > .titrePanneau{ font-family:'Nunito'; font-weight:800;
+    font-size:16px; color:var(--encre); margin-bottom:8px; letter-spacing:-.1px; }
+  .panneau h3{ font-family:'Nunito'; font-size:16px; font-weight:800; }
+  .etape{ display:inline-flex; align-items:center; justify-content:center;
+    width:24px; height:24px; border-radius:99px; background:var(--or-doux);
+    color:var(--or-fonce); font-size:13px; font-weight:800; margin-right:8px;
+    border:1.5px solid var(--or-trait); vertical-align:middle; }
+  .discret{ color:var(--encre2); font-size:14px; }
+  .mini{ font-size:13px; color:var(--encre3); }
 
-  .panneau{ background:var(--bois); border:2px solid var(--lisiere);
-    border-radius:12px; padding:10px; }
-  .btnOr{ font-family:'Pixelify Sans'; font-size:17px; cursor:pointer; width:100%;
-    background:var(--or); color:#241a10; border:0; border-bottom:4px solid #a67c1e;
-    border-radius:12px; padding:12px; }
-  .btnOr:active{ transform:translateY(2px); border-bottom-width:2px; }
-  .btnBois{ font-family:'Pixelify Sans'; font-size:14px; cursor:pointer;
-    background:#241a10; color:var(--craie); border:2px solid var(--lisiere);
-    border-radius:10px; padding:8px 10px; }
-  .discret{ color:var(--brume); font-size:13px; }
+  /* --- les boutons : 48 px minimum, un retour au doigt ------------------ */
+  .btnOr{ font-family:'Nunito'; font-weight:800; font-size:17px; cursor:pointer; width:100%;
+    background:var(--or); color:#2a2119; border:0; border-radius:14px;
+    min-height:52px; padding:12px 16px; box-shadow:0 2px 0 var(--or-fonce), var(--ombre);
+    transition:transform .08s, box-shadow .08s, filter .12s; letter-spacing:.1px; }
+  .btnOr:active{ transform:translateY(2px) scale(.99); box-shadow:0 0 0 var(--or-fonce); }
+  .btnOr[disabled], .btnOr.off{ filter:grayscale(.6); opacity:.55; box-shadow:none; }
+  .btnOr small, .btnOr span{ font-weight:700; font-size:13px; opacity:.8; }
+  .btnBois{ font-family:'Nunito'; font-weight:800; font-size:15px; cursor:pointer;
+    background:var(--carte); color:var(--encre); border:1.5px solid var(--trait);
+    border-radius:var(--r-petit); min-height:48px; padding:10px 14px;
+    transition:transform .08s, background .12s; }
+  .btnBois:active{ transform:scale(.98); background:var(--carte2); }
+  .btnDanger{ background:var(--danger); color:#fff; border:0; border-radius:14px;
+    font-family:'Nunito'; font-weight:800; font-size:16px; min-height:52px;
+    padding:12px 16px; width:100%; cursor:pointer; box-shadow:0 2px 0 #a8342a;
+    transition:transform .08s, box-shadow .08s; }
+  .btnDanger:active{ transform:translateY(2px); box-shadow:none; }
 
-  /* le jardin */
-  #cvJardin{ width:100%; height:46vh; border-radius:12px;
-    border:2px solid var(--lisiere); touch-action:manipulation; display:block; }
+  /* --- la nav du bas : 5 destinations, icône + libellé, état actif net --- */
+  #navbas{ display:flex; background:var(--carte); border-top:1px solid var(--trait);
+    padding:6px 6px calc(6px + env(safe-area-inset-bottom)); box-shadow:var(--ombre-haut);
+    flex:0 0 auto; }
+  #navbas button{ flex:1; background:none; border:0; color:var(--encre3); cursor:pointer;
+    font-family:'Nunito'; font-weight:800; font-size:12px; padding:6px 0 4px;
+    border-radius:14px; min-height:56px; position:relative; transition:color .12s; }
+  #navbas button .ico{ display:block; font-size:22px; line-height:1.2; margin:0 auto 3px;
+    width:52px; border-radius:99px; padding:2px 0; filter:grayscale(.55) opacity(.8);
+    transition:background .15s, filter .15s, transform .12s; }
+  #navbas button.actif{ color:var(--or-fonce); }
+  #navbas button.actif .ico{ background:var(--or-doux); filter:none; }
+  #navbas button:active .ico{ transform:scale(.9); }
+  #navbas button.alerte{ color:var(--danger); }
+  #navbas button.alerte .ico::after{ content:''; position:absolute; top:6px; right:calc(50% - 20px);
+    width:10px; height:10px; border-radius:99px; background:var(--danger);
+    border:2px solid var(--carte); }
 
-  /* la fiche */
-  #voileFiche{ position:fixed; inset:0; background:#000c; display:none;
-    align-items:flex-end; z-index:9; }
-  #voileFiche.actif{ display:flex; }
-  .fiche{ background:var(--ecran); border-top:3px solid var(--or);
-    border-radius:18px 18px 0 0; width:100%; padding:14px;
-    max-height:82%; overflow:auto; }
-  .fiche h3{ color:var(--or); font-size:20px; }
-  #fichePortrait{ width:56px; height:56px; image-rendering:pixelated;
-    border-radius:10px; border:2px solid var(--lisiere); background:#241a10; float:right; }
-  .jauges{ display:grid; grid-template-columns:auto 1fr auto; gap:5px 8px;
-    align-items:center; font-size:13px; margin-top:8px; }
-  .jauges .barre{ height:10px; background:#1c130b; border-radius:99px;
-    overflow:hidden; border:1px solid #00000055; display:block; }
-  .jauges .barre i{ display:block; height:100%; border-radius:99px; }
-  .soins{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
-  .soin{ background:var(--bois); border:2px solid var(--lisiere); border-radius:12px;
-    padding:10px; cursor:pointer; text-align:left; color:var(--craie); font-family:'Nunito'; }
-  .soin:active{ transform:translateY(1px); }
-  .soin .gros{ font-size:22px; }
-  .soin b{ display:block; font-size:14.5px; }
-  .soin span{ font-size:11.5px; color:var(--brume); }
+  /* --- la pension --------------------------------------------------------- */
+  #cvJardin{ width:100%; height:44vh; border-radius:var(--r); display:block;
+    border:1px solid var(--trait); box-shadow:var(--ombre); touch-action:none; }
+  #btnGrand{ position:absolute; top:10px; right:10px; width:44px; height:44px;
+    min-height:44px; padding:0; font-size:20px; border-radius:12px;
+    background:#ffffffe6; backdrop-filter:blur(6px); }
+  #alerteInvasion{ background:var(--danger-doux); border:1.5px solid var(--danger-trait);
+    border-radius:var(--r); padding:12px 14px; display:flex; flex-direction:column; gap:8px;
+    animation:alerteBat 1.8s ease-in-out infinite; }
+  #alerteInvasion b{ display:block; font-size:15px; color:#8e2a20; }
+  .btnDefendre{ background:var(--danger); border:0; color:#fff; font-family:'Nunito';
+    font-weight:800; font-size:16px; border-radius:var(--r-petit); min-height:48px;
+    padding:10px 14px; cursor:pointer; width:100%; box-shadow:0 2px 0 #a8342a;
+    transition:transform .08s, box-shadow .08s; }
+  .btnDefendre:active{ transform:translateY(2px); box-shadow:none; }
+  .btnDefendre.zone{ background:var(--zone); box-shadow:0 2px 0 #6a2f99; }
+  @keyframes alerteBat{ 50%{ box-shadow:0 0 0 6px rgba(216,74,58,.10); } }
+  .puces{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .puce2{ display:flex; align-items:center; gap:10px; background:var(--carte2);
+    border-radius:var(--r-petit); padding:9px 12px; font-size:14px; color:var(--encre); }
+  .puce2 .i{ font-size:18px; width:24px; text-align:center; flex:0 0 auto; }
 
-  /* l'équipe */
-  #rangEquipe{ display:flex; gap:12px; flex-wrap:wrap; padding:6px 2px 4px; }
-  .choixMob{ background:none; border:0; cursor:pointer; position:relative;
-    width:76px; padding:0; }
-  .mobImg{ width:52px; height:52px; image-rendering:pixelated; border-radius:12px;
-    border:2.5px solid var(--lisiere); background:#241a10; display:block; margin:0 auto; }
-  .choixMob.pris .mobImg{ outline:3px solid var(--or); outline-offset:2px; }
+  /* --- l'équipe ------------------------------------------------------------ */
+  #rangEquipe{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; padding-top:4px; }
+  .choixMob{ background:var(--carte2); border:2px solid transparent; cursor:pointer;
+    position:relative; padding:10px 6px 8px; border-radius:var(--r); min-height:48px;
+    transition:transform .08s, border-color .12s, background .12s; }
+  .choixMob:active{ transform:scale(.97); }
+  .mobImg{ width:56px; height:56px; image-rendering:pixelated; border-radius:12px;
+    display:block; margin:0 auto; background:#fff; border:1px solid var(--trait); }
+  .choixMob.pris{ border-color:var(--or); background:var(--or-doux); }
+  .choixMob.pris .mobImg{ border-color:var(--or-trait); }
+  .choixMob .ordre{ position:absolute; top:6px; left:6px; width:22px; height:22px;
+    border-radius:99px; background:var(--or); color:#2a2119; font-size:12px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--ombre); }
   .choixMob.epuise{ opacity:.45; filter:grayscale(.8); }
-  .choixMob .etat{ font-size:10.5px; color:var(--brume); display:block;
-    margin-top:4px; text-align:center; line-height:1.3; }
-  .lignesButin{ display:flex; flex-direction:column; gap:6px; font-size:13.5px; }
+  .choixMob .etat{ font-size:13px; color:var(--encre); display:block; margin-top:6px;
+    text-align:center; line-height:1.3; font-weight:800; }
+  .choixMob .etat .mini{ display:block; font-weight:600; }
+  .lignesButin{ display:flex; flex-direction:column; gap:8px; font-size:14px; }
   .lignesButin .l{ display:flex; justify-content:space-between; gap:10px;
-    background:#241a10; border-radius:8px; padding:7px 10px; align-items:center; }
-  .lignesButin .l b{ color:var(--or); text-align:right; }
+    background:var(--carte2); border-radius:var(--r-petit); padding:12px 14px;
+    align-items:center; min-height:48px; border:1.5px solid transparent;
+    transition:transform .08s, border-color .12s; }
+  .lignesButin .l b{ color:var(--encre); text-align:right; }
+  .lignesButin .l[onclick], .lignesButin .l.cliquable{ cursor:pointer; }
+  .lignesButin .l.cliquable:active{ transform:scale(.99); }
+  .lignesButin .l.choisi{ border-color:var(--or); background:var(--or-doux); }
+  .lignesButin .l.ferme{ opacity:.55; }
+  .lignesButin .l.revanche{ background:var(--danger-doux); border-color:var(--danger-trait); }
+  .lignesButin .l .nomDj{ font-weight:800; display:block; }
+  .etiquette{ font-size:12px; font-weight:800; padding:4px 9px; border-radius:99px;
+    background:var(--carte); border:1.5px solid var(--trait); color:var(--encre2);
+    white-space:nowrap; }
+  .etiquette.or{ background:var(--or-doux); border-color:var(--or-trait); color:var(--or-fonce); }
+  .etiquette.rouge{ background:var(--danger); border-color:var(--danger); color:#fff; }
+  .vengBloc{ display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .vengBarre{ flex:1; max-width:140px; height:6px; background:var(--trait2);
+    border-radius:99px; overflow:hidden; }
+  .vengBarre i{ display:block; height:100%; background:linear-gradient(90deg,#f0a35e,var(--danger)); border-radius:99px; }
+  .vengPct{ font-size:12px; color:var(--encre2); white-space:nowrap; font-weight:700; }
+  #colereZone .vengBarre i{ background:linear-gradient(90deg,#c58af0,var(--zone)); }
 
-  /* le donjon */
-  #cvDonjon{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-  .donjonScene{ position:relative; flex:1; min-height:0; background:#16100a; }
-  .donjonHaut{ position:absolute; top:0; left:0; right:0; display:flex; gap:8px;
-    padding:8px 10px; align-items:center; pointer-events:none;
-    text-shadow:0 2px 0 #000; font-family:'Pixelify Sans'; }
-  .donjonHaut span{ color:var(--or); font-size:15px; }
-  .donjonHaut .droite{ margin-left:auto; color:var(--craie); }
-  #pupitre{ display:flex; gap:6px; padding:8px; background:#1c130b;
-    border-top:2px solid var(--lisiere); }
-  #pupitre.large{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  #pupitre.large .cap{ flex:0 0 84px; }
-  #alerteInvasion{ background:linear-gradient(#4a1d14, #38160f); border:2px solid #a03a28;
-    border-radius:14px; padding:12px; text-align:center;
-    animation:alerteBat 1.6s ease-in-out infinite; }
-  #alerteInvasion b{ display:block; font-size:13.5px; color:#ffb3a3; margin-bottom:9px; }
-  .btnDefendre{ background:#c0392b; border:2px solid #ef6b6b; color:#fff;
-    font-family:'Pixelify Sans'; font-size:15px; border-radius:12px;
-    padding:9px 14px; cursor:pointer; width:100%; margin-top:6px; }
-  .btnDefendre:active{ transform:translateY(1px); }
-  .btnDefendre.zone{ background:#7a1f66; border-color:#c75fd0; }
-  #alerteInvasion b{ margin-bottom:4px; }
-  .vengBloc{ display:flex; align-items:center; gap:6px; margin-top:4px; }
-  .vengBarre{ flex:1; max-width:120px; height:6px; background:#241a10;
-    border:1px solid var(--lisiere); border-radius:99px; overflow:hidden; }
-  .vengBarre i{ display:block; height:100%; background:linear-gradient(90deg,#c0392b,#f2a65e); }
-  .vengPct{ font-size:10.5px; color:#f2a65e; white-space:nowrap; }
-  .caseAide{ display:inline-block; width:52px; height:52px; margin:4px 3px 0 0;
-    background:#241a10; border:2px solid var(--lisiere); border-radius:10px;
-    text-align:center; vertical-align:top; cursor:pointer; font-size:10px;
-    color:var(--brume); overflow:hidden; padding-top:3px; }
-  .caseAide img{ width:30px; height:30px; image-rendering:pixelated; display:block; margin:0 auto; }
-  .caseAide.verrou{ opacity:.55; cursor:default; }
-  .caseAide.achat{ border-color:var(--or); color:var(--or); }
-  #consChoix{ margin-top:8px; border-top:1px dashed var(--lisiere); padding-top:6px; }
-  @keyframes alerteBat{ 50%{ box-shadow:0 0 16px #a03a2888; } }
-  #navbas button.alerte{ color:#ef6b6b; }
-  #navbas button.alerte .ico::after{ content:'❗'; font-size:11px; position:relative; top:-8px; }
-  .cap{ flex:1; position:relative; background:var(--bois); border:2px solid var(--lisiere);
-    border-radius:12px; padding:7px 2px 6px; cursor:pointer; color:var(--craie);
-    font-family:'Nunito'; text-align:center; overflow:hidden; min-height:64px; }
-  .cap .gros{ font-size:20px; display:block; line-height:1.2; }
-  .cap b{ font-size:10.5px; display:block; line-height:1.25; }
-  .cap .froid{ position:absolute; inset:0; background:#000a; display:flex;
-    align-items:center; justify-content:center; font-family:'Pixelify Sans';
-    font-size:17px; color:var(--eau); }
-  .cap.pret{ border-color:var(--or); box-shadow:0 0 10px #f2c14e55;
-    animation:pulser 1s infinite; }
-  @keyframes pulser{ 50%{ box-shadow:0 0 16px #f2c14eaa; } }
-  .cap.replier{ background:linear-gradient(#463618,#3a2c14); border-color:var(--or); }
-
-  /* les spins */
-  .machine{ text-align:center; background:linear-gradient(#463618,#3a2c14);
-    border-color:var(--or); }
-  .machine .gros{ font-size:46px; line-height:1.1; }
-  .carteSpin{ display:flex; flex-direction:column; align-items:center; gap:4px;
-    padding:14px; animation:pose .4s; }
-  .carteSpin img{ width:96px; height:96px; image-rendering:pixelated;
-    border-radius:14px; border:3px solid var(--or); background:#241a10; }
-  .carteSpin b{ font-family:'Pixelify Sans'; font-size:20px; color:var(--or); }
-  .carteSpin.brille img{ box-shadow:0 0 24px #f2c14e; }
-  .carteSpin img{ border-color:var(--rar, var(--or)); }
+  /* --- les spins --------------------------------------------------------- */
+  .machine{ text-align:center; background:linear-gradient(180deg, #fff8e6, var(--carte));
+    border-color:var(--or-trait); }
+  .machine .gros{ font-size:52px; line-height:1.1; margin-bottom:4px; }
+  .machine .px{ font-size:22px; color:var(--encre); display:block; }
+  .machine .discret{ margin-top:4px; }
+  .carteSpin{ display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:12px; animation:pose .4s; }
+  .carteSpin img{ width:112px; height:112px; image-rendering:pixelated;
+    border-radius:20px; border:4px solid var(--rar, var(--or)); background:#fff;
+    box-shadow:var(--ombre); }
+  .carteSpin b{ font-family:'Pixelify Sans'; font-size:26px; font-weight:600; line-height:1.15; }
+  .carteSpin span{ font-size:15px; font-weight:700; }
+  .carteSpin.brille img{ box-shadow:0 0 28px #f2c14e; }
   .carteSpin.brille{ animation:pose .4s, scintille 1s infinite; }
   @keyframes pose{ from{ transform:scale(.6); opacity:0; } }
-  @keyframes scintille{ 50%{ filter:brightness(1.25); } }
+  @keyframes scintille{ 50%{ filter:brightness(1.15); } }
   .machine.secoue{ animation:secousse .12s infinite; }
   @keyframes secousse{ 25%{ transform:translate(-2px,1px) rotate(-.6deg); }
                        75%{ transform:translate(2px,-1px) rotate(.6deg); } }
   .carteSpin.tourne img{ animation:tourbillon .22s infinite; }
-  @keyframes tourbillon{ 50%{ transform:scale(.92) rotate(3deg); filter:brightness(1.3); } }
+  @keyframes tourbillon{ 50%{ transform:scale(.92) rotate(3deg); filter:brightness(1.2); } }
+  .rarete{ display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:var(--carte2); border-radius:var(--r-petit); font-size:14px; }
+  .rarete .pastille{ width:12px; height:12px; border-radius:99px; flex:0 0 auto;
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.08); }
+  .rarete .nom{ font-weight:800; flex:0 0 auto; }
+  .rarete .taux{ color:var(--encre2); font-weight:700; flex:0 0 auto; }
+  .rarete .qui{ margin-left:auto; text-align:right; color:var(--encre2); font-size:13px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-  /* la boutique */
-  #rayons{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .article{ background:var(--bois); border:2px solid var(--lisiere);
-    border-radius:12px; padding:9px; cursor:pointer; }
-  .article:active{ transform:translateY(1px); }
-  .article.off{ opacity:.5; cursor:default; }
-  .article .gros{ font-size:21px; }
-  .article b{ display:block; font-size:13.5px; }
-  .article .prix{ color:var(--or); font-weight:800; font-size:13px; display:block; }
-  .article span{ font-size:11.5px; color:var(--brume); display:block; }
+  /* --- la boutique -------------------------------------------------------- */
+  #rayons{ display:flex; flex-direction:column; gap:10px; }
+  .rayonTitre{ font-size:13px; font-weight:800; color:var(--encre3); text-transform:uppercase;
+    letter-spacing:.08em; margin:6px 2px 0; }
+  .article{ background:var(--carte); border:1px solid var(--trait); border-radius:var(--r);
+    padding:12px 14px; display:grid; grid-template-columns:44px 1fr auto; gap:12px;
+    align-items:center; box-shadow:var(--ombre); cursor:pointer; min-height:64px;
+    transition:transform .08s; }
+  .article:active{ transform:scale(.99); }
+  .article.off{ opacity:.55; cursor:default; box-shadow:none; }
+  .article .gros{ font-size:28px; text-align:center; line-height:1; }
+  .article b{ display:block; font-size:15px; }
+  .article span{ font-size:13px; color:var(--encre2); display:block; margin-top:2px; }
+  .article .prix{ color:var(--or-fonce); font-weight:800; font-size:14px; display:inline-flex;
+    align-items:center; justify-content:center; background:var(--or-doux);
+    border:1.5px solid var(--or-trait); border-radius:99px; padding:8px 12px; min-height:40px;
+    margin:0; white-space:nowrap; }
+  .article.off .prix{ background:var(--carte2); border-color:var(--trait); color:var(--encre3); }
+
+  /* --- le compte ----------------------------------------------------------- */
   #zoneReset{ text-align:center; }
-  .grilleCompte{ display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
-  .grilleCompte div{ background:#241a10; border:1.5px solid var(--lisiere); border-radius:10px;
-    padding:7px 9px; font-size:12.5px; color:var(--brume); }
-  .grilleCompte b{ display:block; font-size:16px; color:var(--craie); font-family:'Pixelify Sans'; }
-  .noteCompte{ font-size:12.5px; color:var(--brume); margin:6px 0 8px; }
-  #champImport{ width:100%; min-height:74px; background:#241a10; color:var(--craie);
-    border:1.5px solid var(--lisiere); border-radius:10px; padding:8px; font-size:11px;
-    font-family:monospace; margin:6px 0; }
-  .btnReset{ background:var(--bois); border:2px solid var(--lisiere); color:var(--craie);
-    border-radius:12px; padding:9px 14px; font-family:inherit; font-size:13.5px; cursor:pointer; margin:4px; }
-  .btnReset.rouge{ background:#6e2318; border-color:#a03a28; font-weight:800; }
-  #confReset p{ font-size:13px; color:var(--brume); margin:10px 0 8px; }
+  .grilleCompte{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px; }
+  .grilleCompte div{ background:var(--carte2); border-radius:var(--r-petit);
+    padding:10px 12px; font-size:13px; color:var(--encre2); font-weight:700; }
+  .grilleCompte b{ display:block; font-size:18px; color:var(--encre); margin-top:2px; }
+  .noteCompte{ font-size:14px; color:var(--encre2); margin:0 0 10px; }
+  #champImport{ width:100%; min-height:80px; background:var(--carte2); color:var(--encre);
+    border:1.5px solid var(--trait); border-radius:var(--r-petit); padding:10px; font-size:12px;
+    font-family:monospace; margin:8px 0; }
+  .btnReset{ background:var(--carte); border:1.5px solid var(--trait); color:var(--encre);
+    border-radius:var(--r-petit); min-height:48px; padding:10px 14px; font-family:inherit;
+    font-size:15px; font-weight:800; cursor:pointer; margin:4px 0; width:100%;
+    transition:transform .08s; }
+  .btnReset:active{ transform:scale(.98); }
+  .btnReset.rouge{ background:var(--danger-doux); border-color:var(--danger-trait); color:#8e2a20; }
+  #confReset p{ font-size:14px; color:var(--encre2); margin:10px 0 8px; }
 
-  /* la pension en grand */
+  /* --- les feuilles qui montent du bas : fiche, conseil, table des types --- */
+  #voileFiche, .voileHaut{ position:fixed; inset:0; background:rgba(40,28,12,.45);
+    display:none; align-items:flex-end; z-index:9; backdrop-filter:blur(2px); }
+  .voileHaut{ z-index:10; }
+  #voileFiche.actif, .voileHaut.actif{ display:flex; }
+  .fiche{ background:var(--fond); border-radius:24px 24px 0 0; width:100%;
+    padding:8px 16px calc(16px + env(safe-area-inset-bottom)); max-height:86%;
+    overflow:auto; box-shadow:var(--ombre-haut); animation:monte .22s ease-out; }
+  .fiche::before{ content:''; display:block; width:40px; height:5px; border-radius:99px;
+    background:var(--trait); margin:0 auto 12px; }
+  @keyframes monte{ from{ transform:translateY(24px); opacity:.6; } }
+  .fiche h3{ font-family:'Pixelify Sans'; font-size:24px; font-weight:600; color:var(--encre); }
+  .fiche h3 .discret{ font-family:'Nunito'; font-size:14px; font-weight:700; }
+  #fichePortrait{ width:64px; height:64px; image-rendering:pixelated; border-radius:16px;
+    border:1px solid var(--trait); background:#fff; float:right; margin:0 0 6px 10px;
+    box-shadow:var(--ombre); }
+  .fiche .panneau{ margin-top:10px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip{ font-size:13px; font-weight:800; padding:5px 10px; border-radius:99px;
+    background:var(--carte); border:1.5px solid var(--trait); color:var(--encre2); }
+  .chip.stat b{ color:var(--encre); margin-left:3px; }
+  .chip.mal{ background:var(--danger-doux); border-color:var(--danger-trait); color:#8e2a20; }
+  .chip.ok{ background:var(--ok-doux); border-color:#b6e3c6; color:#1f6f43; }
+  #ficheActions{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+  #ficheActions .btnBois{ width:100%; }
+  .jauges{ display:grid; grid-template-columns:auto 1fr auto; gap:5px 8px;
+    align-items:center; font-size:13px; margin-top:8px; }
+  .jauges .barre{ height:10px; background:var(--trait2); border-radius:99px; overflow:hidden; display:block; }
+  .jauges .barre i{ display:block; height:100%; border-radius:99px; }
+
+  /* le conseil de défense */
+  #consRenforts{ display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-top:8px; }
+  .caseAide{ aspect-ratio:1; min-height:56px; background:var(--carte2); border:1.5px solid var(--trait);
+    border-radius:var(--r-petit); text-align:center; cursor:pointer; font-size:11px; font-weight:700;
+    color:var(--encre2); overflow:hidden; padding-top:4px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; transition:transform .08s; }
+  .caseAide:active{ transform:scale(.96); }
+  .caseAide img{ width:32px; height:32px; image-rendering:pixelated; display:block; }
+  .caseAide.verrou{ opacity:.5; cursor:default; }
+  .caseAide.achat{ border-color:var(--or-trait); background:var(--or-doux); color:var(--or-fonce); }
+  #consChoix{ margin-top:10px; border-top:1px dashed var(--trait); padding-top:8px;
+    display:flex; flex-wrap:wrap; gap:8px; }
+  #consChoix .caseAide{ width:64px; flex:0 0 auto; }
+  #consChoix p{ flex-basis:100%; }
+
+  /* --- la pension en grand --------------------------------------------- */
   #grandDomaine{ position:fixed; inset:0; z-index:8; background:#16100a;
     display:flex; flex-direction:column; }
   #cvGrand{ flex:1; min-height:0; width:100%; display:block; touch-action:none; }
-  #fermerGrand{ position:absolute; top:calc(8px + env(safe-area-inset-top));
-    right:8px; z-index:2; font-family:'Pixelify Sans'; font-size:18px;
-    background:#241a10dd; color:var(--craie); border:2px solid var(--lisiere);
-    border-radius:10px; padding:6px 12px; }
-  #bandePokes{ display:flex; gap:8px; overflow-x:auto; padding:8px;
-    background:#1c130bee; border-top:2px solid var(--lisiere); }
-  .puce{ flex:0 0 auto; background:var(--bois); border:2px solid var(--lisiere);
-    border-radius:12px; padding:4px; position:relative; cursor:pointer; }
-  .puce img{ width:44px; height:44px; image-rendering:pixelated; display:block;
-    border-radius:8px; background:#241a10; }
-  .puce span{ position:absolute; bottom:2px; right:2px; font-size:10px;
-    font-weight:800; background:#000a; border-radius:6px; padding:0 4px;
-    color:var(--or); }
+  #fermerGrand{ position:absolute; top:calc(10px + env(safe-area-inset-top));
+    right:10px; z-index:2; font-size:20px; width:44px; height:44px;
+    background:#ffffffe6; color:var(--encre); border:0; border-radius:12px; cursor:pointer; }
+  #bandePokes{ display:flex; gap:8px; overflow-x:auto; padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    background:var(--carte); border-top:1px solid var(--trait); }
+  .puce{ flex:0 0 auto; background:var(--carte2); border:1.5px solid var(--trait);
+    border-radius:14px; padding:4px; position:relative; cursor:pointer; }
+  .puce img{ width:48px; height:48px; image-rendering:pixelated; display:block;
+    border-radius:10px; background:#fff; }
+  .puce span{ position:absolute; bottom:3px; right:3px; font-size:11px;
+    font-weight:800; background:var(--or); border-radius:6px; padding:0 5px; color:#2a2119; }
   .puce:active{ transform:scale(.94); }
-  #cvJardin{ touch-action:none; }
 
-  /* la table des types */
-  .voileHaut{ position:fixed; inset:0; background:#000c; display:none;
-    align-items:flex-end; z-index:10; }
-  .voileHaut.actif{ display:flex; }
+  /* --- le donjon : la scène reste sombre ------------------------------- */
+  #cvDonjon{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .donjonScene{ position:relative; flex:1; min-height:0; background:#16100a; }
+  .donjonHaut{ position:absolute; top:0; left:0; right:0; display:flex; gap:8px;
+    padding:8px 12px; align-items:center; pointer-events:none;
+    text-shadow:0 2px 0 #000; font-family:'Pixelify Sans'; color:#f4e8d0; }
+  .donjonHaut span{ color:#f2c14e; font-size:16px; }
+  .donjonHaut .droite{ margin-left:auto; color:#f4e8d0; }
+  #pupitre{ display:flex; gap:8px; padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+    background:#1c130b; border-top:2px solid #5c4830; }
+  #pupitre.large{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #pupitre.large .cap{ flex:0 0 92px; }
+  .cap{ flex:1; position:relative; background:#3a2c1c; border:2px solid #5c4830;
+    border-radius:14px; padding:8px 4px 8px; cursor:pointer; color:#f4e8d0;
+    font-family:'Nunito'; text-align:center; overflow:hidden; min-height:72px; }
+  .cap .gros{ font-size:22px; display:block; line-height:1.2; }
+  .cap b{ font-size:11.5px; display:block; line-height:1.25; }
+  .cap .discret{ color:#b39e7e; font-size:11px; }
+  .cap .froid{ position:absolute; inset:0; background:#000a; display:flex;
+    align-items:center; justify-content:center; font-family:'Pixelify Sans';
+    font-size:18px; color:#8fc4f0; }
+  .cap.pret{ border-color:#f2c14e; box-shadow:0 0 10px #f2c14e55; animation:pulser 1s infinite; }
+  @keyframes pulser{ 50%{ box-shadow:0 0 16px #f2c14eaa; } }
+  .cap.replier{ background:linear-gradient(#463618,#3a2c14); border-color:#f2c14e; }
 
-  /* le journal */
-  #journal{ position:fixed; left:10px; right:10px; bottom:64px; z-index:20;
-    background:#241a10ee; border:2px solid var(--or); border-radius:12px;
-    padding:9px 12px; font-size:14px; opacity:0; transform:translateY(8px);
-    transition:.25s; pointer-events:none; }
+  /* --- le journal (toast) ---------------------------------------------- */
+  #journal{ position:fixed; left:16px; right:16px; bottom:calc(156px + env(safe-area-inset-bottom));
+    z-index:20; background:var(--encre); color:#fff; border-radius:14px;
+    padding:12px 16px; font-size:15px; font-weight:700; opacity:0; transform:translateY(8px);
+    transition:.25s; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.25); text-align:center; }
   #journal.vu{ opacity:1; transform:none; }
   #version{ position:fixed; right:8px; top:2px; font-size:9px; color:#00000000; }
 </style>
@@ -238,15 +364,15 @@
       <div id="alerteInvasion" hidden></div>
       <div style="position:relative;">
         <canvas id="cvJardin"></canvas>
-        <button id="btnGrand" class="btnBois" style="position:absolute; top:8px; right:8px;
-          padding:6px 10px; font-size:16px;">⤢</button>
+        <button id="btnGrand" class="btnBois" aria-label="Voir la pension en grand">⤢</button>
       </div>
       <div class="panneau">
-        <b style="font-size:14px;">D'un coup d'œil</b>
-        <p class="discret" id="coupDoeil" style="margin-top:3px;">…</p>
-        <p class="discret" style="margin-top:4px;">Glisse pour te balader · tape un Pokémon
-          pour sa fiche · ⤢ pour ouvrir la pension en grand.</p>
+        <div class="titrePanneau">D'un coup d'œil</div>
+        <div class="puces" id="coupDoeil"></div>
+        <p class="mini" style="margin-top:10px;">Glisse pour te balader · tape un Pokémon pour sa fiche.</p>
       </div>
+    </div>
+    <div class="barreAction">
       <button class="btnOr" onclick="montrer('equipe')">⚔ Préparer une expédition</button>
     </div>
   </section>
@@ -254,7 +380,7 @@
   <!-- ============ LA PENSION EN GRAND ============ -->
   <div id="grandDomaine" hidden>
     <canvas id="cvGrand"></canvas>
-    <button id="fermerGrand">✕</button>
+    <button id="fermerGrand" aria-label="Fermer">✕</button>
     <div id="bandePokes"></div>
   </div>
 
@@ -262,27 +388,29 @@
   <section class="ecran" data-nom="equipe">
     <div class="statut">
       <span class="titre">Expédition</span>
-      <span class="jeton">équipe <b id="compteEquipe">0/3</b></span>
+      <button class="jeton" onclick="ouvrirTableTypes()" style="cursor:pointer;">📖 Types</button>
     </div>
     <div class="corps">
       <div class="panneau">
-        <b class="px" style="color:var(--or)">1 · Choisis jusqu'à 3 Pokémon</b>
+        <div class="titrePanneau"><span class="etape">1</span>Choisis jusqu'à 3 Pokémon</div>
         <div id="rangEquipe"></div>
       </div>
-      <button class="btnBois" onclick="ouvrirTableTypes()" style="width:100%;">📖 La table des types</button>
       <div class="panneau">
-        <b class="px" style="color:var(--or)">2 · Le Pré du Grand Départ</b>
+        <div class="titrePanneau"><span class="etape">2</span>Le Pré du Grand Départ</div>
         <div id="colereZone" hidden>
-          <div class="vengBloc">
+          <div class="vengBloc" style="margin-top:0;">
             <span class="vengBarre" style="max-width:none;"><i id="colereBarre" style="width:0%"></i></span>
             <span class="vengPct" id="colerePct">🌋 0%</span>
           </div>
-          <p class="discret" style="font-size:11px; margin-top:2px;">Colère de la zone — chaque donjon vaincu
+          <p class="mini" style="margin:4px 0 10px;">Colère de la zone — chaque donjon vaincu
             l'attise un peu, chaque revanche repoussée beaucoup.</p>
         </div>
-        <div class="lignesButin" id="listeDonjons" style="margin-top:8px; font-size:12.5px;"></div>
+        <div class="lignesButin" id="listeDonjons"></div>
       </div>
-      <button class="btnOr" onclick="partirEnDonjon()">🎲 C'EST PARTI !</button>
+    </div>
+    <div class="barreAction">
+      <div class="compteur">équipe<b id="compteEquipe">0/3</b></div>
+      <button class="btnOr" onclick="partirEnDonjon()">🎲 C'est parti !</button>
     </div>
   </section>
 
@@ -292,7 +420,7 @@
       <canvas id="cvDonjon"></canvas>
       <div class="donjonHaut">
         <span id="dTitre"></span>
-        <span id="dInfo" style="color:var(--craie); font-size:13px;"></span>
+        <span id="dInfo" style="color:#f4e8d0; font-size:13px;"></span>
         <span class="droite" id="dSous"></span>
       </div>
     </div>
@@ -304,10 +432,12 @@
     <div class="statut"><span class="titre">Retour au bercail</span></div>
     <div class="corps">
       <div class="panneau" style="text-align:center;">
-        <b class="px" style="font-size:22px; color:var(--or);" id="butinTitre">…</b>
+        <b class="px" style="font-size:26px; color:var(--encre); display:block;" id="butinTitre">…</b>
         <p class="discret" id="butinSousTitre"></p>
       </div>
       <div class="panneau lignesButin" id="lignesButin"></div>
+    </div>
+    <div class="barreAction">
       <button class="btnOr" onclick="montrer('pension')">💛 Retour à la pension</button>
     </div>
   </section>
@@ -322,24 +452,20 @@
     <div class="corps">
       <div class="panneau machine">
         <div class="gros">🎰</div>
-        <b class="px" style="font-size:19px; color:var(--or);">PORTAIL · 🌾 La Grande Plaine</b>
-        <p class="discret">les 25 familles de la Grande Plaine — une famille = un
-          tirage, tu reçois la forme de base et tu la fais monter. Les tickets sont
-          RARES : chaque spin est un événement.</p>
-        <button class="btnOr" style="margin-top:8px;" onclick="faireSpin()">🎟 SPIN !
-          <span style="font-size:12px;">(1 ticket · il t'en reste <b id="nbTickets">0</b>)</span></button>
+        <b class="px">🌾 La Grande Plaine</b>
+        <p class="discret">25 familles · une famille = un tirage, tu reçois la forme de base.</p>
       </div>
       <div class="panneau" id="resultatSpin" hidden></div>
       <div class="panneau">
-        <b style="font-size:14px;">Les raretés</b>
-        <div class="lignesButin" id="tauxRaretes" style="margin-top:6px; font-size:11.5px;"></div>
-        <p class="discret" style="margin-top:6px; font-size:11.5px;">✨ Et 0,1% de
-          SHINY sur chaque tirage — n'importe lequel, stats ×1,5.</p>
+        <div class="titrePanneau">Les raretés</div>
+        <div id="tauxRaretes" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <p class="mini" style="margin-top:10px;">✨ Et 0,1 % de shiny sur chaque tirage — stats ×1,5.</p>
       </div>
-      <div class="panneau" style="opacity:.55;">
-        <b style="font-size:14px;">🔒 🌲 Forêt · 🕳 Grotte</b>
-        <p class="discret">les prochains portails arrivent avec les prochaines zones.</p>
-      </div>
+      <p class="mini" style="text-align:center; padding:0 8px;">🔒 Forêt et Grotte arrivent avec les prochaines zones.</p>
+    </div>
+    <div class="barreAction">
+      <div class="compteur">tickets<b id="nbTickets">0</b></div>
+      <button class="btnOr" onclick="faireSpin()">🎟 SPIN !</button>
     </div>
   </section>
 
@@ -367,7 +493,7 @@
       </div>
       <div class="panneau">
         <h3>Sauvegarde</h3>
-        <p class="noteCompte">Ta partie est sauvegardée automatiquement sur cet appareil, à chaque action.
+        <p class="noteCompte">Ta partie est sauvegardée automatiquement sur cet appareil.
         Pour la transférer sur un autre téléphone, copie le code ici et colle-le là-bas.</p>
         <button id="btnExporter" class="btnReset">📋 Copier mon code de sauvegarde</button>
         <button id="btnMontrerImport" class="btnReset">📥 Importer un code</button>
@@ -387,7 +513,7 @@
           </div>
         </div>
       </div>
-      <p class="noteCompte" style="text-align:center;">La Pension · sprites PMD Sprite Collab</p>
+      <p class="mini" style="text-align:center;">La Pension · sprites PMD Sprite Collab</p>
     </div>
   </section>
 
@@ -405,35 +531,35 @@
       <img id="fichePortrait" alt="">
       <h3 id="ficheNom">…</h3>
       <p class="discret" id="ficheCarac"></p>
-      <p class="discret" id="ficheTypes" style="font-size:11.5px;"></p>
-      <div class="panneau" style="margin-top:10px; font-size:13px;" id="ficheAtk"></div>
-      <div style="margin-top:10px; display:flex; flex-direction:column; gap:4px;" id="ficheActions"></div>
+      <div id="ficheTypes"></div>
+      <div class="panneau" id="ficheAtk"></div>
+      <div id="ficheActions"></div>
       <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerFiche()">Fermer</button>
     </div>
   </div>
 
   <!-- le conseil de défense : qui défend, quels renforts payés -->
   <div id="voileDefense" class="voileHaut">
-    <div class="fiche" style="max-height:82vh; overflow-y:auto;">
-      <h3 style="color:#ef6b6b" id="consTitre">🛡 Conseil de défense</h3>
+    <div class="fiche">
+      <h3 style="color:var(--danger)" id="consTitre">🛡 Conseil de défense</h3>
       <p class="discret" id="consTexte" style="margin-top:2px;"></p>
-      <div class="panneau" style="margin-top:8px;">
-        <b style="font-size:13px;">Les défenseurs de la Grande Plaine</b>
-        <p class="discret" id="consDefenseurs" style="margin-top:4px;"></p>
+      <div class="panneau">
+        <div class="titrePanneau">Les défenseurs de la Grande Plaine</div>
+        <p class="discret" id="consDefenseurs"></p>
       </div>
-      <div class="panneau" style="margin-top:8px;">
-        <b style="font-size:13px;">Les renforts d'ailleurs <span class="discret">(10 places max)</span></b>
+      <div class="panneau">
+        <div class="titrePanneau">Les renforts d'ailleurs <span class="mini">· 10 places max</span></div>
         <div id="consRenforts"></div>
         <div id="consChoix" hidden></div>
       </div>
-      <button class="btnOr" id="btnLancerDef" style="width:100%; margin-top:10px; font-size:16px;">⚔ LANCER LA DÉFENSE</button>
-      <button class="btnBois" style="width:100%; margin-top:6px;" onclick="fermerConseil()">Pas maintenant</button>
+      <button class="btnDanger" id="btnLancerDef" style="margin-top:12px;">⚔ Lancer la défense</button>
+      <button class="btnBois" style="width:100%; margin-top:8px;" onclick="fermerConseil()">Pas maintenant</button>
     </div>
   </div>
 
   <div id="voileTypes" class="voileHaut">
     <div class="fiche">
-      <h3 style="color:var(--or)">📖 La table des types</h3>
+      <h3>📖 La table des types</h3>
       <p class="discret" style="margin-top:2px;">Ce que chaque type d'attaque vaut
         contre les autres — généré depuis les vraies règles du jeu.</p>
       <div id="corpsTypes" style="margin-top:8px;"></div>
@@ -3059,15 +3185,18 @@ async function majPension(){
   const alertes = [];
   for(const p of P.pensionnaires){
     const ev = especeDe(p).evo;
-    if(ev && p.niveau >= ev.niv) alertes.push('✨ ' + p.espece + ' peut évoluer !');
+    if(ev && p.niveau >= ev.niv) alertes.push(['✨', p.espece + ' peut évoluer !']);
     else if(p.niveau < NIVEAU_MAX && P.sacs.sous >= coutNiveau(p.niveau))
-      alertes.push('⬆ ' + p.espece + ' peut monter (' + coutNiveau(p.niveau) + ' 🪙)');
+      alertes.push(['⬆', p.espece + ' peut monter — ' + coutNiveau(p.niveau) + ' 🪙']);
   }
   if(P.invasion && P.invasion.zone && P.invasion.zone.jauge > 0 && !P.invasion.zone.due)
-    alertes.unshift('🌋 Colère du Pré : ' + P.invasion.zone.jauge + '%');
+    alertes.unshift(['🌋', 'Colère du Pré : ' + P.invasion.zone.jauge + ' %']);
+  if(!alertes.length)
+    alertes.push(['🏡', P.pensionnaires.length + ' pensionnaire' + (P.pensionnaires.length > 1 ? 's' : '')
+      + ' à la pension' + (P.sacs.tickets ? ' · ' + P.sacs.tickets + ' ticket' + (P.sacs.tickets > 1 ? 's' : '') + ' à tirer' : '')]);
   const b = $('#coupDoeil');
-  if(b) b.textContent = alertes.length ? alertes.slice(0, 3).join(' · ')
-    : P.pensionnaires.length + ' pensionnaire(s) — glisse pour te balader, tape pour la fiche.';
+  if(b) b.innerHTML = alertes.slice(0, 3).map(a =>
+    '<div class="puce2"><span class="i">' + a[0] + '</span><span>' + a[1] + '</span></div>').join('');
   const al = $('#alerteInvasion');
   if(al){
     const dues = [];
@@ -3302,8 +3431,8 @@ function ouvrirTableTypes(){
       else if(m === 0) nuls.push((TYPE_ICO[d] || '') + d);
       else faibles.push((TYPE_ICO[d] || '') + d);
     }
-    return '<div class="panneau" style="margin-bottom:6px; font-size:12px;">'
-      + '<b style="font-size:14px">' + (TYPE_ICO[t] || '') + ' ' + t.toUpperCase() + '</b><br>'
+    return '<div class="panneau" style="margin-bottom:8px; font-size:13.5px;">'
+      + '<b style="font-size:15px">' + (TYPE_ICO[t] || '') + ' ' + t.toUpperCase() + '</b><br>'
       + (forts.length ? '<span style="color:var(--ok)">×2 contre : ' + forts.join(', ') + '</span><br>' : '')
       + (faibles.length ? '<span class="discret">×0,5 contre : ' + faibles.join(', ') + '</span><br>' : '')
       + (nuls.length ? '<span style="color:var(--mal)">×0 contre : ' + nuls.join(', ') + '</span>' : '')
@@ -3340,15 +3469,19 @@ function rendreFiche(p){
     else if(m === 0) resiste.push((TYPE_ICO[t] || '') + t + ' ×0');
     else if(m < 1) resiste.push((TYPE_ICO[t] || '') + t);
   }
-  $('#ficheTypes').innerHTML = e.types.map(t => (TYPE_ICO[t] || '') + t).join(' · ')
-    + '  ·  ' + st.pv + ' PV · ' + Math.round(st.atq) + ' ATQ · ' + Math.round(st.def) + ' DÉF'
-    + (craint.length ? '<br><span style="color:var(--mal)">craint : ' + craint.join(', ') + '</span>' : '')
-    + (resiste.length ? '<br><span style="color:var(--ok)">résiste : ' + resiste.join(', ') + '</span>' : '');
+  $('#ficheTypes').innerHTML = '<div class="chips">'
+    + e.types.map(t => '<span class="chip">' + (TYPE_ICO[t] || '') + ' ' + t + '</span>').join('')
+    + '<span class="chip stat">PV<b>' + st.pv + '</b></span>'
+    + '<span class="chip stat">ATQ<b>' + Math.round(st.atq) + '</b></span>'
+    + '<span class="chip stat">DÉF<b>' + Math.round(st.def) + '</b></span></div>'
+    + (craint.length || resiste.length ? '<div class="chips">'
+      + craint.map(x => '<span class="chip mal">craint ' + x + '</span>').join('')
+      + resiste.map(x => '<span class="chip ok">résiste ' + x + '</span>').join('') + '</div>' : '');
   /* l'attaque signature et l'ult */
   let atk = '<b>Signature :</b> ' + e.sig.nom + ' <span class="discret">(' + e.sig.type + ')</span>'
-    + '<br><span class="discret" style="font-size:11.5px">' + decrireSig(e.sig) + '</span>';
-  if(p.ult) atk += '<br><b style="color:var(--or)">ULT :</b> ' + ULTS[p.ult].nom
-    + '<br><span class="discret" style="font-size:11.5px">' + decrireUlt(p.ult) + '</span>';
+    + '<br><span class="mini">' + decrireSig(e.sig) + '</span>';
+  if(p.ult) atk += '<br><b style="color:var(--or-fonce)">ULT :</b> ' + ULTS[p.ult].nom
+    + '<br><span class="mini">' + decrireUlt(p.ult) + '</span>';
   $('#ficheAtk').innerHTML = atk;
   /* LES TROIS BOUTONS : monter, évoluer, apprendre */
   let h = '';
@@ -3362,9 +3495,9 @@ function rendreFiche(p){
   if(e.evo){
     if(p.niveau >= e.evo.niv){
       h += e.evo.choix
-        ? '<div style="margin-top:8px"><b style="color:var(--or)">⭐ Prêt à évoluer !</b> '
+        ? '<div><b style="color:var(--or-fonce)">⭐ Prêt à évoluer !</b><div class="chips">'
           + e.evo.choix.map(v => '<button class="btnBois" onclick="evoluerId(' + p.id + ',\'' + v + '\')">'
-            + v + '</button>').join(' ') + '</div>'
+            + v + '</button>').join('') + '</div></div>'
         : '<button class="btnOr" style="margin-top:8px" onclick="evoluerId('
           + p.id + ')">⭐ ÉVOLUER en ' + e.evo.vers + ' !</button>';
     } else h += '<p class="discret" style="margin-top:6px">Évolution au niveau ' + e.evo.niv
@@ -3376,7 +3509,7 @@ function rendreFiche(p){
     h += dispo.length
       ? '<button class="btnBois" style="margin-top:8px; width:100%" onclick="apprendreUlt('
         + p.id + ',\'' + dispo[0] + '\')">📜 APPRENDRE ' + ULTS[dispo[0]].nom + ' (1 parchemin)</button>'
-        + '<p class="discret" style="font-size:11.5px; margin-top:3px">' + decrireUlt(dispo[0]) + '</p>'
+        + '<p class="mini">' + decrireUlt(dispo[0]) + '</p>'
       : '<p class="discret" style="margin-top:6px">📜 Apprendre : aucun parchemin '
         + e.types.join('/') + ' — la boutique en vend.</p>';
   }
@@ -3407,10 +3540,12 @@ function majEquipe(){
     b.className = 'choixMob' + (selection.includes(p.id) ? ' pris' : '')
                 + (!enForme(p) ? ' epuise' : '');
     const port = urlPortrait(p.espece);
-    b.innerHTML = '<img class="mobImg" src="' + port.url + '" onerror="this.src=\''
+    const rang = selection.indexOf(p.id);
+    b.innerHTML = (rang >= 0 ? '<span class="ordre">' + (rang + 1) + '</span>' : '')
+      + '<img class="mobImg" src="' + port.url + '" onerror="this.src=\''
       + (port.secours || '') + '\'">'
-      + '<span class="etat">' + (p.shiny ? '✨' : '') + p.espece + ' · ' + p.niveau
-      + '<br>' + CARACTERES[e.carac].ico + ' ' + CARACTERES[e.carac].nom + '</span>';
+      + '<span class="etat">' + (p.shiny ? '✨' : '') + p.espece + ' <span class="mini">niv. ' + p.niveau
+      + '</span><span class="mini">' + CARACTERES[e.carac].ico + ' ' + CARACTERES[e.carac].nom + '</span></span>';
     b.onclick = () => {
       if(selection.includes(p.id)) selection = selection.filter(i => i !== p.id);
       else if(selection.length < 3) selection.push(p.id);
@@ -3434,23 +3569,24 @@ function majEquipe(){
     const l = document.createElement('div');
     const ouvert = i <= P.avancee.tuto;
     const fait = i < P.avancee.tuto;
-    l.className = 'l';
-    if(i === donjonChoisi && ouvert) l.style.cssText = 'border:1.5px solid var(--or);border-radius:8px;';
     const dj = (P.invasion && P.invasion.donjons && P.invasion.donjons[d.cle]) || null;
     const jv = dj ? dj.jauge : 0;
-    l.innerHTML = '<span>' + (fait ? '✅ ' : ouvert ? '▶ ' : '🔒 ') + (i + 1) + ' · ' + d.nom
+    l.className = 'l' + (ouvert ? ' cliquable' : ' ferme')
+      + (i === donjonChoisi && ouvert ? ' choisi' : '')
+      + (dj && dj.due ? ' revanche' : '');
+    const etiquette = dj && dj.due ? '<span class="etiquette rouge">🔥 revanche !</span>'
+      : fait ? '<span class="etiquette">' + (d.final ? '👑 ' : '') + 'rejouable</span>'
+      : ouvert ? '<span class="etiquette or">' + (d.final ? '👑 ' : '') + 'à toi !</span>'
+      : '<span class="etiquette">🔒 clé du donjon ' + i + '</span>';
+    l.innerHTML = '<span><span class="nomDj">' + (fait ? '✅ ' : ouvert ? '▶ ' : '') + (i + 1) + ' · ' + d.nom + '</span>'
       + (ouvert
         ? '<span class="vengBloc">'
           + '<span class="vengBarre"><i style="width:' + jv + '%"></i></span>'
-          + '<span class="vengPct">' + (dj && dj.due ? '🔥 REVANCHE !' : '🔥 ' + jv + '%')
-          + (dj && dj.serie > 1 && !dj.due ? ' <b style="color:#ef6b6b">série ×' + dj.serie + '</b>' : '')
-          + '</span>'
-          + '</span>'
-        : '') + '</span>'
-      + '<b>' + (d.final ? '👑 ' : '') + (fait ? 'rejouable' : ouvert ? 'À TOI !' : 'clé du donjon ' + i) + '</b>';
-    if(dj && dj.due) l.style.cssText += 'background:#3a1a14;';
+          + '<span class="vengPct">🔥 ' + jv + ' %'
+          + (dj && dj.serie > 1 && !dj.due ? ' · <b style="color:var(--danger)">série ×' + dj.serie + '</b>' : '')
+          + '</span></span>'
+        : '') + '</span>' + etiquette;
     if(ouvert) l.onclick = () => { donjonChoisi = i; majEquipe(); };
-    l.style.opacity = ouvert ? 1 : 0.5;
     dl.appendChild(l);
   });
 }
@@ -3884,13 +4020,14 @@ function majSpins(){
   const tab = $('#tauxRaretes');
   tab.innerHTML = RARETES.map(r => {
     const dispo = PORTAIL_PLAINE.filter(n => ESPECES[n].rarete === r.cle);
-    return '<div class="l"><span>' + r.ico + ' ' + r.nom + ' · ' + r.taux + '%</span><b>'
-      + dispo.slice(0, 3).join(', ') + (dispo.length > 3 ? '…' : '') + '</b></div>';
+    return '<div class="rarete"><span class="pastille" style="background:' + COULEURS_RARETE[r.cle] + '"></span>'
+      + '<span class="nom">' + r.nom + '</span><span class="taux">' + r.taux + ' %</span>'
+      + '<span class="qui">' + dispo.slice(0, 3).join(', ') + (dispo.length > 3 ? '…' : '') + '</span></div>';
   }).join('');
   majJetons();
 }
-const COULEURS_RARETE = {commun:'#cfc8b8', peuCommun:'#8fe388', rare:'#6fb3ff',
-  epique:'#c78fdd', ultra:'#ffa04e', legendaire:'#ffd45e'};
+const COULEURS_RARETE = {commun:'#8a7f70', peuCommun:'#2f9e5f', rare:'#3b8fd9',
+  epique:'#8e44c9', legendaire:'#c9921a'};
 let spinEnCours = false;
 function faireSpin(){
   if(spinEnCours) return;
@@ -3920,7 +4057,7 @@ function faireSpin(){
     const eTire = ESPECES[t.espece];
     const e = especeDe(p);
     const r = RARETES.find(x => x.cle === eTire.rarete);
-    const coul = p.shiny ? '#ffd45e' : COULEURS_RARETE[eTire.rarete];
+    const coul = p.shiny ? '#c9921a' : COULEURS_RARETE[eTire.rarete];
     const port = urlPortrait(p.espece);
     let titre, ligne2;
     if(t.doublon === 'shiny'){
@@ -3941,7 +4078,7 @@ function faireSpin(){
       + '<img src="' + port.url + '" onerror="this.src=\'' + (port.secours || '') + '\'">'
       + '<b style="color:' + coul + '">' + titre + '</b>'
       + '<span style="color:' + coul + '">' + ligne2 + '</span>'
-      + '<span class="discret">' + CARACTERES[e.carac].ico + ' caractère '
+      + '<span class="mini" style="font-weight:600">' + CARACTERES[e.carac].ico + ' caractère '
       + CARACTERES[e.carac].nom + '</span></div>';
     direJeu(t.doublon === 'shiny' ? '✨ Ton ' + p.espece + ' devient SHINY !'
           : t.doublon === 'niveau' ? 'Doublon : ' + p.espece + ' passe niveau ' + p.niveau + ' !'
@@ -3957,16 +4094,20 @@ function majBoutique(){
   const box = $('#rayons');
   const art = (ico, nom, txt, prix, fn, off) =>
     '<div class="article' + (off ? ' off' : '') + '"' + (off ? '' : ' onclick="' + fn + '"')
-    + '><span class="gros">' + ico + '</span><b>' + nom + '</b><span>' + txt
-    + '</span><span class="prix">' + prix + '</span></div>';
-  let h = art('🫐', 'Baie ×3', 'soigne en donjon (le bouton Baie)', (PRIX.baie * 3) + ' 🪙', 'acheter(\'baies\')');
-  h += art('🎟', 'Ticket de spin', 'rarissime en boutique', PRIX.ticket + ' 🪙', 'acheter(\'ticket\')');
+    + '><span class="gros">' + ico + '</span><div><b>' + nom + '</b><span>' + txt
+    + '</span></div><span class="prix">' + prix + '</span></div>';
+  const FORME = {cible: 'un seul ennemi', zone: 'explose en zone', ligne: 'traverse en ligne'};
+  let h = '<div class="rayonTitre">Consommables</div>';
+  h += art('🫐', 'Baies ×3', 'soigne un Pokémon en plein donjon', (PRIX.baie * 3) + ' 🪙', 'acheter(\'baies\')');
+  h += art('🎟', 'Ticket de spin', 'un tirage de plus au portail', PRIX.ticket + ' 🪙', 'acheter(\'ticket\')');
+  if(typesPossedes.length) h += '<div class="rayonTitre">Parchemins d\'Ult · un par Pokémon</div>';
   for(const t of typesPossedes.slice(0, 6))
-    h += art('💥', 'Ult ' + t + ' : ' + ULTS[t].nom,
-      decrireUlt(t) + ' — UN parchemin = UN Pokémon (type ' + t + ' requis)',
+    h += art(TYPE_ICO[t] || '💥', ULTS[t].nom,
+      'puissance ' + ULTS[t].puiss + ' · ' + FORME[ULTS[t].forme] + ' · pour un type ' + t,
       PRIX.ult + ' 🪙', 'acheter(\'ult\',\'' + t + '\')');
-  h += art('🌲', 'Biome Forêt', 'arrive dans la prochaine version !', '🔒', '', true);
-  h += art('🕳', 'Biome Grotte', 'arrive dans la prochaine version !', '🔒', '', true);
+  h += '<div class="rayonTitre">Bientôt</div>';
+  h += art('🌲', 'Biome Forêt', 'arrive avec la prochaine zone', '🔒', '', true);
+  h += art('🕳', 'Biome Grotte', 'arrive avec la prochaine zone', '🔒', '', true);
   box.innerHTML = h;
   majJetons();
 }
@@ -4133,6 +4274,17 @@ async function demarrer(){
   $('#voileFiche').addEventListener('click', e => {
     if(e.target === e.currentTarget) fermerFiche();
   });
+  /* les feuilles se ferment aussi en tapant le voile */
+  $$('.voileHaut').forEach(v => v.addEventListener('click', e => {
+    if(e.target === e.currentTarget) v.classList.remove('actif');
+  }));
+  /* LE RETOUR AU DOIGT : une micro-vibration sur tout ce qui se tape.
+     Le doigt sait que le jeu a entendu, avant même que l'écran bouge. */
+  document.addEventListener('pointerdown', e => {
+    const cible = e.target.closest('button, .article, .l.cliquable, .caseAide, .choixMob, .puce');
+    if(!cible || cible.disabled || cible.classList.contains('off')) return;
+    try { if(navigator.vibrate) navigator.vibrate(8); } catch(err){}
+  }, {passive: true});
   if(!window.RESSOURCES)
     fetch('/ping').then(r => r.json())
       .then(j => { const v = $('#version'); if(v) v.textContent = 'v' + j.version; })
