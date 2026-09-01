@@ -3553,13 +3553,6 @@ function majCompte(){
     + '<div>Pièces<b>🪙 ' + P.sacs.sous + '</b></div>'
     + '<div>Tickets · Baies<b>🎟 ' + P.sacs.tickets + ' · 🫐 ' + P.sacs.baies + '</b></div>'
     + '<div>Invasions repoussées<b>🛡 ' + ((P.invasion && P.invasion.victoires) || 0) + '</b></div>'
-    + '<div>Colère du Pré (zone)<b>🌋 ' + ((P.invasion.zone && P.invasion.zone.jauge) || 0) + '%</b></div>'
-    + '<div style="grid-column:1/-1;">Revanches des donjons<b style="font-size:12.5px;">'
-      + (DONJONS.map(d => {
-          const dj = (P.invasion.donjons || {})[d.cle];
-          return dj && dj.jauge ? '🔥 ' + d.nom.replace(/^(Le|La) /, '') + ' ' + dj.jauge + '%' : null;
-        }).filter(Boolean).join(' · ') || 'toutes calmes… pour l\'instant')
-      + '</b></div>'
     + '<div>Places de renfort<b>🤝 ' + (P.invasion.slots || 0) + ' / 10</b></div>'
     + '<div style="grid-column:1/-1;">Compte créé il y a<b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b></div>';
   majJetons();
