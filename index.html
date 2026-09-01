@@ -114,10 +114,20 @@
     border-radius:14px; padding:12px; text-align:center;
     animation:alerteBat 1.6s ease-in-out infinite; }
   #alerteInvasion b{ display:block; font-size:13.5px; color:#ffb3a3; margin-bottom:9px; }
-  #btnDefendre{ background:#c0392b; border:2px solid #ef6b6b; color:#fff;
-    font-family:'Pixelify Sans'; font-size:16px; border-radius:12px;
-    padding:10px 18px; cursor:pointer; width:100%; }
-  #btnDefendre:active{ transform:translateY(1px); }
+  .btnDefendre{ background:#c0392b; border:2px solid #ef6b6b; color:#fff;
+    font-family:'Pixelify Sans'; font-size:15px; border-radius:12px;
+    padding:9px 14px; cursor:pointer; width:100%; margin-top:6px; }
+  .btnDefendre:active{ transform:translateY(1px); }
+  .btnDefendre.zone{ background:#7a1f66; border-color:#c75fd0; }
+  #alerteInvasion b{ margin-bottom:4px; }
+  .caseAide{ display:inline-block; width:52px; height:52px; margin:4px 3px 0 0;
+    background:#241a10; border:2px solid var(--lisiere); border-radius:10px;
+    text-align:center; vertical-align:top; cursor:pointer; font-size:10px;
+    color:var(--brume); overflow:hidden; padding-top:3px; }
+  .caseAide img{ width:30px; height:30px; image-rendering:pixelated; display:block; margin:0 auto; }
+  .caseAide.verrou{ opacity:.55; cursor:default; }
+  .caseAide.achat{ border-color:var(--or); color:var(--or); }
+  #consChoix{ margin-top:8px; border-top:1px dashed var(--lisiere); padding-top:6px; }
   @keyframes alerteBat{ 50%{ box-shadow:0 0 16px #a03a2888; } }
   #navbas button.alerte{ color:#ef6b6b; }
   #navbas button.alerte .ico::after{ content:'❗'; font-size:11px; position:relative; top:-8px; }
@@ -221,10 +231,7 @@
       <span class="jeton">🫐 <b class="jBaies">x0</b></span>
     </div>
     <div class="corps">
-      <div id="alerteInvasion" hidden>
-        <b id="alerteTexte">…</b>
-        <button id="btnDefendre">🛡 DÉFENDRE LA PENSION !</button>
-      </div>
+      <div id="alerteInvasion" hidden></div>
       <div style="position:relative;">
         <canvas id="cvJardin"></canvas>
         <button id="btnGrand" class="btnBois" style="position:absolute; top:8px; right:8px;
@@ -389,6 +396,25 @@
       <div class="panneau" style="margin-top:10px; font-size:13px;" id="ficheAtk"></div>
       <div style="margin-top:10px; display:flex; flex-direction:column; gap:4px;" id="ficheActions"></div>
       <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerFiche()">Fermer</button>
+    </div>
+  </div>
+
+  <!-- le conseil de défense : qui défend, quels renforts payés -->
+  <div id="voileDefense" class="voileHaut">
+    <div class="fiche" style="max-height:82vh; overflow-y:auto;">
+      <h3 style="color:#ef6b6b" id="consTitre">🛡 Conseil de défense</h3>
+      <p class="discret" id="consTexte" style="margin-top:2px;"></p>
+      <div class="panneau" style="margin-top:8px;">
+        <b style="font-size:13px;">Les défenseurs de la Plaine</b>
+        <p class="discret" id="consDefenseurs" style="margin-top:4px;"></p>
+      </div>
+      <div class="panneau" style="margin-top:8px;">
+        <b style="font-size:13px;">Les renforts d'ailleurs <span class="discret">(10 places max)</span></b>
+        <div id="consRenforts"></div>
+        <div id="consChoix" hidden></div>
+      </div>
+      <button class="btnOr" id="btnLancerDef" style="width:100%; margin-top:10px; font-size:16px;">⚔ LANCER LA DÉFENSE</button>
+      <button class="btnBois" style="width:100%; margin-top:6px;" onclick="fermerConseil()">Pas maintenant</button>
     </div>
   </div>
 
@@ -2450,7 +2476,7 @@ function partieNeuve(){
     sacs: {sous: 80, baies: 3, tickets: 3},
     ults: {},                       // parchemins non appris, par type
     avancee: {tuto: 0, tutoFini: false, bienvenue: false},
-    invasion: {jauge: 0, due: false, victoires: 0, faits: {}},
+    invasion: {zone: {jauge: 0, due: false}, donjons: {}, victoires: 0, slots: 0, aides: []},
     prochainId: 1
   };
 }
@@ -2464,9 +2490,13 @@ function charger(){
     if(brut){
       P = JSON.parse(brut); idPens = P.prochainId || 1;
       if(P.sacs.tickets === undefined) P.sacs.tickets = 0;
-      if(!P.invasion) P.invasion = {jauge: 0, due: false, victoires: 0, faits: {}};
-      if(P.invasion.jauge === undefined) P.invasion.jauge = 0;
-      if(!P.invasion.faits) P.invasion.faits = {};
+      if(!P.invasion) P.invasion = {};
+      if(!P.invasion.zone)
+        P.invasion.zone = {jauge: Math.min(100, P.invasion.jauge || 0), due: !!P.invasion.due};
+      if(!P.invasion.donjons) P.invasion.donjons = {};
+      P.invasion.victoires = P.invasion.victoires || 0;
+      P.invasion.slots = P.invasion.slots || 0;
+      if(!Array.isArray(P.invasion.aides)) P.invasion.aides = [];
       return;
     }
   } catch(e){}
@@ -2618,15 +2648,36 @@ async function majPension(){
     else if(p.niveau < NIVEAU_MAX && P.sacs.sous >= coutNiveau(p.niveau))
       alertes.push('⬆ ' + p.espece + ' peut monter (' + coutNiveau(p.niveau) + ' 🪙)');
   }
-  if(P.avancee.tutoFini && P.invasion && !P.invasion.due && P.invasion.jauge > 0)
-    alertes.unshift('🔥 Vengeance du Pré : ' + P.invasion.jauge + '%');
+  if(P.avancee.tutoFini && P.invasion && P.invasion.zone && P.invasion.zone.jauge > 0
+     && !P.invasion.zone.due)
+    alertes.unshift('🌋 Colère du Pré : ' + P.invasion.zone.jauge + '%');
   const b = $('#coupDoeil');
   if(b) b.textContent = alertes.length ? alertes.slice(0, 3).join(' · ')
     : P.pensionnaires.length + ' pensionnaire(s) — glisse pour te balader, tape pour la fiche.';
   const al = $('#alerteInvasion');
   if(al){
-    al.hidden = !(P.invasion && P.invasion.due);
-    if(!al.hidden) $('#alerteTexte').textContent = INVASIONS.plaine.alerte;
+    const dues = [];
+    if(P.invasion.zone && P.invasion.zone.due)
+      dues.push({type: 'zone', cle: null, texte: '🌋 LA ZONE ENTIÈRE marche sur la pension !!',
+                 bouton: '⚔ DÉFENDRE — l\'assaut du Pré', classe: 'zone'});
+    for(const [cle, dj] of Object.entries(P.invasion.donjons || {}))
+      if(dj.due){
+        const d = DONJONS.find(o => o.cle === cle);
+        dues.push({type: 'donjon', cle,
+          texte: '🔥 ' + (d ? d.nom : cle) + ' veut sa revanche !',
+          bouton: '🛡 Défendre', classe: ''});
+      }
+    al.hidden = !dues.length;
+    al.innerHTML = '';
+    for(const q of dues){
+      const b = document.createElement('b');
+      b.textContent = q.texte;
+      const btn = document.createElement('button');
+      btn.className = 'btnDefendre ' + q.classe;
+      btn.textContent = q.bouton;
+      btn.onclick = () => ouvrirConseil(q.type, q.cle);
+      al.appendChild(b); al.appendChild(btn);
+    }
   }
   majJetons();
   majBande();
@@ -3053,59 +3104,201 @@ function majPupitre(){
 }
 
 /* --- l'invasion : lancement et fin ------------------------------------ */
-/* un donjon vaincu chauffe la zone : +8 la première fois, puis 12, 18,
-   24, 30, 30… par re-passage — le farm déclenche la revanche, pas la
-   simple visite. À 100 %, l'invasion est DUE. */
-function chargerVengeance(cle){
-  if(!P.avancee.tutoFini || P.invasion.due) return null;
-  const deja = P.invasion.faits[cle] || 0;
-  const gain = deja === 0 ? 8 : Math.min(30, 12 + 6 * (deja - 1));
-  P.invasion.faits[cle] = deja + 1;
-  P.invasion.jauge = Math.min(100, (P.invasion.jauge || 0) + gain);
-  if(P.invasion.jauge >= 100){
-    P.invasion.due = true;
-    return ['🔥 VENGEANCE À SON COMBLE', 'la zone attaque — file à la pension !'];
+/* les espèces de la Plaine : le portail + toutes leurs évolutions.
+   Ce sont ELLES qui défendent quand la Plaine est attaquée. */
+let _setPlaine = null;
+function estDeLaPlaine(espece){
+  if(!_setPlaine){
+    _setPlaine = new Set();
+    for(const n of PORTAIL_PLAINE) for(const v of ligneDe(n)) _setPlaine.add(v);
   }
-  return ['🔥 Vengeance du Pré', P.invasion.jauge + '%'
-    + (deja ? '' : ' (repasser un donjon la chauffe bien plus)')];
+  return _setPlaine.has(espece);
+}
+
+/* DEUX VENGEANCES, deux rythmes :
+   — chaque DONJON a SA barre : +10 par victoire de CE donjon (lent, ~10
+     passages) → sa revanche à lui, avec ses espèces et son boss ;
+   — la ZONE a une barre TRÈS longue : +2 par victoire n'importe où, +12
+     quand une revanche de donjon est repoussée → l'assaut de la zone
+     ENTIÈRE, l'événement rare. */
+function chargerVengeance(cle){
+  if(!P.avancee.tutoFini) return [];
+  const lignes = [];
+  const inv = P.invasion;
+  const dj = inv.donjons[cle] || (inv.donjons[cle] = {jauge: 0, due: false});
+  const d = DONJONS.find(o => o.cle === cle);
+  if(!dj.due){
+    dj.jauge = Math.min(100, dj.jauge + 10);
+    if(dj.jauge >= 100){
+      dj.due = true;
+      lignes.push(['🔥 REVANCHE !', (d ? d.nom : cle) + ' attaque la pension !']);
+    } else lignes.push(['🔥 ' + (d ? d.nom : cle), dj.jauge + '%']);
+  }
+  if(!inv.zone.due){
+    inv.zone.jauge = Math.min(100, inv.zone.jauge + 2);
+    if(inv.zone.jauge >= 100){
+      inv.zone.due = true;
+      lignes.push(['🌋 LA ZONE ENTIÈRE ATTAQUE', 'le Pré marche sur la pension !!']);
+    } else if(inv.zone.jauge % 10 === 0)
+      lignes.push(['🌋 Colère du Pré', inv.zone.jauge + '%']);
+  }
+  return lignes;
+}
+
+/* --- le conseil de défense : qui défend, quels renforts --------------- */
+const coutSlot = n => Math.round(250 * Math.pow(1.55, n));
+let defensePrevue = null;      // {type:'zone'|'donjon', cle}
+
+function ouvrirConseil(type, cle){
+  defensePrevue = {type, cle};
+  const d = type === 'donjon' ? DONJONS.find(o => o.cle === cle) : null;
+  $('#consTitre').textContent = type === 'zone'
+    ? '🌋 LA ZONE ENTIÈRE ATTAQUE !' : '🛡 Revanche — ' + (d ? d.nom : '');
+  $('#consTexte').textContent = type === 'zone'
+    ? 'Tout le Pré marche sur la pension. Le combat de ta vie.'
+    : 'Les espèces de ce donjon veulent leur revanche.';
+  majConseil();
+  $('#voileDefense').classList.add('actif');
+}
+function fermerConseil(){ $('#voileDefense').classList.remove('actif'); $('#consChoix').hidden = true; }
+function defenseursDeLaZone(){ return P.pensionnaires.filter(p => estDeLaPlaine(p.espece)); }
+function aidesValides(){
+  return P.invasion.aides.map(id => P.pensionnaires.find(p => p.id === id)).filter(Boolean);
+}
+function majConseil(){
+  const defs = defenseursDeLaZone();
+  $('#consDefenseurs').textContent = defs.length
+    ? defs.length + ' Pokémon de la Plaine répondent à l\'appel : '
+      + defs.slice(0, 8).map(p => p.espece).join(', ') + (defs.length > 8 ? '…' : '')
+    : 'Aucun Pokémon de la Plaine à la pension !';
+  const box = $('#consRenforts');
+  box.innerHTML = '';
+  for(let i = 0; i < 10; i++){
+    const c = document.createElement('div');
+    c.className = 'caseAide';
+    if(i < P.invasion.slots){
+      const aide = aidesValides()[i];
+      if(aide){
+        c.innerHTML = '<img src="' + urlPortrait(aide.espece) + '" alt="">' + aide.espece;
+        c.onclick = () => { P.invasion.aides = P.invasion.aides.filter(id => id !== aide.id); sauver(); majConseil(); };
+        c.title = 'retirer';
+      } else {
+        c.textContent = '＋';
+        c.style.fontSize = '24px';
+        c.onclick = () => montrerChoixAide();
+      }
+    } else if(i === P.invasion.slots){
+      c.classList.add('achat');
+      c.innerHTML = '🔓<br>' + coutSlot(i) + ' 🪙';
+      c.onclick = () => {
+        const prix = coutSlot(P.invasion.slots);
+        if(P.sacs.sous < prix) return direJeu('Il te faut ' + prix + ' pièces pour cette place de renfort.');
+        P.sacs.sous -= prix; P.invasion.slots++;
+        sauver(); majJetons(); majConseil();
+        direJeu('Place de renfort n°' + P.invasion.slots + ' débloquée — pour toujours !');
+      };
+    } else {
+      c.classList.add('verrou');
+      c.textContent = '🔒';
+      c.style.fontSize = '20px';
+    }
+    box.appendChild(c);
+  }
+}
+function montrerChoixAide(){
+  const z = $('#consChoix');
+  const dispo = P.pensionnaires.filter(p => !estDeLaPlaine(p.espece)
+    && !P.invasion.aides.includes(p.id));
+  if(!dispo.length){
+    z.hidden = false;
+    z.innerHTML = '<p class="discret">Aucun Pokémon d\'une autre zone à la pension — '
+      + 'les renforts viennent des espèces qui ne sont PAS de la Plaine.</p>';
+    return;
+  }
+  z.hidden = false;
+  z.innerHTML = '<p class="discret">Choisis un renfort :</p>';
+  for(const p of dispo){
+    const c = document.createElement('div');
+    c.className = 'caseAide';
+    c.innerHTML = '<img src="' + urlPortrait(p.espece) + '" alt="">' + p.espece;
+    c.onclick = () => {
+      if(P.invasion.aides.length >= P.invasion.slots) return;
+      P.invasion.aides.push(p.id);
+      z.hidden = true; sauver(); majConseil();
+    };
+    z.appendChild(c);
+  }
 }
 async function lancerModeInvasion(){
-  if(!P.invasion || !P.invasion.due) return;
-  if(P.pensionnaires.length < 4)
-    return direJeu('Il te faut au moins 4 pensionnaires pour tenir la haie !');
+  if(!defensePrevue) return;
+  const {type, cle} = defensePrevue;
+  const defenseurs = [...defenseursDeLaZone(), ...aidesValides()];
+  if(defenseurs.length < 4)
+    return direJeu('Il te faut au moins 4 défenseurs pour tenir la haie !');
+  fermerConseil();
   construireDomaine();
   chargerDecorPension();
-  const src = INVASIONS.plaine;
-  const moy = P.pensionnaires.reduce((s, p) => s + p.niveau, 0) / P.pensionnaires.length;
+  const moy = defenseurs.reduce((s, p) => s + p.niveau, 0) / defenseurs.length;
   const niv = Math.max(3, Math.round(moy) - 2);
-  const def = {
-    nom: src.nom, sbires: src.sbires, elites: src.elites, miniBoss: src.miniBoss,
-    niv, vagues: 6 + Math.min(3, P.invasion.victoires),
-    cristalPv: Math.round(150 + moy * 12),
-    cristalDef: Math.round(moy * 0.8),
-    boss: Object.assign({}, src.boss,
-      {niv: niv + 5, force: 0.6 + P.invasion.victoires * 0.08})
-  };
+  let def;
+  if(type === 'zone'){
+    const src = INVASIONS.plaine;
+    def = {
+      type, cle: null, nom: src.nom,
+      sbires: src.sbires, elites: src.elites, miniBoss: src.miniBoss,
+      niv, vagues: 8 + Math.min(3, P.invasion.victoires),
+      cristalPv: Math.round(150 + moy * 12), cristalDef: Math.round(moy * 0.8),
+      recTickets: 4,
+      boss: Object.assign({}, src.boss,
+        {niv: niv + 5, force: 0.65 + P.invasion.victoires * 0.08})
+    };
+  } else {
+    const d = DONJONS.find(o => o.cle === cle);
+    def = {
+      type, cle, nom: 'Revanche — ' + d.nom,
+      sbires: d.sbires, elites: d.elites,
+      niv, vagues: 4,
+      cristalPv: Math.round(150 + moy * 12), cristalDef: Math.round(moy * 0.8),
+      recTickets: 1,
+      boss: Object.assign({}, d.boss,
+        {niv: niv + 4, force: 0.55 + P.invasion.victoires * 0.05,
+         titre: (d.boss.titre || d.boss.espece) + ', le Revanchard'})
+    };
+  }
   const positions = {};
   for(const e of DOMAINE.ents) if(e.p) positions[e.p.id] = {x: e.x, y: e.y};
   montrer('donjon');
-  construirePupitre(P.pensionnaires.filter(p => p.ult), true);
-  await lancerInvasion(def, P.pensionnaires, positions);
+  construirePupitre(defenseurs.filter(p => p.ult), true);
+  await lancerInvasion(def, defenseurs, positions);
 }
 function finInvasion(r){
   const gagne = r.victoire;
   const lignes = [];
   const cr = r.equipe.find(e => e.cristal);
+  const type = D.def.type || 'zone';
   if(gagne){
     P.invasion.victoires++;
-    P.invasion.due = false; P.invasion.jauge = 0;
+    if(type === 'zone'){
+      P.invasion.zone = {jauge: 0, due: false};
+    } else {
+      P.invasion.donjons[D.def.cle] = {jauge: 0, due: false};
+      /* repousser une revanche de donjon ATTISE la colère de la zone */
+      if(!P.invasion.zone.due){
+        P.invasion.zone.jauge = Math.min(100, P.invasion.zone.jauge + 12);
+        if(P.invasion.zone.jauge >= 100){
+          P.invasion.zone.due = true;
+          lignes.push(['🌋 LA ZONE ENTIÈRE ATTAQUE', 'ta victoire a mis le Pré en RAGE !']);
+        } else lignes.push(['🌋 Colère du Pré', P.invasion.zone.jauge + '%']);
+      }
+    }
+    const tk = D.def.recTickets || 3;
     P.sacs.sous += r.butin.sous;
     P.sacs.baies += r.butin.baies;
-    P.sacs.tickets += 3;
-    lignes.push(['🛡 LA PENSION EST SAUVE', 'invasion n°' + P.invasion.victoires + ' repoussée !']);
+    P.sacs.tickets += tk;
+    lignes.unshift(['🛡 LA PENSION EST SAUVE', 'invasion n°' + P.invasion.victoires + ' repoussée !']);
     lignes.push(['🪙 Pièces ramassées', '+' + r.butin.sous]);
     if(r.butin.baies) lignes.push(['🫐 Baies', '+' + r.butin.baies]);
-    lignes.push(['🎟 Tickets de spin', '+3']);
+    lignes.push(['🎟 Tickets de spin', '+' + tk]);
     if(cr && cr.pv / cr.pvMax > 0.9){
       P.sacs.tickets++;
       lignes.push(['💎 Cristal INTACT', '+1 ticket bonus !']);
@@ -3170,8 +3363,7 @@ function finExpedition(r){
     } else lignes.push(['👑 Donjon rejoué', 'bien joué !']);
     /* LA JAUGE DE VENGEANCE : un premier passage chauffe à peine la zone —
        c'est le FARM qui la met en rage. Plus tu repasses, plus ça charge. */
-    const ligneV = chargerVengeance(DONJONS[idx].cle);
-    if(ligneV) lignes.push(ligneV);
+    lignes.push(...chargerVengeance(DONJONS[idx].cle));
     if(Math.random() < 0.35 && !DONJONS[idx].final){
       P.sacs.tickets++;
       lignes.push(['🎟 Ticket de spin', '+1 !']);
@@ -3331,7 +3523,14 @@ function majCompte(){
     + '<div>Pièces<b>🪙 ' + P.sacs.sous + '</b></div>'
     + '<div>Tickets · Baies<b>🎟 ' + P.sacs.tickets + ' · 🫐 ' + P.sacs.baies + '</b></div>'
     + '<div>Invasions repoussées<b>🛡 ' + ((P.invasion && P.invasion.victoires) || 0) + '</b></div>'
-    + '<div>Vengeance de la zone<b>🔥 ' + ((P.invasion && P.invasion.jauge) || 0) + '%</b></div>'
+    + '<div>Colère du Pré (zone)<b>🌋 ' + ((P.invasion.zone && P.invasion.zone.jauge) || 0) + '%</b></div>'
+    + '<div style="grid-column:1/-1;">Revanches des donjons<b style="font-size:12.5px;">'
+      + (DONJONS.map(d => {
+          const dj = (P.invasion.donjons || {})[d.cle];
+          return dj && dj.jauge ? '🔥 ' + d.nom.replace(/^(Le|La) /, '') + ' ' + dj.jauge + '%' : null;
+        }).filter(Boolean).join(' · ') || 'toutes calmes… pour l\'instant')
+      + '</b></div>'
+    + '<div>Places de renfort<b>🤝 ' + (P.invasion.slots || 0) + ' / 10</b></div>'
     + '<div style="grid-column:1/-1;">Compte créé il y a<b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b></div>';
   majJetons();
 }
@@ -3369,7 +3568,9 @@ function majJetons(){
   $$('.jBaies').forEach(e => e.textContent = 'x' + P.sacs.baies);
   $$('.jTickets').forEach(e => e.textContent = 'x' + P.sacs.tickets);
   const bp = $('#navbas button[data-vers="pension"]');
-  if(bp) bp.classList.toggle('alerte', !!(P.invasion && P.invasion.due));
+  const due = !!(P.invasion && ((P.invasion.zone && P.invasion.zone.due)
+    || Object.values(P.invasion.donjons || {}).some(dj => dj.due)));
+  if(bp) bp.classList.toggle('alerte', due);
 }
 
 /* le petit journal en bas de l'écran */
@@ -3417,8 +3618,8 @@ async function demarrer(){
   brancherDomaine($('#cvGrand'));
   $('#btnGrand').onclick = ouvrirGrand;
   $('#fermerGrand').onclick = fermerGrand;
-  const bd = $('#btnDefendre');
-  if(bd) bd.onclick = lancerModeInvasion;
+  const bl = $('#btnLancerDef');
+  if(bl) bl.onclick = lancerModeInvasion;
   /* le sifflet : le prochain tap sur le donjon devient le point de ralliement */
   $('#cvDonjon').addEventListener('pointerdown', ev => {
     if(!window.__sifflet || !D.actif || !D.invasion) return;
