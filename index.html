@@ -532,39 +532,39 @@ const ESPECES = {
   'Zigzaton':  {num:263, types:['normal'], rarete:'commun', carac:'docile', biome:'plaine',
     base:{pv:26, atq:7, def:5, vit:2.9}, sig:{nom:'Tacle', type:'normal', puiss:35, cd:1.1, por:1},
     evo:{vers:'Linéon', niv:20}},
-  'Linéon':    {num:264, types:['normal'], rarete:'commun', carac:'docile', biome:'plaine',
+  'Linéon':    {num:264, types:['normal'], rarete:'peuCommun', carac:'docile', biome:'plaine',
     base:{pv:38, atq:10, def:7, vit:3.3}, sig:{nom:'Éclate-Griffe', type:'normal', puiss:50, cd:1.1, por:1}},
 
   /* ===== communs ===== */
   'Rattata':   {num:19, types:['normal'], rarete:'commun', carac:'brave', biome:'plaine',
     base:{pv:24, atq:8, def:4, vit:3.2}, sig:{nom:'Vive-Attaque', type:'normal', puiss:40, cd:1.0, por:1},
     evo:{vers:'Rattatac', niv:20}},
-  'Rattatac':  {num:20, types:['normal'], rarete:'commun', carac:'brave', biome:'plaine',
+  'Rattatac':  {num:20, types:['normal'], rarete:'peuCommun', carac:'brave', biome:'plaine',
     base:{pv:36, atq:12, def:6, vit:3.5}, sig:{nom:'Croc Fatal', type:'normal', puiss:60, cd:1.2, por:1}},
   'Roucool':   {num:16, types:['normal','vol'], rarete:'commun', carac:'timide', biome:'plaine',
     base:{pv:24, atq:6, def:4, vit:3.0}, sig:{nom:'Tornade', type:'vol', puiss:35, cd:1.3, por:3.2},
     evo:{vers:'Roucoups', niv:20}},
-  'Roucoups':  {num:17, types:['normal','vol'], rarete:'commun', carac:'timide', biome:'plaine',
+  'Roucoups':  {num:17, types:['normal','vol'], rarete:'peuCommun', carac:'timide', biome:'plaine',
     base:{pv:34, atq:9, def:6, vit:3.3}, sig:{nom:'Cru-Aile', type:'vol', puiss:55, cd:1.2, por:1.4},
     evo:{vers:'Roucarnage', niv:30}},
-  'Roucarnage':{num:18, types:['normal','vol'], rarete:'commun', carac:'timide', biome:'plaine',
+  'Roucarnage':{num:18, types:['normal','vol'], rarete:'rare', carac:'timide', biome:'plaine',
     base:{pv:46, atq:12, def:8, vit:3.6}, sig:{nom:'Ouragan', type:'vol', puiss:75, cd:1.5, por:3.2}},
   'Piafabec':  {num:21, types:['normal','vol'], rarete:'commun', carac:'presse', biome:'plaine',
     base:{pv:22, atq:8, def:3, vit:3.4}, sig:{nom:'Picpic', type:'vol', puiss:38, cd:0.9, por:1},
     evo:{vers:'Rapasdepic', niv:20}},
-  'Rapasdepic':{num:22, types:['normal','vol'], rarete:'commun', carac:'presse', biome:'plaine',
+  'Rapasdepic':{num:22, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'plaine',
     base:{pv:34, atq:12, def:5, vit:3.7}, sig:{nom:'Bec Vrille', type:'vol', puiss:60, cd:1.1, por:1}},
   'Fouinette': {num:161, types:['normal'], rarete:'commun', carac:'foufou', biome:'plaine',
     base:{pv:24, atq:7, def:4, vit:3.3}, sig:{nom:'Ruse', type:'normal', puiss:38, cd:1.0, por:1},
     evo:{vers:'Fouinar', niv:20}},
-  'Fouinar':   {num:162, types:['normal'], rarete:'commun', carac:'foufou', biome:'plaine',
+  'Fouinar':   {num:162, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
     base:{pv:38, atq:10, def:6, vit:3.6}, sig:{nom:'Tacle Foudre', type:'normal', puiss:55, cd:1.1, por:1}},
 
   /* ===== peu communs ===== */
   'Doduo':     {num:84, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'plaine',
     base:{pv:28, atq:10, def:4, vit:3.6}, sig:{nom:'Torgnoles', type:'normal', puiss:45, cd:0.9, por:1},
     evo:{vers:'Dodrio', niv:20}},
-  'Dodrio':    {num:85, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'plaine',
+  'Dodrio':    {num:85, types:['normal','vol'], rarete:'rare', carac:'presse', biome:'plaine',
     base:{pv:42, atq:14, def:6, vit:3.9}, sig:{nom:'Triplattaque', type:'normal', puiss:70, cd:1.2, por:1}},
   'Ponyta':    {num:77, types:['feu'], rarete:'rare', carac:'brave', biome:'plaine',
     base:{pv:30, atq:9, def:6, vit:3.7}, sig:{nom:'Flammèche', type:'feu', puiss:42, cd:1.1, por:1.6},
@@ -579,21 +579,21 @@ const ESPECES = {
     evo:{vers:'Rafflesia', niv:30}},
   'Rafflesia': {num:45, types:['plante','poison'], rarete:'peuCommun', carac:'timide', biome:'plaine',
     base:{pv:54, atq:13, def:10, vit:2.7}, sig:{nom:'Danse-Fleur', type:'plante', puiss:70, cd:1.4, por:2.4, zone:1.6}},
-  'Nidoran♂':  {num:32, types:['poison'], rarete:'peuCommun', carac:'mauvais', biome:'plaine',
+  'Nidoran♂':  {num:32, types:['poison'], rarete:'commun', carac:'mauvais', biome:'plaine',
     base:{pv:28, atq:9, def:5, vit:2.9}, sig:{nom:'Furie', type:'normal', puiss:40, cd:1.0, por:1},
     evo:{vers:'Nidorino', niv:20}},
   'Nidorino':  {num:33, types:['poison'], rarete:'peuCommun', carac:'mauvais', biome:'plaine',
     base:{pv:40, atq:12, def:7, vit:3.1}, sig:{nom:'Coup d\'Korne', type:'poison', puiss:55, cd:1.1, por:1},
     evo:{vers:'Nidoking', niv:30}},
-  'Nidoking':  {num:34, types:['poison','sol'], rarete:'peuCommun', carac:'mauvais', biome:'plaine',
+  'Nidoking':  {num:34, types:['poison','sol'], rarete:'epique', carac:'mauvais', biome:'plaine',
     base:{pv:56, atq:16, def:10, vit:3.2}, sig:{nom:'Empal\'Korne', type:'sol', puiss:75, cd:1.3, por:1, zone:1.4}},
-  'Nidoran♀':  {num:29, types:['poison'], rarete:'peuCommun', carac:'hardi', biome:'plaine',
+  'Nidoran♀':  {num:29, types:['poison'], rarete:'commun', carac:'hardi', biome:'plaine',
     base:{pv:30, atq:8, def:6, vit:2.8}, sig:{nom:'Griffe', type:'normal', puiss:38, cd:1.0, por:1},
     evo:{vers:'Nidorina', niv:20}},
   'Nidorina':  {num:30, types:['poison'], rarete:'peuCommun', carac:'hardi', biome:'plaine',
     base:{pv:44, atq:11, def:9, vit:2.9}, sig:{nom:'Croc de Mort', type:'normal', puiss:52, cd:1.1, por:1},
     evo:{vers:'Nidoqueen', niv:30}},
-  'Nidoqueen': {num:31, types:['poison','sol'], rarete:'peuCommun', carac:'hardi', biome:'plaine',
+  'Nidoqueen': {num:31, types:['poison','sol'], rarete:'epique', carac:'hardi', biome:'plaine',
     base:{pv:60, atq:14, def:13, vit:3.0}, sig:{nom:'Écras\'Face', type:'normal', puiss:70, cd:1.3, por:1}},
 
   /* ===== rares ===== */
@@ -626,7 +626,7 @@ const ESPECES = {
   'Ptiravi':   {num:440, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
     base:{pv:40, atq:4, def:4, vit:2.6}, sig:{nom:'Copieuse', type:'normal', puiss:25, cd:1.2, por:1, soin:14},
     evo:{vers:'Leveinard', niv:20}},
-  'Leveinard': {num:113, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
+  'Leveinard': {num:113, types:['normal'], rarete:'epique', carac:'gentil', biome:'plaine',
     base:{pv:90, atq:5, def:5, vit:2.7}, sig:{nom:'Métronome', type:'normal', puiss:30, cd:1.2, por:1.6, soin:24},
     evo:{vers:'Leuphorie', niv:30}},
   'Leuphorie': {num:242, types:['normal'], rarete:'epique', carac:'gentil', biome:'plaine',
@@ -664,7 +664,7 @@ const ESPECES = {
     evo:{vers:'Grodoudou', niv:30}},
   'Grodoudou': {num:40, types:['normal','fee'], rarete:'peuCommun', carac:'gentil', biome:'plaine',
     base:{pv:76, atq:9, def:6, vit:2.8}, sig:{nom:'Voix Enjôleuse', type:'fee', puiss:42, cd:1.2, por:2.2, soin:28}},
-  'Abo':       {num:23, types:['poison'], rarete:'peuCommun', carac:'malin', biome:'plaine',
+  'Abo':       {num:23, types:['poison'], rarete:'commun', carac:'malin', biome:'plaine',
     base:{pv:26, atq:9, def:4, vit:3.1}, sig:{nom:'Morsure', type:'tenebres', puiss:40, cd:1.0, por:1},
     evo:{vers:'Arbok', niv:20}},
   'Arbok':     {num:24, types:['poison'], rarete:'peuCommun', carac:'malin', biome:'plaine',
@@ -697,7 +697,7 @@ const ESPECES = {
   'Miaouss':   {num:52, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
     base:{pv:26, atq:8, def:5, vit:3.5}, sig:{nom:'Griffe', type:'normal', puiss:40, cd:1.0, por:1},
     evo:{vers:'Persian', niv:28}},
-  'Persian':   {num:53, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
+  'Persian':   {num:53, types:['normal'], rarete:'rare', carac:'foufou', biome:'plaine',
     base:{pv:40, atq:14, def:8, vit:4.3}, sig:{nom:'Vive-Attaque', type:'normal', puiss:62, cd:0.95, por:1}},
 
   /* --- le portail Plaine revu : les habitués des routes ---------------- */
@@ -825,12 +825,14 @@ const BONUS_SHINY = 1.5;
 
 /* ce que la machine du portail Plaine peut sortir (les bases des lignées) */
 const PORTAIL_PLAINE = [
-  /* le biome 🌾 La Grande Plaine, à la lettre : formes de base seulement */
-  'Rattata', 'Zigzaton', 'Fouinette', 'Roucool', 'Piafabec',         /* communs */
-  'Abo', 'Nidoran♂', 'Nidoran♀', 'Doduo', 'Miaouss',                 /* peu communs */
-  'Girafarig', 'Écrémeuh', 'Ptiravi',                                /* rares */
-  'Kangourex', 'Évoli',                                              /* épiques */
-  'Tauros',                                                          /* ultra */
+  /* le biome 🌾 La Grande Plaine, 30 tirables — les évolutions montent en rareté */
+  'Rattata', 'Zigzaton', 'Fouinette', 'Roucool', 'Piafabec',
+  'Abo', 'Nidoran♂', 'Nidoran♀',                                     /* communs */
+  'Rattatac', 'Linéon', 'Fouinar', 'Roucoups', 'Rapasdepic',
+  'Arbok', 'Doduo', 'Miaouss',                                       /* peu communs */
+  'Roucarnage', 'Dodrio', 'Persian', 'Girafarig', 'Écrémeuh', 'Ptiravi',   /* rares */
+  'Nidoking', 'Nidoqueen', 'Kangourex', 'Évoli', 'Leveinard',        /* épiques */
+  'Tauros', 'Ronflex',                                               /* ultras */
   'Suicune'                                                          /* légendaire */
 ];                                                        /* légendaire */
 
@@ -2881,6 +2883,24 @@ function ligneDe(base){
   suivre(base);
   return noms;
 }
+/* La FAMILLE entière, ancêtres compris : depuis qu'on peut tirer des formes
+   évoluées, un Roucarnage tiré alors qu'on a un Roucool est un doublon. */
+let _familles = null;
+function familleDe(espece){
+  if(!_familles){
+    _familles = new Map();
+    const parent = new Map();
+    for(const [n, e] of Object.entries(ESPECES))
+      for(const v of (e.evo ? (e.evo.choix || [e.evo.vers]) : []))
+        if(v && ESPECES[v]) parent.set(v, n);
+    for(const n of Object.keys(ESPECES)){
+      let racine = n, garde = 0;
+      while(parent.has(racine) && garde++ < 6) racine = parent.get(racine);
+      _familles.set(n, ligneDe(racine));
+    }
+  }
+  return _familles.get(espece) || [espece];
+}
 function spin(){
   if(P.sacs.tickets <= 0){ direJeu('Plus de ticket. Ils se gagnent en donjon !'); return null; }
   P.sacs.tickets--;
@@ -2890,7 +2910,8 @@ function spin(){
   const shiny = Math.random() < TAUX_SHINY;
   /* PAS DE DOUBLON : si sa lignée vit déjà à la pension, le tirage
      profite à celui qu'on a — un niveau (ou mieux) */
-  const deja = P.pensionnaires.find(o => ligneDe(espece).includes(o.espece));
+  const famille = familleDe(espece);
+  const deja = P.pensionnaires.find(o => famille.includes(o.espece));
   if(deja){
     let doublon;
     if(shiny && !deja.shiny){ deja.shiny = true; doublon = 'shiny'; }
