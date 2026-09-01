@@ -323,8 +323,8 @@
     <div class="corps">
       <div class="panneau machine">
         <div class="gros">🎰</div>
-        <b class="px" style="font-size:19px; color:var(--or);">PORTAIL · 🌾 La Plaine</b>
-        <p class="discret">surtout des Pokémon de la Plaine — les tickets sont
+        <b class="px" style="font-size:19px; color:var(--or);">PORTAIL · 🌾 La Grande Plaine</b>
+        <p class="discret">les 30 Pokémon de la Grande Plaine — les tickets sont
           RARES, chaque spin est un événement.</p>
         <button class="btnOr" style="margin-top:8px;" onclick="faireSpin()">🎟 SPIN !
           <span style="font-size:12px;">(1 ticket · il t'en reste <b id="nbTickets">0</b>)</span></button>
@@ -418,7 +418,7 @@
       <h3 style="color:#ef6b6b" id="consTitre">🛡 Conseil de défense</h3>
       <p class="discret" id="consTexte" style="margin-top:2px;"></p>
       <div class="panneau" style="margin-top:8px;">
-        <b style="font-size:13px;">Les défenseurs de la Plaine</b>
+        <b style="font-size:13px;">Les défenseurs de la Grande Plaine</b>
         <p class="discret" id="consDefenseurs" style="margin-top:4px;"></p>
       </div>
       <div class="panneau" style="margin-top:8px;">
@@ -3471,8 +3471,8 @@ function majPupitre(){
 }
 
 /* --- l'invasion : lancement et fin ------------------------------------ */
-/* les espèces de la Plaine : le portail + toutes leurs évolutions.
-   Ce sont ELLES qui défendent quand la Plaine est attaquée. */
+/* les espèces de la Grande Plaine : le portail + toutes leurs évolutions.
+   Ce sont ELLES qui défendent quand la zone est attaquée. */
 let _setPlaine = null;
 function estDeLaPlaine(espece){
   if(!_setPlaine){
@@ -3546,9 +3546,9 @@ function aidesValides(){
 function majConseil(){
   const defs = defenseursDeLaZone();
   $('#consDefenseurs').textContent = defs.length
-    ? defs.length + ' Pokémon de la Plaine répondent à l\'appel : '
+    ? defs.length + ' Pokémon de la Grande Plaine répondent à l\'appel : '
       + defs.slice(0, 8).map(p => p.espece).join(', ') + (defs.length > 8 ? '…' : '')
-    : 'Aucun Pokémon de la Plaine à la pension !';
+    : 'Aucun Pokémon de la Grande Plaine à la pension !';
   const box = $('#consRenforts');
   box.innerHTML = '';
   for(let i = 0; i < 10; i++){
@@ -3590,7 +3590,7 @@ function montrerChoixAide(){
   if(!dispo.length){
     z.hidden = false;
     z.innerHTML = '<p class="discret">Aucun Pokémon d\'une autre zone à la pension — '
-      + 'les renforts viennent des espèces qui ne sont PAS de la Plaine.</p>';
+      + 'les renforts viennent des espèces qui ne sont PAS de la Grande Plaine.</p>';
     return;
   }
   z.hidden = false;
