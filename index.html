@@ -17,6 +17,7 @@
     --ok:#8ff0a4; --mal:#ef6b6b; --eau:#8fc4f0;
   }
   *{ box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+  [hidden]{ display:none !important; }
   html,body{ height:100%; overscroll-behavior:none; }
   body{ background:var(--nuit); color:var(--craie);
     font-family:'Nunito',system-ui,sans-serif; user-select:none;
@@ -107,6 +108,19 @@
   .donjonHaut .droite{ margin-left:auto; color:var(--craie); }
   #pupitre{ display:flex; gap:6px; padding:8px; background:#1c130b;
     border-top:2px solid var(--lisiere); }
+  #pupitre.large{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #pupitre.large .cap{ flex:0 0 84px; }
+  #alerteInvasion{ background:linear-gradient(#4a1d14, #38160f); border:2px solid #a03a28;
+    border-radius:14px; padding:12px; text-align:center;
+    animation:alerteBat 1.6s ease-in-out infinite; }
+  #alerteInvasion b{ display:block; font-size:13.5px; color:#ffb3a3; margin-bottom:9px; }
+  #btnDefendre{ background:#c0392b; border:2px solid #ef6b6b; color:#fff;
+    font-family:'Pixelify Sans'; font-size:16px; border-radius:12px;
+    padding:10px 18px; cursor:pointer; width:100%; }
+  #btnDefendre:active{ transform:translateY(1px); }
+  @keyframes alerteBat{ 50%{ box-shadow:0 0 16px #a03a2888; } }
+  #navbas button.alerte{ color:#ef6b6b; }
+  #navbas button.alerte .ico::after{ content:'❗'; font-size:11px; position:relative; top:-8px; }
   .cap{ flex:1; position:relative; background:var(--bois); border:2px solid var(--lisiere);
     border-radius:12px; padding:7px 2px 6px; cursor:pointer; color:var(--craie);
     font-family:'Nunito'; text-align:center; overflow:hidden; min-height:64px; }
@@ -207,6 +221,10 @@
       <span class="jeton">🫐 <b class="jBaies">x0</b></span>
     </div>
     <div class="corps">
+      <div id="alerteInvasion" hidden>
+        <b id="alerteTexte">…</b>
+        <button id="btnDefendre">🛡 DÉFENDRE LA PENSION !</button>
+      </div>
       <div style="position:relative;">
         <canvas id="cvJardin"></canvas>
         <button id="btnGrand" class="btnBois" style="position:absolute; top:8px; right:8px;
@@ -730,6 +748,20 @@ const DONJONS = [
     escorte:[{espece:'Linéon', niv:10}, {espece:'Linéon', niv:10}]},
    vagues:4, decor:['AmpPlains','LushPrairie','TinyWoods','BeachCave'], final:1}
 ];
+
+/* --- l'invasion : la zone se venge ------------------------------------ */
+const INVASION_TOUS_LES = 3;      // victoires de boss avant la revanche
+const INVASIONS = {
+  plaine: {
+    nom: 'La Revanche du Pré',
+    alerte: 'Des Zigzaton rôdent autour de la haie… le Pré prépare sa REVANCHE !',
+    sbires: ['Zigzaton', 'Rattata', 'Roucool', 'Piafabec'],
+    elites: ['Linéon', 'Rattatac'],
+    miniBoss: {espece: 'Rapasdepic', titre: 'Rapasdepic l\'Éclaireur'},
+    boss: {espece: 'Tauros', titre: 'Tauros le Vengeur', taille: 1.7, ult: 'sol',
+           escorte: [{espece: 'Rattatac'}, {espece: 'Linéon'}]}
+  }
+};
 
 /* --- l'économie -------------------------------------------------------- */
 const PRIX = {baie:18, ticket:400, ult:900};
@@ -1356,6 +1388,48 @@ async function lancerDonjon(def, equipe){
   D.actif = true;                    // SEULEMENT maintenant : tout est en place
 }
 
+/* --- L'INVASION : la zone se venge SUR la pension --------------------- */
+async function lancerInvasion(def, defenseurs, positions){
+  rngD = Alea((Date.now() % 100000) | 0);
+  const W = DOMAINE.W, H = DOMAINE.H;
+  const carte = new Uint8Array(W * H);
+  for(let i = 0; i < W * H; i++) carte[i] = DOMAINE.carte[i] === 0 ? 1 : 0;
+  /* les BRÈCHES : la haie cède en trois points */
+  const breches = [{x: W / 2, y: 2}, {x: 3, y: H / 2}, {x: W - 3, y: H / 2}];
+  for(const b of breches)
+    for(let yy = -1; yy <= 1; yy++)
+      for(let xx = -2; xx <= 2; xx++){
+        const X = (b.x + xx) | 0, Y = (b.y + yy) | 0;
+        if(X > 0 && Y > 0 && X < W - 1 && Y < H - 1) carte[Y * W + X] = 1;
+      }
+  const salle = {x: 1, y: 1, w: W - 2, h: H - 2, cx: W / 2, cy: H / 2,
+                 boss: true, vue: true, faite: false};
+  Object.assign(D, {
+    actif: false, peuplement: false, invasion: true, def, carte, W, H,
+    salles: [salle], ents: [], sols: [], fx: [], flottants: [], salleIdx: 0,
+    phase: 'vagues', tActuel: 0, secousse: 0.6, tues: 0, vague: 0,
+    vaguesTotal: def.vagues, resultat: null, breches, ralliement: null,
+    butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
+  });
+  chargerVfx();
+  /* TOUS les pensionnaires défendent, là où ils se baladaient */
+  for(const p of defenseurs){
+    const pos = positions && positions[p.id];
+    const e = await creerEnt(p.espece, 'equipe',
+      pos ? pos.x : entre(W * 0.3, W * 0.7),
+      pos ? pos.y : entre(H * 0.45, H * 0.8),
+      p.niveau, {shiny: p.shiny, pensionnaire: p,
+                 ultDef: p.ult ? ULTS[p.ult] : null,
+                 ultType: p.ult || null, charge: 0});
+    if(!solEn(e.x, e.y)){ e.x = W / 2; e.y = H * 0.65; }
+    D.ents.push(e);
+  }
+  D.cam.x = W / 2; D.cam.y = H / 2;
+  D.enAttente = 2.5;
+  banniereD('⚔ ' + def.nom + ' — défends la pension !', '#ef6b6b');
+  D.actif = true;
+}
+
 /* la horde d'une salle : plein de sbires faibles, l'élite en plus haut */
 async function peuplerSalle(i){
   const s = D.salles[i], def = D.def;
@@ -1377,8 +1451,32 @@ async function peuplerSalle(i){
 async function lancerVague(){
   D.vague++;
   const s = D.salles[D.salles.length - 1], def = D.def;
-  const n = 4 + D.vague * 2;
   banniereD('Vague ' + D.vague + ' / ' + D.vaguesTotal, '#9fc4f2');
+  if(D.invasion){
+    /* les assaillants déboulent PAR LES BRÈCHES, à l'échelle de ta pension */
+    const nDef = D.ents.filter(e => e.camp === 'equipe' && !e.ko).length;
+    const nI = 3 + D.vague + Math.floor(nDef / 3);
+    const promesses = [];
+    for(let k = 0; k < nI; k++){
+      const elite = def.elites.length && D.vague >= 2 && rngD() < 0.2;
+      const espece = elite ? parmi(def.elites) : parmi(def.sbires);
+      const br = parmi(D.breches);
+      promesses.push(creerEnt(espece, 'ennemi',
+        br.x + entre(-1.4, 1.4), br.y + entre(-0.6, 0.6),
+        def.niv + D.vague + (elite ? 2 : 0), {elite, eveille: true}));
+    }
+    /* à mi-invasion, l'ÉCLAIREUR mène l'assaut */
+    if(def.miniBoss && D.vague === Math.ceil(D.vaguesTotal / 2)){
+      banniereD('⚠ ' + def.miniBoss.titre + ' mène l\'assaut !', '#c78fdd');
+      D.secousse = 0.5;
+      promesses.push(creerEnt(def.miniBoss.espece, 'ennemi',
+        D.breches[0].x, D.breches[0].y, def.niv + 5,
+        {elite: true, eveille: true, taille: 1.3, titre: def.miniBoss.titre}));
+    }
+    (await Promise.all(promesses)).forEach(e => { e.flash = 0.25; D.ents.push(e); });
+    return;
+  }
+  const n = 4 + D.vague * 2;
   const promesses = [];
   for(let k = 0; k < n; k++){
     const elite = def.elites.length && rngD() < 0.22;
@@ -1406,7 +1504,8 @@ async function lancerBoss(){
   for(let i = 0; i < (b.escorte || []).length; i++){
     const g = b.escorte[i];
     const garde = await creerEnt(g.espece, 'ennemi',
-      s.cx - 1.5 + i * 3, s.y + 3, g.niv, {elite: true, eveille: true});
+      s.cx - 1.5 + i * 3, s.y + 3, g.niv || Math.max(2, b.niv - 4),
+      {elite: true, eveille: true});
     garde.flash = 0.35;
     D.ents.push(garde);
   }
@@ -1423,6 +1522,10 @@ function degatsD(att, cible, coup){
   if(att.def.carac === 'relax') d *= 2.1;                                 // rare mais lourd
   if(att.camp === 'ennemi' && att.boost > 0) d *= 1.3;   // le cri du chef de meute
   d = Math.max(1, d - cible.defs * 0.45);
+  /* l'AoE télégraphiée d'un boss fait TRÈS mal, mais ne one-shot jamais
+     un Pokémon en pleine forme : rater l'esquive doit punir, pas rayer */
+  if(coup.estUlt && att.camp === 'ennemi' && cible.camp === 'equipe')
+    d = Math.min(d, cible.pvMax * 0.55);
   return {d, eff};
 }
 function frapperD(att, cible, coup, opts){
@@ -1517,6 +1620,20 @@ function choisirCible(e){
 }
 
 function bougerVers(e, tx, ty, dt, vitesse){
+  /* le DÉTOUR : coincé contre un rocher, on longe un moment au lieu d'insister */
+  if(e.detour && e.detour.t > 0){
+    e.detour.t -= dt;
+    const ld = Math.hypot(e.detour.px, e.detour.py) || 1;
+    const vd = (vitesse || e.vit) * dt;
+    const nx2 = e.x + e.detour.px / ld * e.detour.sens * vd;
+    const ny2 = e.y + e.detour.py / ld * e.detour.sens * vd;
+    if(solEn(nx2, ny2)){
+      e.dir = dirVers(nx2 - e.x, ny2 - e.y); e.enMarche = 0.2;
+      e.x = nx2; e.y = ny2;
+    } else e.detour.t = 0;
+    return;
+  }
+  const avX = e.x, avY = e.y;
   const dx = tx - e.x, dy = ty - e.y;
   const l = Math.hypot(dx, dy);
   if(l < 0.05) return;
@@ -1540,6 +1657,14 @@ function bougerVers(e, tx, ty, dt, vitesse){
     }
     e.x = nx; e.y = ny;
   }
+  /* on n'a presque pas avancé ? le compteur de coinçage monte */
+  if(Math.hypot(e.x - avX, e.y - avY) < v * 0.2){
+    e.coince = (e.coince || 0) + dt;
+    if(e.coince > 0.45){
+      e.coince = 0;
+      e.detour = {t: 0.55, px: -(ty - e.y), py: tx - e.x, sens: rngD() < 0.5 ? 1 : -1};
+    }
+  } else e.coince = 0;
 }
 
 function attaquer(e, cible){
@@ -1562,13 +1687,23 @@ function attaquer(e, cible){
 function iaEquipe(e, dt){
   const p = e.pensionnaire;
   /* le cercle rouge du boss ? ON DÉGAGE — le réflexe passe avant tout */
-  const danger = D.fx.find(f => f.cercle
+  const danger = D.fx.find(f => f.cercle && !f.doux
     && Math.hypot(e.x - f.x, e.y - f.y) < f.cercle + 0.35);
   if(danger){
     let fx2 = e.x - danger.x, fy2 = e.y - danger.y;
     if(Math.abs(fx2) + Math.abs(fy2) < 0.05){ fx2 = rngD() - 0.5; fy2 = rngD() - 0.5; }
     bougerVers(e, e.x + fx2 * 3, e.y + fy2 * 3, dt, e.vit * 1.25);
     return;
+  }
+  /* le SIFFLET : tout le monde converge, sauf ceux déjà au corps-à-corps */
+  if(D.ralliement){
+    const pres = proche(e, ennemisDe(e));
+    const loinDuPoint = Math.hypot(e.x - D.ralliement.x, e.y - D.ralliement.y) > 1.6;
+    if((!pres || dist(e, pres) > 2.6) && loinDuPoint){
+      bougerVers(e, D.ralliement.x + ((e.id % 4) - 1.5) * 0.7,
+                 D.ralliement.y + (((e.id / 4) | 0) % 3 - 1) * 0.7, dt, e.vit * 1.15);
+      return;
+    }
   }
   /* GENTIL : soigner d'abord ceux qui souffrent */
   if(e.def.carac === 'gentil'){
@@ -1923,6 +2058,7 @@ function tickDonjon(dt){
   D.tActuel += dt;
   if(D.banniere) D.banniere.t -= dt;
   if(D.secousse > 0) D.secousse -= dt;
+  if(D.ralliement){ D.ralliement.t -= dt; if(D.ralliement.t <= 0) D.ralliement = null; }
 
   for(const e of D.ents){
     if(e.ko){ e.mortT -= dt; continue; }
@@ -1945,8 +2081,12 @@ function tickDonjon(dt){
       }
       /* on souffle en chemin : petite récup, façon couloir de PMD */
       e.pv = Math.min(e.pvMax, e.pv + e.pvMax * 0.05 * dt);
-    } else if(e.camp === 'equipe') iaEquipe(e, dt);
-    else iaEnnemi(e, dt);
+    } else if(e.camp === 'equipe'){
+      /* pendant l'accalmie entre deux vagues d'invasion : on souffle */
+      if(D.invasion && D.enAttente > 0)
+        e.pv = Math.min(e.pvMax, e.pv + e.pvMax * 0.05 * dt);
+      iaEquipe(e, dt);
+    } else iaEnnemi(e, dt);
   }
   D.ents = D.ents.filter(e => !e.ko || e.mortT > 0 || e.camp === 'equipe');
 
@@ -2001,7 +2141,10 @@ function tickDonjon(dt){
       if(D.vague >= D.vaguesTotal){
         D.peuplement = true;
         lancerBoss().then(() => { D.peuplement = false; });
-      } else D.enAttente = 1.0;
+      } else {
+        D.enAttente = D.invasion ? 4.0 : 1.0;
+        if(D.invasion) banniereD('Vague repoussée — souffle un peu !', '#8ff0a4');
+      }
     }
   } else if(D.phase === 'boss' && !restants.length){
     finDonjon(true); return;
@@ -2024,7 +2167,9 @@ function finDonjon(victoire){
   D.actif = false;
   D.resultat = {victoire, butin: D.butin, tues: D.tues,
                 equipe: D.ents.filter(e => e.camp === 'equipe')};
-  if(typeof finExpedition === 'function') finExpedition(D.resultat);
+  if(D.invasion && typeof finInvasion === 'function') finInvasion(D.resultat);
+  else if(typeof finExpedition === 'function') finExpedition(D.resultat);
+  D.invasion = false;
 }
 
 /* --- le rendu --------------------------------------------------------- */
@@ -2229,6 +2374,7 @@ function partieNeuve(){
     sacs: {sous: 80, baies: 3, tickets: 3},
     ults: {},                       // parchemins non appris, par type
     avancee: {tuto: 0, tutoFini: false, bienvenue: false},
+    invasion: {compteur: 0, due: false, victoires: 0},
     prochainId: 1
   };
 }
@@ -2242,6 +2388,7 @@ function charger(){
     if(brut){
       P = JSON.parse(brut); idPens = P.prochainId || 1;
       if(P.sacs.tickets === undefined) P.sacs.tickets = 0;
+      if(!P.invasion) P.invasion = {compteur: 0, due: false, victoires: 0};
       return;
     }
   } catch(e){}
@@ -2396,6 +2543,11 @@ async function majPension(){
   const b = $('#coupDoeil');
   if(b) b.textContent = alertes.length ? alertes.slice(0, 3).join(' · ')
     : P.pensionnaires.length + ' pensionnaire(s) — glisse pour te balader, tape pour la fiche.';
+  const al = $('#alerteInvasion');
+  if(al){
+    al.hidden = !(P.invasion && P.invasion.due);
+    if(!al.hidden) $('#alerteTexte').textContent = INVASIONS.plaine.alerte;
+  }
   majJetons();
   majBande();
 
@@ -2751,19 +2903,20 @@ async function partirEnDonjon(){
 }
 
 /* --- le pupitre du donjon --------------------------------------------- */
-function construirePupitre(equipe){
+function construirePupitre(equipe, invasion){
   const box = $('#pupitre');
   box.innerHTML = '';
-  equipe.forEach((p, i) => {
+  box.classList.toggle('large', !!invasion);
+  equipe.forEach(p => {
     const b = document.createElement('button');
     b.className = 'cap';
-    b.dataset.idx = i;
+    b.dataset.pid = p.id;
     const u = p.ult ? ULTS[p.ult] : null;
     b.innerHTML = u
       ? '<span class="gros">💥</span><b>' + u.nom + '</b><b class="discret">' + p.espece + '</b><span class="froid">0%</span>'
       : '<span class="gros">—</span><b>pas d\'ult</b><b class="discret">' + p.espece + '</b>';
     b.onclick = () => {
-      const e = D.ents.filter(o => o.camp === 'equipe')[i];
+      const e = D.ents.find(o => o.camp === 'equipe' && o.pensionnaire && o.pensionnaire.id === p.id);
       if(e) lancerUlt(e);
     };
     box.appendChild(b);
@@ -2773,16 +2926,32 @@ function construirePupitre(equipe){
   baie.innerHTML = '<span class="gros">🫐</span><b>Baie</b><b class="discret" id="nbBaies">x' + P.sacs.baies + '</b>';
   baie.onclick = () => { if(donnerBaie()){ sauver(); $('#nbBaies').textContent = 'x' + P.sacs.baies; } };
   box.appendChild(baie);
-  const rep = document.createElement('button');
-  rep.className = 'cap replier';
-  rep.innerHTML = '<span class="gros">🏕</span><b>Replier</b>';
-  rep.onclick = () => { if(D.actif) finDonjon(true); };
-  box.appendChild(rep);
+  if(invasion){
+    const sif = document.createElement('button');
+    sif.className = 'cap'; sif.id = 'btnSifflet';
+    sif.innerHTML = '<span class="gros">📣</span><b>Sifflet</b><b class="discret">rallie !</b>';
+    sif.onclick = () => {
+      window.__sifflet = true; sif.classList.add('pret');
+      direJeu('Tape un endroit du domaine — tes défenseurs y convergent !');
+    };
+    box.appendChild(sif);
+    const ceder = document.createElement('button');
+    ceder.className = 'cap replier';
+    ceder.innerHTML = '<span class="gros">🏳</span><b>Céder</b>';
+    ceder.onclick = () => { if(D.actif) finDonjon(false); };
+    box.appendChild(ceder);
+  } else {
+    const rep = document.createElement('button');
+    rep.className = 'cap replier';
+    rep.innerHTML = '<span class="gros">🏕</span><b>Replier</b>';
+    rep.onclick = () => { if(D.actif) finDonjon(true); };
+    box.appendChild(rep);
+  }
 }
 function majPupitre(){
-  const equipe = D.ents.filter(o => o.camp === 'equipe');
-  $$('#pupitre .cap[data-idx]').forEach(b => {
-    const e = equipe[+b.dataset.idx];
+  $$('#pupitre .cap[data-pid]').forEach(b => {
+    const e = D.ents.find(o => o.camp === 'equipe' && o.pensionnaire
+      && o.pensionnaire.id === +b.dataset.pid);
     const froid = b.querySelector('.froid');
     if(!e || !froid) return;
     if(e.ko){ b.classList.remove('pret'); froid.textContent = 'K.O.'; froid.style.display = 'flex'; return; }
@@ -2792,10 +2961,76 @@ function majPupitre(){
            froid.textContent = Math.round(e.charge) + '%'; }
   });
   $('#dTitre').textContent = D.def ? D.def.nom : '';
-  $('#dInfo').textContent = D.phase === 'vagues' ? ('Vague ' + D.vague + '/' + D.vaguesTotal)
+  $('#dInfo').textContent = D.invasion
+    ? ('🛡 Vague ' + D.vague + '/' + D.vaguesTotal + (D.phase === 'boss' ? ' — 👑 LE VENGEUR !' : ''))
+    : D.phase === 'vagues' ? ('Vague ' + D.vague + '/' + D.vaguesTotal)
     : D.phase === 'boss' ? '👑 LE BOSS !'
     : 'salle ' + Math.min(D.salleIdx + 1, D.salles.length) + '/' + D.salles.length;
   $('#dSous').textContent = '🪙 +' + D.butin.sous + '  ⚔ ' + D.tues;
+}
+
+/* --- l'invasion : lancement et fin ------------------------------------ */
+async function lancerModeInvasion(){
+  if(!P.invasion || !P.invasion.due) return;
+  if(P.pensionnaires.length < 4)
+    return direJeu('Il te faut au moins 4 pensionnaires pour tenir la haie !');
+  construireDomaine();
+  chargerDecorPension();
+  const src = INVASIONS.plaine;
+  const moy = P.pensionnaires.reduce((s, p) => s + p.niveau, 0) / P.pensionnaires.length;
+  const niv = Math.max(3, Math.round(moy) - 2);
+  const def = {
+    nom: src.nom, sbires: src.sbires, elites: src.elites, miniBoss: src.miniBoss,
+    niv, vagues: 6 + Math.min(3, P.invasion.victoires),
+    boss: Object.assign({}, src.boss,
+      {niv: niv + 5, force: 0.6 + P.invasion.victoires * 0.08})
+  };
+  const positions = {};
+  for(const e of DOMAINE.ents) if(e.p) positions[e.p.id] = {x: e.x, y: e.y};
+  montrer('donjon');
+  construirePupitre(P.pensionnaires.filter(p => p.ult), true);
+  await lancerInvasion(def, P.pensionnaires, positions);
+}
+function finInvasion(r){
+  const gagne = r.victoire;
+  const lignes = [];
+  if(gagne){
+    P.invasion.victoires++;
+    P.invasion.due = false; P.invasion.compteur = 0;
+    P.sacs.sous += r.butin.sous;
+    P.sacs.baies += r.butin.baies;
+    P.sacs.tickets += 3;
+    lignes.push(['🛡 LA PENSION EST SAUVE', 'invasion n°' + P.invasion.victoires + ' repoussée !']);
+    lignes.push(['🪙 Pièces ramassées', '+' + r.butin.sous]);
+    if(r.butin.baies) lignes.push(['🫐 Baies', '+' + r.butin.baies]);
+    lignes.push(['🎟 Tickets de spin', '+3']);
+    if(r.butin.xp){
+      const parts = Math.max(1, r.equipe.length);
+      for(const e of r.equipe){
+        const p = e.pensionnaire;
+        if(!p) continue;
+        p.xp += Math.round(r.butin.xp / parts);
+        let monte = 0;
+        while(p.niveau < NIVEAU_MAX && p.xp >= xpPour(p.niveau + 1)){
+          p.xp -= xpPour(p.niveau + 1); p.niveau++; monte++;
+        }
+        if(monte) lignes.push(['⭐ ' + p.espece, 'niveau ' + p.niveau + ' !']);
+      }
+      lignes.push(['⭐ XP des défenseurs', '+' + r.butin.xp + ' partagée']);
+    }
+  } else {
+    const garde = Math.round(r.butin.sous / 2);
+    P.sacs.sous += garde;
+    lignes.push(['💨 L\'invasion se retire…', 'elle reviendra !']);
+    if(garde) lignes.push(['🪙 Pièces sauvées', '+' + garde]);
+    lignes.push(['🛡 Retente quand tu veux', 'l\'alerte reste à la pension']);
+  }
+  $('#butinTitre').textContent = gagne ? 'Invasion repoussée !' : 'La pension a plié…';
+  $('#butinSousTitre').textContent = D.def.nom + ' — toute la pension a défendu';
+  $('#lignesButin').innerHTML = lignes.map(l =>
+    '<div class="l"><span>' + l[0] + '</span><b>' + l[1] + '</b></div>').join('');
+  sauver();
+  montrer('butin');
 }
 
 /* --- la fin d'expédition ---------------------------------------------- */
@@ -2824,6 +3059,14 @@ function finExpedition(r){
         lignes.push(['🗝 CLÉ obtenue', DONJONS[idx + 1].nom + ' s\'ouvre !']);
       }
     } else lignes.push(['👑 Donjon rejoué', 'bien joué !']);
+    /* LA REVANCHE couve : la zone n'oublie pas qu'on la pille */
+    if(P.avancee.tutoFini && !P.invasion.due){
+      P.invasion.compteur++;
+      if(P.invasion.compteur >= INVASION_TOUS_LES){
+        P.invasion.due = true;
+        lignes.push(['🛡 La zone prépare sa REVANCHE', 'file voir la pension…']);
+      }
+    }
     if(Math.random() < 0.35 && !DONJONS[idx].final){
       P.sacs.tickets++;
       lignes.push(['🎟 Ticket de spin', '+1 !']);
@@ -3018,6 +3261,8 @@ function majJetons(){
   $$('.jSous').forEach(e => e.textContent = P.sacs.sous);
   $$('.jBaies').forEach(e => e.textContent = 'x' + P.sacs.baies);
   $$('.jTickets').forEach(e => e.textContent = 'x' + P.sacs.tickets);
+  const bp = $('#navbas button[data-vers="pension"]');
+  if(bp) bp.classList.toggle('alerte', !!(P.invasion && P.invasion.due));
 }
 
 /* le petit journal en bas de l'écran */
@@ -3065,6 +3310,23 @@ async function demarrer(){
   brancherDomaine($('#cvGrand'));
   $('#btnGrand').onclick = ouvrirGrand;
   $('#fermerGrand').onclick = fermerGrand;
+  const bd = $('#btnDefendre');
+  if(bd) bd.onclick = lancerModeInvasion;
+  /* le sifflet : le prochain tap sur le donjon devient le point de ralliement */
+  $('#cvDonjon').addEventListener('pointerdown', ev => {
+    if(!window.__sifflet || !D.actif || !D.invasion) return;
+    window.__sifflet = false;
+    const bs = $('#btnSifflet'); if(bs) bs.classList.remove('pret');
+    const cv = ev.currentTarget, r = cv.getBoundingClientRect();
+    const sx = (ev.clientX - r.left) * (cv.width / r.width);
+    const sy = (ev.clientY - r.top) * (cv.height / r.height);
+    const T = Math.round(Math.min(cv.width / 18, cv.height / 18));
+    const mx = (sx - (cv.width / 2 - D.cam.x * T)) / T;
+    const my = (sy - (cv.height / 2 - D.cam.y * T)) / T;
+    D.ralliement = {x: mx, y: my, t: 5};
+    D.fx.push({x: mx, y: my, t: 0, duree: 5, cercle: 1.3, coul: '#f2c14e', doux: true});
+    banniereD('📣 Ralliement !', '#f2c14e');
+  });
   $('#btnReset').onclick = () => { $('#confReset').hidden = false; $('#btnReset').hidden = true; };
   $('#btnResetNon').onclick = () => { $('#confReset').hidden = true; $('#btnReset').hidden = false; };
   $('#btnResetOui').onclick = () => {
