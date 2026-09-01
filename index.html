@@ -3201,7 +3201,9 @@ function majEquipe(){
       + (ouvert
         ? '<span class="vengBloc">'
           + '<span class="vengBarre"><i style="width:' + jv + '%"></i></span>'
-          + '<span class="vengPct">' + (dj && dj.due ? '🔥 REVANCHE !' : '🔥 ' + jv + '%') + '</span>'
+          + '<span class="vengPct">' + (dj && dj.due ? '🔥 REVANCHE !' : '🔥 ' + jv + '%')
+          + (dj && dj.serie > 1 && !dj.due ? ' <b style="color:#ef6b6b">série ×' + dj.serie + '</b>' : '')
+          + '</span>'
           + '</span>'
         : '') + '</span>'
       + '<b>' + (d.final ? '👑 ' : '') + (fait ? 'rejouable' : ouvert ? 'À TOI !' : 'clé du donjon ' + i) + '</b>';
@@ -3323,14 +3325,26 @@ function estDeLaPlaine(espece){
 function chargerVengeance(cle){
   const lignes = [];
   const inv = P.invasion;
-  const dj = inv.donjons[cle] || (inv.donjons[cle] = {jauge: 0, due: false});
+  const dj = inv.donjons[cle] || (inv.donjons[cle] = {jauge: 0, due: false, serie: 0});
+  if(dj.serie === undefined) dj.serie = 0;
   const d = DONJONS.find(o => o.cle === cle);
+  /* LA SÉRIE : enchaîner LE MÊME donjon fait exploser sa colère.
+     Changer de donjon casse la série de tous les autres — les alterner
+     tranquillement ne réveille personne. */
+  for(const [k, o] of Object.entries(inv.donjons)) if(k !== cle) o.serie = 0;
+  dj.serie++;
+  const gain = Math.min(60, Math.round(4 * Math.pow(1.6, dj.serie - 1)));
   if(!dj.due){
-    dj.jauge = Math.min(100, dj.jauge + 10);
+    dj.jauge = Math.min(100, dj.jauge + gain);
     if(dj.jauge >= 100){
       dj.due = true;
       lignes.push(['🔥 REVANCHE !', (d ? d.nom : cle) + ' attaque la pension !']);
-    } else lignes.push(['🔥 ' + (d ? d.nom : cle), dj.jauge + '%']);
+    } else {
+      lignes.push(['🔥 ' + (d ? d.nom : cle),
+        dj.jauge + '% (+' + gain + (dj.serie > 1 ? ' · série ×' + dj.serie : '') + ')']);
+      if(dj.serie === 2)
+        lignes.push(['⚠ Ils te voient revenir', 'enchaîner le même donjon le met en rage à toute vitesse']);
+    }
   }
   if(!inv.zone.due){
     inv.zone.jauge = Math.min(100, inv.zone.jauge + 2);
