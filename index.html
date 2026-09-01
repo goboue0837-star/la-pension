@@ -120,6 +120,11 @@
   .btnDefendre:active{ transform:translateY(1px); }
   .btnDefendre.zone{ background:#7a1f66; border-color:#c75fd0; }
   #alerteInvasion b{ margin-bottom:4px; }
+  .vengBloc{ display:flex; align-items:center; gap:6px; margin-top:4px; }
+  .vengBarre{ flex:1; max-width:120px; height:6px; background:#241a10;
+    border:1px solid var(--lisiere); border-radius:99px; overflow:hidden; }
+  .vengBarre i{ display:block; height:100%; background:linear-gradient(90deg,#c0392b,#f2a65e); }
+  .vengPct{ font-size:10.5px; color:#f2a65e; white-space:nowrap; }
   .caseAide{ display:inline-block; width:52px; height:52px; margin:4px 3px 0 0;
     background:#241a10; border:2px solid var(--lisiere); border-radius:10px;
     text-align:center; vertical-align:top; cursor:pointer; font-size:10px;
@@ -268,6 +273,14 @@
       <button class="btnBois" onclick="ouvrirTableTypes()" style="width:100%;">📖 La table des types</button>
       <div class="panneau">
         <b class="px" style="color:var(--or)">2 · Le Pré du Grand Départ</b>
+        <div id="colereZone" hidden>
+          <div class="vengBloc">
+            <span class="vengBarre" style="max-width:none;"><i id="colereBarre" style="width:0%"></i></span>
+            <span class="vengPct" id="colerePct">🌋 0%</span>
+          </div>
+          <p class="discret" style="font-size:11px; margin-top:2px;">Colère de la zone — chaque donjon vaincu
+            l'attise un peu, chaque revanche repoussée beaucoup.</p>
+        </div>
         <div class="lignesButin" id="listeDonjons" style="margin-top:8px; font-size:12.5px;"></div>
       </div>
       <button class="btnOr" onclick="partirEnDonjon()">🎲 C'EST PARTI !</button>
@@ -3005,6 +3018,14 @@ function majEquipe(){
     box.appendChild(b);
   }
   $('#compteEquipe').textContent = selection.length + '/3';
+  /* la colère de la ZONE, au-dessus de ses donjons */
+  const cz = $('#colereZone');
+  if(cz){
+    const z = (P.invasion && P.invasion.zone) || {jauge: 0, due: false};
+    cz.hidden = !P.avancee.tutoFini;
+    $('#colereBarre').style.width = z.jauge + '%';
+    $('#colerePct').textContent = z.due ? '🌋 LA ZONE ATTAQUE !' : '🌋 ' + z.jauge + '%';
+  }
   /* la liste des donjons du tuto */
   const dl = $('#listeDonjons');
   dl.innerHTML = '';
@@ -3014,8 +3035,17 @@ function majEquipe(){
     const fait = i < P.avancee.tuto;
     l.className = 'l';
     if(i === donjonChoisi && ouvert) l.style.cssText = 'border:1.5px solid var(--or);border-radius:8px;';
-    l.innerHTML = '<span>' + (fait ? '✅ ' : ouvert ? '▶ ' : '🔒 ') + (i + 1) + ' · ' + d.nom + '</span>'
+    const dj = (P.invasion && P.invasion.donjons && P.invasion.donjons[d.cle]) || null;
+    const jv = dj ? dj.jauge : 0;
+    l.innerHTML = '<span>' + (fait ? '✅ ' : ouvert ? '▶ ' : '🔒 ') + (i + 1) + ' · ' + d.nom
+      + (ouvert && P.avancee.tutoFini
+        ? '<span class="vengBloc">'
+          + '<span class="vengBarre"><i style="width:' + jv + '%"></i></span>'
+          + '<span class="vengPct">' + (dj && dj.due ? '🔥 REVANCHE !' : '🔥 ' + jv + '%') + '</span>'
+          + '</span>'
+        : '') + '</span>'
       + '<b>' + (d.final ? '👑 ' : '') + (fait ? 'rejouable' : ouvert ? 'À TOI !' : 'clé du donjon ' + i) + '</b>';
+    if(dj && dj.due) l.style.cssText += 'background:#3a1a14;';
     if(ouvert) l.onclick = () => { donjonChoisi = i; majEquipe(); };
     l.style.opacity = ouvert ? 1 : 0.5;
     dl.appendChild(l);
