@@ -2,12 +2,10 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#241a14">
-<style>html,body{margin:0}body{background:#241a14;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
-</head>
-<body>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icone.png">
 <title>La Pension</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
@@ -226,7 +224,8 @@
   #journal.vu{ opacity:1; transform:none; }
   #version{ position:fixed; right:8px; top:2px; font-size:9px; color:#00000000; }
 </style>
-
+</head>
+<body>
 
   <!-- ============ PENSION ============ -->
   <section class="ecran actif" data-nom="pension">
@@ -528,44 +527,172 @@ const ULTS = {
    evo : {vers, niv} — manuelle, un bouton sur la fiche.
    -------------------------------------------------------------------- */
 const ESPECES = {
-  /* ===== la lignée du tuto ===== */
-  'Zigzaton':  {num:263, types:['normal'], rarete:'commun', carac:'docile', biome:'plaine',
+
+  /* ═══ COMMUNS ═══ 6 familles ═══════════════════════ */
+  /* Rattata — le premier venu, mord vite et souvent */
+  'Rattata':      {num:19, types:['normal'], rarete:'commun', carac:'brave', biome:'plaine',
+    base:{pv:24, atq:8, def:4, vit:3.2}, sig:{nom:'Vive-Attaque', type:'normal', puiss:40, cd:1, por:1},
+    evo:{vers:'Rattatac', niv:20}},
+  'Rattatac':     {num:20, types:['normal'], rarete:'commun', carac:'brave', biome:'plaine',
+    base:{pv:36, atq:12, def:6, vit:3.5}, sig:{nom:'Croc Fatal', type:'normal', puiss:60, cd:1.2, por:1}},
+  /* Zigzaton — zigzague derrière un allié et frappe sa cible */
+  'Zigzaton':     {num:263, types:['normal'], rarete:'commun', carac:'docile', biome:'plaine',
     base:{pv:26, atq:7, def:5, vit:2.9}, sig:{nom:'Tacle', type:'normal', puiss:35, cd:1.1, por:1},
     evo:{vers:'Linéon', niv:20}},
-  'Linéon':    {num:264, types:['normal'], rarete:'peuCommun', carac:'docile', biome:'plaine',
+  'Linéon':       {num:264, types:['normal'], rarete:'commun', carac:'docile', biome:'plaine',
     base:{pv:38, atq:10, def:7, vit:3.3}, sig:{nom:'Éclate-Griffe', type:'normal', puiss:50, cd:1.1, por:1}},
-
-  /* ===== communs ===== */
-  'Rattata':   {num:19, types:['normal'], rarete:'commun', carac:'brave', biome:'plaine',
-    base:{pv:24, atq:8, def:4, vit:3.2}, sig:{nom:'Vive-Attaque', type:'normal', puiss:40, cd:1.0, por:1},
-    evo:{vers:'Rattatac', niv:20}},
-  'Rattatac':  {num:20, types:['normal'], rarete:'peuCommun', carac:'brave', biome:'plaine',
-    base:{pv:36, atq:12, def:6, vit:3.5}, sig:{nom:'Croc Fatal', type:'normal', puiss:60, cd:1.2, por:1}},
-  'Roucool':   {num:16, types:['normal','vol'], rarete:'commun', carac:'timide', biome:'plaine',
-    base:{pv:24, atq:6, def:4, vit:3.0}, sig:{nom:'Tornade', type:'vol', puiss:35, cd:1.3, por:3.2},
+  /* Fouinette — détale sur le butin avant les autres */
+  'Fouinette':    {num:161, types:['normal'], rarete:'commun', carac:'foufou', biome:'plaine',
+    base:{pv:24, atq:7, def:4, vit:3.3}, sig:{nom:'Ruse', type:'normal', puiss:38, cd:1, por:1},
+    evo:{vers:'Fouinar', niv:20}},
+  'Fouinar':      {num:162, types:['normal'], rarete:'commun', carac:'foufou', biome:'plaine',
+    base:{pv:38, atq:10, def:6, vit:3.6}, sig:{nom:'Tacle Foudre', type:'normal', puiss:55, cd:1.1, por:1}},
+  /* Roucool — tourne au large et souffle de loin */
+  'Roucool':      {num:16, types:['normal', 'vol'], rarete:'commun', carac:'timide', biome:'plaine',
+    base:{pv:24, atq:6, def:4, vit:3}, sig:{nom:'Tornade', type:'vol', puiss:35, cd:1.3, por:3.2},
     evo:{vers:'Roucoups', niv:20}},
-  'Roucoups':  {num:17, types:['normal','vol'], rarete:'peuCommun', carac:'timide', biome:'plaine',
+  'Roucoups':     {num:17, types:['normal', 'vol'], rarete:'commun', carac:'timide', biome:'plaine',
     base:{pv:34, atq:9, def:6, vit:3.3}, sig:{nom:'Cru-Aile', type:'vol', puiss:55, cd:1.2, por:1.4},
     evo:{vers:'Roucarnage', niv:30}},
-  'Roucarnage':{num:18, types:['normal','vol'], rarete:'rare', carac:'timide', biome:'plaine',
-    base:{pv:46, atq:12, def:8, vit:3.6}, sig:{nom:'Ouragan', type:'vol', puiss:75, cd:1.5, por:3.2}},
-  'Piafabec':  {num:21, types:['normal','vol'], rarete:'commun', carac:'presse', biome:'plaine',
+  'Roucarnage':   {num:18, types:['normal', 'vol'], rarete:'commun', carac:'timide', biome:'plaine',
+    base:{pv:46, atq:12, def:8, vit:3.6}, sig:{nom:'Ouragan', type:'vol', puiss:75, cd:1.5, por:3.2, zone:1.5}},
+  /* Piafabec — pique, touche, repart aussitôt */
+  'Piafabec':     {num:21, types:['normal', 'vol'], rarete:'commun', carac:'presse', biome:'plaine',
     base:{pv:22, atq:8, def:3, vit:3.4}, sig:{nom:'Picpic', type:'vol', puiss:38, cd:0.9, por:1},
     evo:{vers:'Rapasdepic', niv:20}},
-  'Rapasdepic':{num:22, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'plaine',
+  'Rapasdepic':   {num:22, types:['normal', 'vol'], rarete:'commun', carac:'presse', biome:'plaine',
     base:{pv:34, atq:12, def:5, vit:3.7}, sig:{nom:'Bec Vrille', type:'vol', puiss:60, cd:1.1, por:1}},
-  'Fouinette': {num:161, types:['normal'], rarete:'commun', carac:'foufou', biome:'plaine',
-    base:{pv:24, atq:7, def:4, vit:3.3}, sig:{nom:'Ruse', type:'normal', puiss:38, cd:1.0, por:1},
-    evo:{vers:'Fouinar', niv:20}},
-  'Fouinar':   {num:162, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
-    base:{pv:38, atq:10, def:6, vit:3.6}, sig:{nom:'Tacle Foudre', type:'normal', puiss:55, cd:1.1, por:1}},
+  /* Medhyèna — poursuit sa proie jusqu'à l'épuisement */
+  'Medhyèna':     {num:261, types:['tenebres'], rarete:'commun', carac:'presse', biome:'plaine',
+    base:{pv:26, atq:8, def:5, vit:3.6}, sig:{nom:'Morsure', type:'tenebres', puiss:38, cd:1, por:1},
+    evo:{vers:'Grahyèna', niv:18}},
+  'Grahyèna':     {num:262, types:['tenebres'], rarete:'commun', carac:'presse', biome:'plaine',
+    base:{pv:42, atq:13, def:8, vit:4}, sig:{nom:'Crocs Éclair', type:'tenebres', puiss:60, cd:1.1, por:1}},
 
-  /* ===== peu communs ===== */
-  'Doduo':     {num:84, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'plaine',
+  /* ═══ PEU COMMUNS ═══ 6 familles ═══════════════════════ */
+  /* Abo — plus il souffre, plus son venin mord */
+  'Abo':          {num:23, types:['poison'], rarete:'peuCommun', carac:'mauvais', biome:'plaine',
+    base:{pv:26, atq:8, def:4, vit:3}, sig:{nom:'Piqûre', type:'poison', puiss:40, cd:1.05, por:1},
+    evo:{vers:'Arbok', niv:22}},
+  'Arbok':        {num:24, types:['poison'], rarete:'peuCommun', carac:'mauvais', biome:'plaine',
+    base:{pv:42, atq:14, def:8, vit:3.4}, sig:{nom:'Dard-Venin', type:'poison', puiss:64, cd:1.15, por:1.3}},
+  /* Nidoran♂ — charge cornes en avant, tête baissée */
+  'Nidoran♂':     {num:32, types:['poison'], rarete:'peuCommun', carac:'brave', biome:'plaine',
+    base:{pv:26, atq:9, def:5, vit:3}, sig:{nom:'Koud\'Korne', type:'poison', puiss:40, cd:1.05, por:1},
+    evo:{vers:'Nidorino', niv:16}},
+  'Nidorino':     {num:33, types:['poison'], rarete:'peuCommun', carac:'brave', biome:'plaine',
+    base:{pv:38, atq:13, def:8, vit:3.4}, sig:{nom:'Double Dard', type:'poison', puiss:58, cd:1, por:1},
+    evo:{vers:'Nidoking', niv:32}},
+  'Nidoking':     {num:34, types:['poison', 'sol'], rarete:'peuCommun', carac:'brave', biome:'plaine',
+    base:{pv:58, atq:20, def:13, vit:3.3}, sig:{nom:'Séisme', type:'sol', puiss:90, cd:1.4, por:1.2, zone:1.7}},
+  /* Nidoran♀ — se met devant les plus fragiles */
+  'Nidoran♀':     {num:29, types:['poison'], rarete:'peuCommun', carac:'hardi', biome:'plaine',
+    base:{pv:30, atq:7, def:6, vit:2.8}, sig:{nom:'Griffe', type:'poison', puiss:38, cd:1.1, por:1},
+    evo:{vers:'Nidorina', niv:16}},
+  'Nidorina':     {num:30, types:['poison'], rarete:'peuCommun', carac:'hardi', biome:'plaine',
+    base:{pv:44, atq:11, def:10, vit:3}, sig:{nom:'Morsure', type:'poison', puiss:56, cd:1.1, por:1},
+    evo:{vers:'Nidoqueen', niv:32}},
+  'Nidoqueen':    {num:31, types:['poison', 'sol'], rarete:'peuCommun', carac:'hardi', biome:'plaine',
+    base:{pv:66, atq:17, def:16, vit:3}, sig:{nom:'Coud\'Boue', type:'sol', puiss:86, cd:1.35, por:2.2, zone:1.5}},
+  /* Doduo — deux têtes, deux fois plus pressé */
+  'Doduo':        {num:84, types:['normal', 'vol'], rarete:'peuCommun', carac:'presse', biome:'plaine',
     base:{pv:28, atq:10, def:4, vit:3.6}, sig:{nom:'Torgnoles', type:'normal', puiss:45, cd:0.9, por:1},
-    evo:{vers:'Dodrio', niv:20}},
-  'Dodrio':    {num:85, types:['normal','vol'], rarete:'rare', carac:'presse', biome:'plaine',
-    base:{pv:42, atq:14, def:6, vit:3.9}, sig:{nom:'Triplattaque', type:'normal', puiss:70, cd:1.2, por:1}},
+    evo:{vers:'Dodrio', niv:24}},
+  'Dodrio':       {num:85, types:['normal', 'vol'], rarete:'peuCommun', carac:'presse', biome:'plaine',
+    base:{pv:42, atq:15, def:7, vit:4.4}, sig:{nom:'Triple Bec', type:'vol', puiss:70, cd:0.95, por:1}},
+  /* Miaouss — ramasse les pièces avant de se battre */
+  'Miaouss':      {num:52, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
+    base:{pv:26, atq:8, def:5, vit:3.5}, sig:{nom:'Griffe', type:'normal', puiss:40, cd:1, por:1},
+    evo:{vers:'Persian', niv:28}},
+  'Persian':      {num:53, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
+    base:{pv:40, atq:14, def:8, vit:4.3}, sig:{nom:'Vive-Attaque', type:'normal', puiss:62, cd:0.95, por:1}},
+  /* Soporifik — vise là où la horde est la plus dense */
+  'Soporifik':    {num:96, types:['psy'], rarete:'peuCommun', carac:'serieux', biome:'plaine',
+    base:{pv:32, atq:8, def:6, vit:2.6}, sig:{nom:'Choc Mental', type:'psy', puiss:42, cd:1.2, por:2.4},
+    evo:{vers:'Hypnomade', niv:26}},
+  'Hypnomade':    {num:97, types:['psy'], rarete:'peuCommun', carac:'serieux', biome:'plaine',
+    base:{pv:48, atq:14, def:10, vit:2.9}, sig:{nom:'Psyko', type:'psy', puiss:72, cd:1.3, por:2.6, zone:1.4}},
+
+  /* ═══ RARES ═══ 5 familles ═══════════════════════ */
+  /* Girafarig — sa queue voit dans le dos et frappe seule */
+  'Girafarig':    {num:203, types:['normal', 'psy'], rarete:'rare', carac:'serieux', biome:'plaine',
+    base:{pv:38, atq:12, def:8, vit:3.4}, sig:{nom:'Psyko', type:'psy', puiss:55, cd:1.15, por:2.4},
+    evo:{vers:'Farigiraf', niv:32}},
+  'Farigiraf':    {num:981, types:['normal', 'psy'], rarete:'rare', carac:'serieux', biome:'plaine',
+    base:{pv:62, atq:19, def:14, vit:3.2}, sig:{nom:'Psycho-Broyeur', type:'psy', puiss:88, cd:1.35, por:2.6, zone:1.5}},
+  /* Écrémeuh — rumine, puis assène un coup terrible */
+  'Écrémeuh':     {num:241, types:['normal'], rarete:'rare', carac:'relax', biome:'plaine',
+    base:{pv:58, atq:13, def:12, vit:2.4}, sig:{nom:'Coup d\'Boule', type:'normal', puiss:58, cd:1.3, por:1}},
+  /* Ptiravi — la seule lignée qui soigne l'équipe */
+  'Ptiravi':      {num:440, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
+    base:{pv:48, atq:5, def:6, vit:2.6}, sig:{nom:'Câlinerie', type:'fee', soin:16, cd:1.6, por:2.4},
+    evo:{vers:'Leveinard', niv:20}},
+  'Leveinard':    {num:113, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
+    base:{pv:90, atq:6, def:8, vit:2.8}, sig:{nom:'Vœu de Soin', type:'normal', soin:26, cd:1.5, por:2.8},
+    evo:{vers:'Leuphorie', niv:34}},
+  'Leuphorie':    {num:242, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
+    base:{pv:120, atq:9, def:14, vit:3}, sig:{nom:'Câlin Guérisseur', type:'fee', soin:40, cd:1.4, por:3}},
+  /* Excelangue — attrape à distance avec sa langue */
+  'Excelangue':   {num:108, types:['normal'], rarete:'rare', carac:'foufou', biome:'plaine',
+    base:{pv:52, atq:12, def:9, vit:2.4}, sig:{nom:'Lèchouille', type:'spectre', puiss:55, cd:1.2, por:2},
+    evo:{vers:'Coudlangue', niv:33}},
+  'Coudlangue':   {num:463, types:['normal'], rarete:'rare', carac:'foufou', biome:'plaine',
+    base:{pv:78, atq:18, def:13, vit:2.5}, sig:{nom:'Grande Langue', type:'spectre', puiss:80, cd:1.3, por:2.6}},
+  /* Canarticho — son poireau vaut une épée : il défie le plus fort */
+  'Canarticho':   {num:83, types:['normal', 'vol'], rarete:'rare', carac:'assure', biome:'plaine',
+    base:{pv:38, atq:15, def:8, vit:3.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:62, cd:0.95, por:1.2}},
+
+  /* ═══ ÉPIQUES ═══ 4 familles ═══════════════════════ */
+  /* Kangourex — protège les siens avant de cogner */
+  'Kangourex':    {num:115, types:['normal'], rarete:'epique', carac:'hardi', biome:'plaine',
+    base:{pv:74, atq:17, def:14, vit:3.2}, sig:{nom:'Écras\'Face', type:'normal', puiss:72, cd:1.2, por:1}},
+  /* Évoli — huit avenirs possibles — le biome décidera */
+  'Évoli':        {num:133, types:['normal'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:34, atq:10, def:7, vit:3.2}, sig:{nom:'Charme', type:'fee', puiss:45, cd:1, por:1},
+    evo:{choix:['Aquali', 'Voltali', 'Pyroli', 'Mentali', 'Noctali', 'Phyllali', 'Givrali', 'Nymphali'], niv:25}},
+  'Aquali':       {num:134, types:['eau'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:72, atq:15, def:10, vit:3}, sig:{nom:'Pistolet à O', type:'eau', puiss:76, cd:1.15, por:2.8}},
+  'Voltali':      {num:135, types:['electrik'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:48, atq:17, def:9, vit:4.6}, sig:{nom:'Étincelle', type:'electrik', puiss:78, cd:1, por:1.6}},
+  'Pyroli':       {num:136, types:['feu'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:56, atq:21, def:10, vit:3.4}, sig:{nom:'Crocs Feu', type:'feu', puiss:84, cd:1.2, por:1}},
+  'Mentali':      {num:196, types:['psy'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:48, atq:18, def:10, vit:3.6}, sig:{nom:'Choc Psy', type:'psy', puiss:80, cd:1.2, por:2.6}},
+  'Noctali':      {num:197, types:['tenebres'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:66, atq:13, def:18, vit:3.2}, sig:{nom:'Vibrobscur', type:'tenebres', puiss:70, cd:1.25, por:2.2}},
+  'Phyllali':     {num:470, types:['plante'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:52, atq:19, def:12, vit:3.6}, sig:{nom:'Feuille Magik', type:'plante', puiss:80, cd:1.1, por:2.4}},
+  'Givrali':      {num:471, types:['glace'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:52, atq:19, def:12, vit:3.3}, sig:{nom:'Vent Glace', type:'glace', puiss:80, cd:1.2, por:2.4, zone:1.3}},
+  'Nymphali':     {num:700, types:['fee'], rarete:'epique', carac:'docile', biome:'plaine',
+    base:{pv:60, atq:17, def:14, vit:3.3}, sig:{nom:'Éclat Magique', type:'fee', puiss:80, cd:1.15, por:2.4}},
+  /* Tauros — le doyen du pré, il ne recule devant rien */
+  'Tauros':       {num:128, types:['normal'], rarete:'epique', carac:'assure', biome:'plaine',
+    base:{pv:68, atq:22, def:13, vit:4}, sig:{nom:'Mania', type:'normal', puiss:84, cd:1.1, por:1.2}},
+  /* Tauros de Paldea — trois races du même taureau : le rustre, l'ardent et le torrentiel */
+  'Tauros de Paldea': {num:128, types:['combat'], rarete:'epique', carac:'brave', biome:'plaine', sprite:'0128/0001',
+    base:{pv:66, atq:22, def:14, vit:3.9}, sig:{nom:'Close Combat', type:'combat', puiss:86, cd:1.15, por:1.1}},
+  'Tauros de Paldea Flamboyant': {num:128, types:['combat', 'feu'], rarete:'epique', carac:'brave', biome:'plaine', sprite:'0128/0002',
+    base:{pv:66, atq:22, def:14, vit:3.9}, sig:{nom:'Corne Ardente', type:'feu', puiss:86, cd:1.15, por:1.2}},
+  'Tauros de Paldea Aquatique': {num:128, types:['combat', 'eau'], rarete:'epique', carac:'brave', biome:'plaine', sprite:'0128/0003',
+    base:{pv:66, atq:22, def:14, vit:3.9}, sig:{nom:'Corne Torrent', type:'eau', puiss:86, cd:1.15, por:1.4}},
+
+  /* ═══ LÉGENDAIRES ═══ 4 familles ═══════════════════════ */
+  /* Suicune — il court purifier les eaux du monde */
+  'Suicune':      {num:245, types:['eau'], rarete:'legendaire', carac:'serieux', biome:'plaine',
+    base:{pv:74, atq:19, def:20, vit:4.4}, sig:{nom:'Blizzard', type:'glace', puiss:96, cd:1.35, por:3, zone:1.7}},
+  /* Jirachi — l'étoile qui tombe et exauce un vœu */
+  'Jirachi':      {num:385, types:['acier', 'psy'], rarete:'legendaire', carac:'gentil', biome:'plaine',
+    base:{pv:70, atq:18, def:18, vit:3.6}, sig:{nom:'Vœu', type:'psy', puiss:88, cd:1.3, por:2.8, zone:1.5}},
+  /* Tokotoro — le gardien taureau, il fait pousser la terre */
+  'Tokotoro':     {num:787, types:['plante', 'fee'], rarete:'legendaire', carac:'brave', biome:'plaine',
+    base:{pv:78, atq:24, def:17, vit:3.4}, sig:{nom:'Bois Sacré', type:'plante', puiss:100, cd:1.35, por:1.4, zone:1.4}},
+  /* Électhor de Galar — il erre les terres sauvages et fond sur le plus fort du groupe */
+  'Électhor de Galar': {num:145, types:['combat', 'vol'], rarete:'legendaire', carac:'assure', biome:'plaine', sprite:'0145/0001',
+    base:{pv:72, atq:25, def:15, vit:4.5}, sig:{nom:'Coup Croix', type:'combat', puiss:98, cd:1.2, por:1.2}},
+
+  /* ═══ LA RÉSERVE ═══ écrites pour les biomes à venir, pas
+     tirables au portail de la Plaine ══════════════════════ */
   'Ponyta':    {num:77, types:['feu'], rarete:'rare', carac:'brave', biome:'plaine',
     base:{pv:30, atq:9, def:6, vit:3.7}, sig:{nom:'Flammèche', type:'feu', puiss:42, cd:1.1, por:1.6},
     evo:{vers:'Galopa', niv:20}},
@@ -579,24 +706,6 @@ const ESPECES = {
     evo:{vers:'Rafflesia', niv:30}},
   'Rafflesia': {num:45, types:['plante','poison'], rarete:'peuCommun', carac:'timide', biome:'plaine',
     base:{pv:54, atq:13, def:10, vit:2.7}, sig:{nom:'Danse-Fleur', type:'plante', puiss:70, cd:1.4, por:2.4, zone:1.6}},
-  'Nidoran♂':  {num:32, types:['poison'], rarete:'commun', carac:'mauvais', biome:'plaine',
-    base:{pv:28, atq:9, def:5, vit:2.9}, sig:{nom:'Furie', type:'normal', puiss:40, cd:1.0, por:1},
-    evo:{vers:'Nidorino', niv:20}},
-  'Nidorino':  {num:33, types:['poison'], rarete:'peuCommun', carac:'mauvais', biome:'plaine',
-    base:{pv:40, atq:12, def:7, vit:3.1}, sig:{nom:'Coup d\'Korne', type:'poison', puiss:55, cd:1.1, por:1},
-    evo:{vers:'Nidoking', niv:30}},
-  'Nidoking':  {num:34, types:['poison','sol'], rarete:'epique', carac:'mauvais', biome:'plaine',
-    base:{pv:56, atq:16, def:10, vit:3.2}, sig:{nom:'Empal\'Korne', type:'sol', puiss:75, cd:1.3, por:1, zone:1.4}},
-  'Nidoran♀':  {num:29, types:['poison'], rarete:'commun', carac:'hardi', biome:'plaine',
-    base:{pv:30, atq:8, def:6, vit:2.8}, sig:{nom:'Griffe', type:'normal', puiss:38, cd:1.0, por:1},
-    evo:{vers:'Nidorina', niv:20}},
-  'Nidorina':  {num:30, types:['poison'], rarete:'peuCommun', carac:'hardi', biome:'plaine',
-    base:{pv:44, atq:11, def:9, vit:2.9}, sig:{nom:'Croc de Mort', type:'normal', puiss:52, cd:1.1, por:1},
-    evo:{vers:'Nidoqueen', niv:30}},
-  'Nidoqueen': {num:31, types:['poison','sol'], rarete:'epique', carac:'hardi', biome:'plaine',
-    base:{pv:60, atq:14, def:13, vit:3.0}, sig:{nom:'Écras\'Face', type:'normal', puiss:70, cd:1.3, por:1}},
-
-  /* ===== rares ===== */
   'Pichu':     {num:172, types:['electrik'], rarete:'rare', carac:'brave', biome:'plaine',
     base:{pv:22, atq:8, def:3, vit:3.2}, sig:{nom:'Charme', type:'fee', puiss:32, cd:1.0, por:1},
     evo:{vers:'Pikachu', niv:20}},
@@ -605,49 +714,24 @@ const ESPECES = {
     evo:{vers:'Raichu', niv:30}},
   'Raichu':    {num:26, types:['electrik'], rarete:'rare', carac:'brave', biome:'plaine',
     base:{pv:48, atq:16, def:8, vit:3.9}, sig:{nom:'Tonnerre', type:'electrik', puiss:80, cd:1.3, por:2.8}},
-  'Tauros':    {num:128, types:['normal'], rarete:'ultra', carac:'assure', biome:'plaine',
-    base:{pv:52, atq:15, def:10, vit:3.5}, sig:{nom:'Damoclès', type:'normal', puiss:85, cd:1.6, por:1}},
   'Caninos':   {num:58, types:['feu'], rarete:'epique', carac:'malin', biome:'plaine',
     base:{pv:34, atq:11, def:6, vit:3.4}, sig:{nom:'Crocs Feu', type:'feu', puiss:50, cd:1.1, por:1},
     evo:{vers:'Arcanin', niv:30}},
   'Arcanin':   {num:59, types:['feu'], rarete:'epique', carac:'malin', biome:'plaine',
     base:{pv:58, atq:17, def:10, vit:4.0}, sig:{nom:'Boutefeu', type:'feu', puiss:90, cd:1.5, por:1}},
-
-  /* ===== épiques ===== */
-  'Évoli':     {num:133, types:['normal'], rarete:'epique', carac:'docile', biome:'plaine',
-    base:{pv:34, atq:10, def:7, vit:3.2}, sig:{nom:'Charme', type:'fee', puiss:45, cd:1.0, por:1},
-    evo:{choix:['Aquali','Voltali','Pyroli'], niv:20}},
-  'Aquali':    {num:134, types:['eau'], rarete:'epique', carac:'hardi', biome:'plaine',
-    base:{pv:64, atq:13, def:9, vit:3.2}, sig:{nom:'Pistolet à O', type:'eau', puiss:60, cd:1.1, por:2.8}},
-  'Voltali':   {num:135, types:['electrik'], rarete:'epique', carac:'presse', biome:'plaine',
-    base:{pv:44, atq:15, def:8, vit:4.3}, sig:{nom:'Éclair', type:'electrik', puiss:65, cd:1.0, por:2.4}},
-  'Pyroli':    {num:136, types:['feu'], rarete:'epique', carac:'mauvais', biome:'plaine',
-    base:{pv:48, atq:17, def:8, vit:3.6}, sig:{nom:'Flammèche', type:'feu', puiss:70, cd:1.1, por:1.8}},
-  'Ptiravi':   {num:440, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
-    base:{pv:40, atq:4, def:4, vit:2.6}, sig:{nom:'Copieuse', type:'normal', puiss:25, cd:1.2, por:1, soin:14},
-    evo:{vers:'Leveinard', niv:20}},
-  'Leveinard': {num:113, types:['normal'], rarete:'epique', carac:'gentil', biome:'plaine',
-    base:{pv:90, atq:5, def:5, vit:2.7}, sig:{nom:'Métronome', type:'normal', puiss:30, cd:1.2, por:1.6, soin:24},
-    evo:{vers:'Leuphorie', niv:30}},
-  'Leuphorie': {num:242, types:['normal'], rarete:'epique', carac:'gentil', biome:'plaine',
-    base:{pv:130, atq:7, def:6, vit:2.8}, sig:{nom:'Voile Doux', type:'normal', puiss:35, cd:1.2, por:2.0, soin:40}},
-
-  /* ===== ultra ===== */
-  'Goinfrex':  {num:446, types:['normal'], rarete:'ultra', carac:'relax', biome:'plaine',
+  'Goinfrex':  {num:446, types:['normal'], rarete:'epique', carac:'relax', biome:'plaine',
     base:{pv:60, atq:12, def:8, vit:2.2}, sig:{nom:'Goinfrerie', type:'normal', puiss:60, cd:1.6, por:1},
     evo:{vers:'Ronflex', niv:20}},
-  'Ronflex':   {num:143, types:['normal'], rarete:'ultra', carac:'relax', biome:'plaine',
+  'Ronflex':   {num:143, types:['normal'], rarete:'epique', carac:'relax', biome:'plaine',
     base:{pv:110, atq:18, def:12, vit:2.2}, sig:{nom:'Plaquage', type:'normal', puiss:95, cd:1.9, por:1, zone:1.3}},
-  'Minidraco': {num:147, types:['dragon'], rarete:'ultra', carac:'serieux', biome:'plaine',
+  'Minidraco': {num:147, types:['dragon'], rarete:'epique', carac:'serieux', biome:'plaine',
     base:{pv:32, atq:10, def:6, vit:3.0}, sig:{nom:'Draco-Rage', type:'dragon', puiss:50, cd:1.2, por:2.6},
     evo:{vers:'Draco', niv:20}},
-  'Draco':     {num:148, types:['dragon'], rarete:'ultra', carac:'serieux', biome:'plaine',
+  'Draco':     {num:148, types:['dragon'], rarete:'epique', carac:'serieux', biome:'plaine',
     base:{pv:46, atq:14, def:8, vit:3.3}, sig:{nom:'Danse Draco', type:'dragon', puiss:70, cd:1.3, por:2.4},
     evo:{vers:'Dracolosse', niv:30}},
-  'Dracolosse':{num:149, types:['dragon','vol'], rarete:'ultra', carac:'serieux', biome:'plaine',
+  'Dracolosse':{num:149, types:['dragon','vol'], rarete:'epique', carac:'serieux', biome:'plaine',
     base:{pv:70, atq:20, def:13, vit:3.5}, sig:{nom:'Colère', type:'dragon', puiss:95, cd:1.5, por:1.8, zone:1.5}},
-
-  /* ===== les nouveaux venus de la Plaine (habitat vérifié) ===== */
   'Granivol':  {num:187, types:['plante','vol'], rarete:'commun', carac:'docile', biome:'plaine',
     base:{pv:24, atq:6, def:4, vit:2.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:32, cd:1.1, por:2.4},
     evo:{vers:'Floravol', niv:20}},
@@ -664,15 +748,6 @@ const ESPECES = {
     evo:{vers:'Grodoudou', niv:30}},
   'Grodoudou': {num:40, types:['normal','fee'], rarete:'peuCommun', carac:'gentil', biome:'plaine',
     base:{pv:76, atq:9, def:6, vit:2.8}, sig:{nom:'Voix Enjôleuse', type:'fee', puiss:42, cd:1.2, por:2.2, soin:28}},
-  'Abo':       {num:23, types:['poison'], rarete:'commun', carac:'malin', biome:'plaine',
-    base:{pv:26, atq:9, def:4, vit:3.1}, sig:{nom:'Morsure', type:'tenebres', puiss:40, cd:1.0, por:1},
-    evo:{vers:'Arbok', niv:20}},
-  'Arbok':     {num:24, types:['poison'], rarete:'peuCommun', carac:'malin', biome:'plaine',
-    base:{pv:40, atq:13, def:7, vit:3.3}, sig:{nom:'Crochet Venin', type:'poison', puiss:60, cd:1.1, por:1}},
-  'Girafarig': {num:203, types:['normal','psy'], rarete:'rare', carac:'serieux', biome:'plaine',
-    base:{pv:42, atq:12, def:7, vit:3.4}, sig:{nom:'Choc Mental', type:'psy', puiss:58, cd:1.2, por:2.6}},
-  'Écrémeuh':  {num:241, types:['normal'], rarete:'rare', carac:'hardi', biome:'plaine',
-    base:{pv:66, atq:10, def:13, vit:3.0}, sig:{nom:'Roulade', type:'roche', puiss:52, cd:1.2, por:1}},
   'Wattouat':  {num:179, types:['electrik'], rarete:'epique', carac:'timide', biome:'plaine',
     base:{pv:30, atq:8, def:5, vit:2.8}, sig:{nom:'Éclair', type:'electrik', puiss:40, cd:1.1, por:2.4},
     evo:{vers:'Lainergie', niv:20}},
@@ -681,31 +756,13 @@ const ESPECES = {
     evo:{vers:'Pharamp', niv:30}},
   'Pharamp':   {num:181, types:['electrik'], rarete:'epique', carac:'timide', biome:'plaine',
     base:{pv:58, atq:15, def:9, vit:3.0}, sig:{nom:'Tonnerre', type:'electrik', puiss:80, cd:1.3, por:2.8}},
-  'Kangourex': {num:115, types:['normal'], rarete:'epique', carac:'mauvais', biome:'plaine',
-    base:{pv:62, atq:14, def:10, vit:3.3}, sig:{nom:'Ultimapoing', type:'normal', puiss:82, cd:1.4, por:1}},
-  'Insécateur':{num:123, types:['insecte','vol'], rarete:'ultra', carac:'presse', biome:'plaine',
+  'Insécateur':{num:123, types:['insecte','vol'], rarete:'epique', carac:'presse', biome:'plaine',
     base:{pv:46, atq:15, def:8, vit:4.0}, sig:{nom:'Plaie Croix', type:'insecte', puiss:70, cd:1.0, por:1},
     evo:{vers:'Cizayox', niv:20}},
-  'Cizayox':   {num:212, types:['insecte','acier'], rarete:'ultra', carac:'presse', biome:'plaine',
+  'Cizayox':   {num:212, types:['insecte','acier'], rarete:'epique', carac:'presse', biome:'plaine',
     base:{pv:56, atq:18, def:11, vit:3.8}, sig:{nom:'Griffe Acier', type:'acier', puiss:85, cd:1.0, por:1}},
-
-  /* ===== légendaire ===== */
   'Shaymin':   {num:492, types:['plante'], rarete:'legendaire', carac:'serieux', biome:'plaine',
-    base:{pv:66, atq:20, def:14, vit:3.8}, sig:{nom:'Vent Violent', type:'vol', puiss:95, cd:1.3, por:3.0, zone:1.6, exclusive:1}},
-
-  /* --- les deux derniers de la Grande Plaine --------------------------- */
-  'Miaouss':   {num:52, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
-    base:{pv:26, atq:8, def:5, vit:3.5}, sig:{nom:'Griffe', type:'normal', puiss:40, cd:1.0, por:1},
-    evo:{vers:'Persian', niv:28}},
-  'Persian':   {num:53, types:['normal'], rarete:'rare', carac:'foufou', biome:'plaine',
-    base:{pv:40, atq:14, def:8, vit:4.3}, sig:{nom:'Vive-Attaque', type:'normal', puiss:62, cd:0.95, por:1}},
-
-  /* --- le portail Plaine revu : les habitués des routes ---------------- */
-  'Medhyèna':  {num:261, types:['tenebres'], rarete:'commun', carac:'presse', biome:'reserve',
-    base:{pv:26, atq:8, def:5, vit:3.6}, sig:{nom:'Morsure', type:'tenebres', puiss:38, cd:1.0, por:1},
-    evo:{vers:'Grahyèna', niv:20}},
-  'Grahyèna':  {num:262, types:['tenebres'], rarete:'commun', carac:'mauvais', biome:'reserve',
-    base:{pv:42, atq:13, def:8, vit:4.0}, sig:{nom:'Crocs Éclair', type:'tenebres', puiss:60, cd:1.1, por:1}},
+    base:{pv:66, atq:20, def:14, vit:3.8}, sig:{nom:'Vent Violent', type:'vol', puiss:95, cd:1.3, por:3.0, zone:1.6}},
   'Nirondelle':{num:276, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'canopee',
     base:{pv:24, atq:9, def:4, vit:4.2}, sig:{nom:'Picpic', type:'vol', puiss:40, cd:0.95, por:1.2},
     evo:{vers:'Hélédelle', niv:22}},
@@ -734,10 +791,6 @@ const ESPECES = {
     base:{pv:30, atq:8, def:6, vit:3.4}, sig:{nom:'Étincelle', type:'electrik', puiss:42, cd:1.1, por:1.8}},
   'Négapi':    {num:312, types:['electrik'], rarete:'peuCommun', carac:'gentil', biome:'paturage',
     base:{pv:30, atq:8, def:6, vit:3.4}, sig:{nom:'Éclair', type:'electrik', puiss:42, cd:1.1, por:2.2}},
-  'Excelangue':{num:108, types:['normal'], rarete:'rare', carac:'foufou', biome:'reserve',
-    base:{pv:52, atq:12, def:9, vit:2.4}, sig:{nom:'Lèchouille', type:'spectre', puiss:55, cd:1.2, por:2.0}},
-  'Canarticho':{num:83, types:['normal','vol'], rarete:'epique', carac:'assure', biome:'reserve',
-    base:{pv:38, atq:15, def:8, vit:3.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:62, cd:0.95, por:1.2}},
   'Élekid':    {num:239, types:['electrik'], rarete:'epique', carac:'presse', biome:'machines',
     base:{pv:30, atq:10, def:6, vit:4.0}, sig:{nom:'Poing-Éclair', type:'electrik', puiss:48, cd:1.0, por:1},
     evo:{vers:'Élektek', niv:20}},
@@ -746,44 +799,39 @@ const ESPECES = {
     evo:{vers:'Élekable', niv:40}},
   'Élekable':  {num:466, types:['electrik'], rarete:'epique', carac:'assure', biome:'machines',
     base:{pv:58, atq:22, def:12, vit:4.7}, sig:{nom:'Poing Éclair', type:'electrik', puiss:92, cd:1.25, por:1.2}},
-
-  /* --- les starters de la plaine, tirage ultra ------------------------- */
-  'Bulbizarre':{num:1, types:['plante','poison'], rarete:'ultra', carac:'serieux', biome:'champs',
+  'Bulbizarre':{num:1, types:['plante','poison'], rarete:'epique', carac:'serieux', biome:'champs',
     base:{pv:32, atq:9, def:8, vit:2.6}, sig:{nom:'Fouet Lianes', type:'plante', puiss:45, cd:1.1, por:2.6},
     evo:{vers:'Herbizarre', niv:20}},
-  'Herbizarre':{num:2, types:['plante','poison'], rarete:'ultra', carac:'serieux', biome:'champs',
+  'Herbizarre':{num:2, types:['plante','poison'], rarete:'epique', carac:'serieux', biome:'champs',
     base:{pv:46, atq:14, def:12, vit:2.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:68, cd:1.15, por:2.8},
     evo:{vers:'Florizarre', niv:32}},
-  'Florizarre':{num:3, types:['plante','poison'], rarete:'ultra', carac:'hardi', biome:'champs',
+  'Florizarre':{num:3, types:['plante','poison'], rarete:'epique', carac:'hardi', biome:'champs',
     base:{pv:66, atq:21, def:17, vit:2.7}, sig:{nom:'Lance-Soleil', type:'plante', puiss:98, cd:1.5, por:3.2, zone:1.6}},
-  'Germignon': {num:152, types:['plante'], rarete:'ultra', carac:'gentil', biome:'champs',
+  'Germignon': {num:152, types:['plante'], rarete:'epique', carac:'gentil', biome:'champs',
     base:{pv:32, atq:8, def:9, vit:2.6}, sig:{nom:'Écras\'Face', type:'normal', puiss:44, cd:1.1, por:1.2},
     evo:{vers:'Macronium', niv:20}},
-  'Macronium': {num:153, types:['plante'], rarete:'ultra', carac:'gentil', biome:'champs',
+  'Macronium': {num:153, types:['plante'], rarete:'epique', carac:'gentil', biome:'champs',
     base:{pv:46, atq:13, def:13, vit:2.8}, sig:{nom:'Vampigraine', type:'plante', puiss:64, cd:1.2, por:2.6, vole:1},
     evo:{vers:'Méganium', niv:32}},
-  'Méganium':  {num:154, types:['plante'], rarete:'ultra', carac:'gentil', biome:'champs',
+  'Méganium':  {num:154, types:['plante'], rarete:'epique', carac:'gentil', biome:'champs',
     base:{pv:68, atq:19, def:18, vit:2.8}, sig:{nom:'Pétale Danse', type:'plante', puiss:94, cd:1.4, por:2.2, zone:1.8}},
-  'Héricendre':{num:155, types:['feu'], rarete:'ultra', carac:'timide', biome:'paturage',
+  'Héricendre':{num:155, types:['feu'], rarete:'epique', carac:'timide', biome:'paturage',
     base:{pv:30, atq:9, def:7, vit:3.2}, sig:{nom:'Flammèche', type:'feu', puiss:46, cd:1.05, por:2.0},
     evo:{vers:'Feurisson', niv:20}},
-  'Feurisson': {num:156, types:['feu'], rarete:'ultra', carac:'brave', biome:'paturage',
+  'Feurisson': {num:156, types:['feu'], rarete:'epique', carac:'brave', biome:'paturage',
     base:{pv:44, atq:14, def:10, vit:3.6}, sig:{nom:'Roue de Feu', type:'feu', puiss:70, cd:1.15, por:1.6},
     evo:{vers:'Typhlosion', niv:32}},
-  'Typhlosion': {num:157, types:['feu'], rarete:'ultra', carac:'brave', biome:'paturage',
+  'Typhlosion': {num:157, types:['feu'], rarete:'epique', carac:'brave', biome:'paturage',
     base:{pv:62, atq:22, def:14, vit:4.0}, sig:{nom:'Lance-Flammes', type:'feu', puiss:98, cd:1.3, por:2.8}},
-  'Poussifeu': {num:255, types:['feu'], rarete:'ultra', carac:'presse', biome:'cratere',
+  'Poussifeu': {num:255, types:['feu'], rarete:'epique', carac:'presse', biome:'cratere',
     base:{pv:30, atq:10, def:6, vit:3.4}, sig:{nom:'Flammèche', type:'feu', puiss:46, cd:1.0, por:1.8},
     evo:{vers:'Galifeu', niv:20}},
-  'Galifeu':   {num:256, types:['feu','combat'], rarete:'ultra', carac:'presse', biome:'cratere',
+  'Galifeu':   {num:256, types:['feu','combat'], rarete:'epique', carac:'presse', biome:'cratere',
     base:{pv:44, atq:16, def:9, vit:4.0}, sig:{nom:'Double Pied', type:'combat', puiss:72, cd:1.05, por:1.1},
     evo:{vers:'Braségali', niv:32}},
-  'Braségali': {num:257, types:['feu','combat'], rarete:'ultra', carac:'assure', biome:'cratere',
-    base:{pv:60, atq:24, def:13, vit:4.3}, sig:{nom:'Pied Brûleur', type:'feu', puiss:100, cd:1.25, por:1.2}},
-
-  /* --- le second légendaire de la plaine ------------------------------- */
-  'Suicune':   {num:245, types:['eau'], rarete:'legendaire', carac:'serieux', biome:'plaine',
-    base:{pv:74, atq:19, def:20, vit:4.4}, sig:{nom:'Blizzard', type:'glace', puiss:96, cd:1.35, por:3.0, zone:1.7, exclusive:1}},};
+  'Braségali': {num:257, types:['feu','combat'], rarete:'epique', carac:'assure', biome:'cratere',
+    base:{pv:60, atq:24, def:13, vit:4.3}, sig:{nom:'Pied Brûleur', type:'feu', puiss:100, cd:1.25, por:1.2}}
+};
 
 /* --- décrire une attaque : ce qu'elle FAIT, exactement ----------------
    Généré depuis les vraies stats — la description ne peut pas mentir. */
@@ -813,34 +861,30 @@ function decrireUlt(cle){
 
 /* --- les raretés de la machine ---------------------------------------- */
 const RARETES = [
-  {cle:'commun',     nom:'Commun',     ico:'⚪', taux:52},
-  {cle:'peuCommun',  nom:'Peu commun', ico:'🟢', taux:28},
-  {cle:'rare',       nom:'Rare',       ico:'🔵', taux:13},
-  {cle:'epique',     nom:'Épique',     ico:'🟣', taux:5},
-  {cle:'ultra',      nom:'Ultra',      ico:'🟠', taux:1.5},
-  {cle:'legendaire', nom:'Légendaire', ico:'🟡', taux:0.5}
+  {cle:'commun',     nom:'Commun',     ico:'⚪', taux:44},
+  {cle:'peuCommun',  nom:'Peu commun', ico:'🟢', taux:29},
+  {cle:'rare',       nom:'Rare',       ico:'🔵', taux:17},
+  {cle:'epique',     nom:'Épique',     ico:'🟣', taux:9},
+  {cle:'legendaire', nom:'Légendaire', ico:'🟡', taux:1}
 ];
 const TAUX_SHINY = 0.001;          // 0,1 % — et ses stats sont ×1,5
 const BONUS_SHINY = 1.5;
 
 /* ce que la machine du portail Plaine peut sortir (les bases des lignées) */
 const PORTAIL_PLAINE = [
-  /* le biome 🌾 La Grande Plaine, 30 tirables — les évolutions montent en rareté */
-  'Rattata', 'Zigzaton', 'Fouinette', 'Roucool', 'Piafabec',
-  'Abo', 'Nidoran♂', 'Nidoran♀',                                     /* communs */
-  'Rattatac', 'Linéon', 'Fouinar', 'Roucoups', 'Rapasdepic',
-  'Arbok', 'Doduo', 'Miaouss',                                       /* peu communs */
-  'Roucarnage', 'Dodrio', 'Persian', 'Girafarig', 'Écrémeuh', 'Ptiravi',   /* rares */
-  'Nidoking', 'Nidoqueen', 'Kangourex', 'Évoli', 'Leveinard',        /* épiques */
-  'Tauros', 'Ronflex',                                               /* ultras */
-  'Suicune'                                                          /* légendaire */
-];                                                        /* légendaire */
-
+  /* 🌾 La Grande Plaine — 25 FAMILLES. Une famille = un tirage : on
+     obtient le chef de famille et on le fait évoluer soi-même. */
+  'Rattata', 'Zigzaton', 'Fouinette', 'Roucool', 'Piafabec', 'Medhyèna', /* communs */
+  'Abo', 'Nidoran♂', 'Nidoran♀', 'Doduo', 'Miaouss', 'Soporifik', /* peu communs */
+  'Girafarig', 'Écrémeuh', 'Ptiravi', 'Excelangue', 'Canarticho', /* rares */
+  'Kangourex', 'Évoli', 'Tauros', 'Tauros de Paldea',        /* épiques */
+  'Suicune', 'Jirachi', 'Tokotoro', 'Électhor de Galar',     /* légendaires */
+];
 /* --- les niveaux ------------------------------------------------------ */
 /* plus c'est rare, plus c'est fort — mais DOUCEMENT : un commun bien
    monté reste jouable, la rareté donne l'avantage, pas la victoire */
 const BONUS_RARETE = {commun:1, peuCommun:1.05, rare:1.12,
-                      epique:1.18, ultra:1.25, legendaire:1.38};
+                      epique:1.22, legendaire:1.38};
 const NIVEAU_MAX = 60;
 const xpPour = niv => Math.round(14 * Math.pow(niv, 1.6));
 const CROISSANCE = 0.07;           // +7 % de stats par niveau
@@ -927,6 +971,13 @@ function indexSprites(){
 }
 async function dossierSprite(nom){
   const esp = ESPECES[nom];
+  /* les formes régionales / variantes vivent dans un sous-dossier :
+     'Tauros de Paldea' → 0128/0001. esp.sprite le dit explicitement. */
+  if(esp && esp.sprite){
+    if(window.RESSOURCES) return RESSOURCES.sprites[esp.sprite] ? esp.sprite
+                               : String(esp.num).padStart(4, '0');
+    return esp.sprite;
+  }
   const num = esp && esp.num ? String(esp.num).padStart(4, '0') : null;
   if(window.RESSOURCES && num) return num;     // tout est embarqué par numéro
   const dispo = await indexSprites();
@@ -949,6 +1000,12 @@ const cachePortrait = new Map();
 function urlPortrait(espece){
   if(cachePortrait.has(espece)) return cachePortrait.get(espece);
   const esp = ESPECES[espece];
+  if(esp && esp.sprite){
+    const r = {url: BASE + 'sprites/' + esp.sprite + '/Portraits/Normal.png',
+               secours: BASE + 'sprites/' + String(esp.num).padStart(4,'0') + '/Portraits/Normal.png'};
+    cachePortrait.set(espece, r);
+    return r;
+  }
   if(window.RESSOURCES && esp && esp.num){
     const r = {url: RESSOURCES.portraits[String(esp.num).padStart(4, '0')] || '', secours: null};
     cachePortrait.set(espece, r);
@@ -1854,7 +1911,12 @@ function degatsD(att, cible, coup){
   const eff = efficacite(coup.type, cible.def.types);
   const humeur = 1;                     // plus de jauges : à armes égales
   const rage = att.carognarde ? 1 : 1;
-  let d = att.atq * (coup.puiss / (att.camp === 'equipe' ? 38 : 58)) * eff * humeur * entre(0.9, 1.1);
+  /* les soigneurs purs n'ont PAS de puissance : quand personne n'est
+     blessé ils tapent quand même, mais du bout des pattes. Et on ne
+     laisse JAMAIS passer un NaN : une cible à PV NaN ne meurt jamais. */
+  const puiss = coup.puiss != null ? coup.puiss
+              : Math.max(20, Math.round((coup.soin || 0) * 0.9));
+  let d = att.atq * (puiss / (att.camp === 'equipe' ? 38 : 58)) * eff * humeur * entre(0.9, 1.1);
   if(att.def.carac === 'mauvais') d *= 1 + (1 - att.pv / att.pvMax);      // la rage
   if(att.def.carac === 'relax') d *= 2.1;                                 // rare mais lourd
   if(att.camp === 'ennemi' && att.boost > 0) d *= 1.3;   // le cri du chef de meute
@@ -1863,6 +1925,7 @@ function degatsD(att, cible, coup){
      un Pokémon en pleine forme : rater l'esquive doit punir, pas rayer */
   if(coup.estUlt && att.camp === 'ennemi' && cible.camp === 'equipe')
     d = Math.min(d, cible.pvMax * 0.55);
+  if(!isFinite(d)) d = 1;
   return {d, eff};
 }
 function frapperD(att, cible, coup, opts){
