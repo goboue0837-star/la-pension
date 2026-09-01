@@ -2661,8 +2661,7 @@ async function majPension(){
     else if(p.niveau < NIVEAU_MAX && P.sacs.sous >= coutNiveau(p.niveau))
       alertes.push('⬆ ' + p.espece + ' peut monter (' + coutNiveau(p.niveau) + ' 🪙)');
   }
-  if(P.avancee.tutoFini && P.invasion && P.invasion.zone && P.invasion.zone.jauge > 0
-     && !P.invasion.zone.due)
+  if(P.invasion && P.invasion.zone && P.invasion.zone.jauge > 0 && !P.invasion.zone.due)
     alertes.unshift('🌋 Colère du Pré : ' + P.invasion.zone.jauge + '%');
   const b = $('#coupDoeil');
   if(b) b.textContent = alertes.length ? alertes.slice(0, 3).join(' · ')
@@ -3022,7 +3021,7 @@ function majEquipe(){
   const cz = $('#colereZone');
   if(cz){
     const z = (P.invasion && P.invasion.zone) || {jauge: 0, due: false};
-    cz.hidden = !P.avancee.tutoFini;
+    cz.hidden = false;
     $('#colereBarre').style.width = z.jauge + '%';
     $('#colerePct').textContent = z.due ? '🌋 LA ZONE ATTAQUE !' : '🌋 ' + z.jauge + '%';
   }
@@ -3038,7 +3037,7 @@ function majEquipe(){
     const dj = (P.invasion && P.invasion.donjons && P.invasion.donjons[d.cle]) || null;
     const jv = dj ? dj.jauge : 0;
     l.innerHTML = '<span>' + (fait ? '✅ ' : ouvert ? '▶ ' : '🔒 ') + (i + 1) + ' · ' + d.nom
-      + (ouvert && P.avancee.tutoFini
+      + (ouvert
         ? '<span class="vengBloc">'
           + '<span class="vengBarre"><i style="width:' + jv + '%"></i></span>'
           + '<span class="vengPct">' + (dj && dj.due ? '🔥 REVANCHE !' : '🔥 ' + jv + '%') + '</span>'
@@ -3152,7 +3151,6 @@ function estDeLaPlaine(espece){
      quand une revanche de donjon est repoussée → l'assaut de la zone
      ENTIÈRE, l'événement rare. */
 function chargerVengeance(cle){
-  if(!P.avancee.tutoFini) return [];
   const lignes = [];
   const inv = P.invasion;
   const dj = inv.donjons[cle] || (inv.donjons[cle] = {jauge: 0, due: false});
