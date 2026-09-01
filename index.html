@@ -1237,8 +1237,8 @@ function construireCarte(def){
   const rects = [];
   for(let i = 0; i < n; i++){
     const boss = i === n - 1;
-    const w = boss ? 13 : (8 + ((rngD() * 4) | 0));
-    const h = boss ? 10 : (6 + ((rngD() * 3) | 0));
+    const w = boss ? (def.final ? 18 : 13) : (8 + ((rngD() * 4) | 0));
+    const h = boss ? (def.final ? 15 : 10) : (6 + ((rngD() * 3) | 0));
     rects.push({w, h, boss});
   }
   const H = rects.reduce((s, r) => s + r.h, 0) + (n - 1) * 8 + 4;
@@ -1379,6 +1379,10 @@ async function creerEnt(espece, camp, x, y, niveau, extra){
       e.tRode = rngD() * 2;
     }
   }
+  if(camp === 'ennemi' && !e.boss && D.durete && D.durete !== 1){
+    e.pv = e.pvMax = Math.round(e.pvMax * D.durete);
+    e.atq *= 1 + (D.durete - 1) * 0.2;
+  }
   if(e.elite){ e.pv = e.pvMax = Math.round(e.pvMax * 3.2); e.atq *= 2.1;
                e.defs *= 1.6; e.taille = 1.18; }
   if(e.boss){
@@ -1398,7 +1402,7 @@ async function lancerDonjon(def, equipe){
   rngD = Alea((Date.now() % 100000) | 0);
   const c = construireCarte(def);
   Object.assign(D, {
-    actif: false, peuplement: false, def, carte: c.carte, W: c.W, H: c.H,
+    actif: false, peuplement: false, durete: 1, def, carte: c.carte, W: c.W, H: c.H,
     salles: c.salles, ents: [], sols: [], fx: [], flottants: [],
     salleIdx: 0, phase: 'combat', tActuel: 0, secousse: 0, tues: 0,
     vague: 0, resultat: null, butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
@@ -1446,8 +1450,8 @@ async function lancerInvasion(def, defenseurs, positions){
   Object.assign(D, {
     actif: false, peuplement: false, invasion: true, def, carte, W, H,
     salles: [salle], ents: [], sols: [], fx: [], flottants: [], salleIdx: 0,
-    phase: 'vagues', tActuel: 0, secousse: 0.6, tues: 0, vague: 0,
-    vaguesTotal: def.vagues, resultat: null, breches, ralliement: null,
+    phase: 'assaut', tActuel: 0, secousse: 0.6, tues: 0, vague: 0,
+    resultat: null, breches, ralliement: null, reserve: [],
     butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
   });
   chargerVfx();
@@ -1476,7 +1480,9 @@ async function lancerInvasion(def, defenseurs, positions){
     sig: {cd: 9999, puiss: 0, type: 'normal', por: 0}
   });
   D.cam.x = W / 2; D.cam.y = H / 2;
-  D.enAttente = 2.5;
+  ouvrirAssaut(def.reserve || [], {cap: def.cap || 12, cadence: def.cadence || 1.5,
+                                   parSalve: def.parSalve || 2, delai: 2.2,
+                                   durete: def.durete || 1});
   banniereD('⚔ ' + def.nom + ' — protège le CRISTAL !', '#ef6b6b');
   D.actif = true;
 }
@@ -1484,8 +1490,23 @@ async function lancerInvasion(def, defenseurs, positions){
 /* la horde d'une salle : plein de sbires faibles, l'élite en plus haut */
 async function peuplerSalle(i){
   const s = D.salles[i], def = D.def;
-  if(s.boss){ D.phase = 'vagues'; D.vague = 0; D.vaguesTotal = def.vagues || 3;
-              D.enAttente = 0.8; return; }
+  if(s.boss){
+    if(def.final){
+      /* LE DONJON FINAL : une grande salle, un flot ininterrompu, et le
+         boss qui entre en dernier — la vraie épreuve de la zone.
+         Ici tu n'as que ton trio : le flot se cale sur lui. */
+      const nEq = Math.max(1, D.ents.filter(e => e.camp === 'equipe' && !e.ko).length);
+      const tot = 16 + nEq * 8 + (def.salles || 3) * 2;
+      banniereD('⚠ La grande salle — ils arrivent sans fin !', '#ef6b6b');
+      D.secousse = 0.6;
+      ouvrirAssaut(reserveDe(def.sbires, def.elites, def.niv, tot, {montee: 3}),
+                   {cap: Math.max(5, nEq * 2), cadence: 1.25, parSalve: 2,
+                    delai: 1.4, durete: 1.35});
+      return;
+    }
+    D.phase = 'vagues'; D.vague = 0; D.vaguesTotal = def.vagues || 3;
+    D.enAttente = 0.8; return;
+  }
   const n = (def.horde || 5) + i + ((rngD() * 2) | 0);
   const promesses = [];
   for(let k = 0; k < n; k++){
@@ -1496,6 +1517,121 @@ async function peuplerSalle(i){
       def.niv + (elite ? 2 : 0) + ((rngD() * 2) | 0), {elite}));
   }
   (await Promise.all(promesses)).forEach(e => D.ents.push(e));
+}
+
+
+
+/* fabrique un stock d'assaut : surtout des sbires, des élites qui se
+   densifient vers la fin, et un palier annoncé à l'entrée du lot */
+function reserveDe(sbires, elites, niv, total, opts){
+  const o = opts || {};
+  const lot = [];
+  for(let i = 0; i < total; i++){
+    const avance = i / Math.max(1, total - 1);
+    const chanceElite = (elites && elites.length)
+      ? (o.elitesDebut !== undefined ? o.elitesDebut : 0.05) + avance * 0.22 : 0;
+    const elite = rngD() < chanceElite;
+    lot.push({
+      espece: elite ? parmi(elites) : parmi(sbires),
+      niv: niv + (elite ? 2 : 0) + ((rngD() * 2) | 0) + Math.round(avance * (o.montee || 2)),
+      elite,
+      pilleur: !elite && rngD() < 0.16
+    });
+  }
+  if(o.palier && lot.length) lot[0].palier = o.palier;
+  return lot;
+}
+
+/* --- L'ASSAUT : un FLUX CONTINU, pas des vagues numérotées -------------
+   Un stock de Pokémon est constitué à l'avance (tant de telle espèce,
+   tant de telle autre). Ils entrent au compte-gouttes, sans jamais
+   s'arrêter, tant que le stock n'est pas vide. Le BOSS est le dernier à
+   entrer — et là, tout ce qui reste debout se bat avec lui. */
+function ouvrirAssaut(reserve, opts){
+  const o = opts || {};
+  D.phase = 'assaut';
+  D.reserve = reserve;
+  D.assautTotal = reserve.length;
+  D.capVivants = o.cap || 12;
+  D.cadence = o.cadence || 1.6;
+  D.parSalve = o.parSalve || 2;
+  D.tSpawn = o.delai !== undefined ? o.delai : 1.2;
+  D.palierVu = null;
+  D.bossEnRoute = 0;
+  D.durete = o.durete || 1;
+}
+function pointsEntree(){
+  if(D.breches) return D.breches;
+  const s = D.salles[D.salles.length - 1];
+  return [{x: s.cx, y: s.y + 1}, {x: s.x + 2, y: s.y + 1.5}, {x: s.x + s.w - 2, y: s.y + 1.5}];
+}
+async function goutteAssaut(){
+  const pts = pointsEntree();
+  const n = Math.min(D.lot || D.parSalve, D.reserve.length);
+  const lot = D.reserve.splice(0, n);
+  const promesses = [];
+  for(const m of lot){
+    const pt = parmi(pts);
+    promesses.push(creerEnt(m.espece, 'ennemi',
+      pt.x + entre(-1.4, 1.4), pt.y + entre(-0.7, 0.7), m.niv,
+      {elite: m.elite, eveille: true, pilleur: !!m.pilleur}));
+  }
+  (await Promise.all(promesses)).forEach(e => { e.flash = 0.25; D.ents.push(e); });
+}
+function tickAssaut(dt){
+  if(!D.reserve) D.reserve = [];
+  const restants = D.ents.filter(e => e.camp === 'ennemi' && !e.ko);
+  /* le palier annoncé (invasion de zone : donjon 1, puis 2, puis 3…) */
+  const prochain = D.reserve[0];
+  if(prochain && prochain.palier && prochain.palier !== D.palierVu){
+    D.palierVu = prochain.palier;
+    banniereD(prochain.palier, '#9fc4f2');
+    D.secousse = 0.35;
+  }
+  if(D.reserve.length){
+    D.tSpawn -= dt;
+    const capNow = D.reserve.length > D.assautTotal * 0.22
+      ? D.capVivants : Math.max(2, Math.ceil(D.capVivants * 0.45));
+    if(D.tSpawn <= 0 && restants.length < capNow && !D.peuplement){
+      D.tSpawn = D.cadence;
+      /* on remplit vraiment le terrain : le flot ne faiblit jamais */
+      D.lot = Math.max(1, Math.min(capNow - restants.length, D.parSalve * 2));
+      D.peuplement = true;
+      goutteAssaut().then(() => { D.peuplement = false; });
+    }
+    return;
+  }
+  /* stock vide : LE BOSS entre en scène, en tout dernier */
+  if(!D.bossEnRoute){
+    D.bossEnRoute = 1;
+    banniereD('Le sol tremble…', '#ef6b6b');
+    D.secousse = 0.7;
+    D.tSpawn = 1.8;
+    return;
+  }
+  if(D.bossEnRoute === 1){
+    D.tSpawn -= dt;
+    if(D.tSpawn <= 0){
+      D.bossEnRoute = 2;
+      /* LE DERNIER ROUND : le cristal s'embrase (invasion) ou l'équipe
+         se redresse (donjon) — dans les deux cas, on repart au complet */
+      const cr = D.ents.find(e => e.cristal && !e.ko);
+      const part = cr ? 0.5 : 0.4;
+      banniereD(cr ? '💎 Le cristal s\'embrase — dernier round !'
+                   : '✊ Un dernier souffle — le voilà !', '#8fd8ff');
+      for(const e of D.ents)
+        if(e.camp === 'equipe' && !e.ko && !e.cristal){
+          const soin = e.pvMax * part;
+          e.pv = Math.min(e.pvMax, e.pv + soin);
+          e.charge = Math.min(100, (e.charge || 0) + (cr ? 25 : 20));
+          e.flash = 0.3;
+          flotterD(e, '+' + Math.round(soin), '#8fd8ff');
+          poserFxD(e.x, e.y, 'fee');
+        }
+      D.peuplement = true;
+      lancerBoss().then(() => { D.peuplement = false; });
+    }
+  }
 }
 
 /* une vague de la salle du boss */
@@ -1545,7 +1681,8 @@ async function lancerBoss(){
   const b = def.boss;
   banniereD('⚠ ' + (b.titre || b.espece + ' arrive !'), '#ef6b6b');
   D.secousse = 0.8;
-  const e = await creerEnt(b.espece, 'ennemi', s.cx, s.y + 2, b.niv,
+  const entree = D.invasion ? D.breches[0] : {x: s.cx, y: s.y + 2};
+  const e = await creerEnt(b.espece, 'ennemi', entree.x, entree.y, b.niv,
     {boss: true, taille: b.taille || 1.4, titre: b.titre, force: b.force,
      ultBoss: b.ult || null});
   e.flash = 0.5;
@@ -1557,7 +1694,7 @@ async function lancerBoss(){
   for(let i = 0; i < (b.escorte || []).length; i++){
     const g = b.escorte[i];
     const garde = await creerEnt(g.espece, 'ennemi',
-      s.cx - 1.5 + i * 3, s.y + 3, g.niv || Math.max(2, b.niv - 4),
+      entree.x - 1.5 + i * 3, entree.y + (D.invasion ? 0.8 : 1), g.niv || Math.max(2, b.niv - 4),
       {elite: true, eveille: true});
     garde.flash = 0.35;
     D.ents.push(garde);
@@ -2186,6 +2323,24 @@ function tickDonjon(dt){
   /* le cristal brisé = la défaite immédiate */
   if(D.invasion){
     const cr = D.ents.find(e => e.cristal);
+    if(cr && !cr.ko && cr.pv > cr.pvMax * 0.25){
+      for(const e of D.ents){
+        if(e.camp !== 'equipe' || e.cristal || !e.ko) continue;
+        if(e.renait === undefined) e.renait = 11;
+        e.renait -= dt;
+        if(e.renait <= 0){
+          e.renait = undefined;
+          e.ko = false; e.mortT = 0;
+          e.pv = Math.round(e.pvMax * 0.4);
+          e.x = cr.x + entre(-1.1, 1.1); e.y = cr.y + entre(0.6, 1.4);
+          e.anim = 'Idle'; e.animT = 0; e.verrou = 0; e.cd = 0.8;
+          e.flash = 0.4; e.cible = null;
+          cr.pv = Math.max(1, cr.pv - cr.pvMax * 0.04);
+          flotterD(e, 'debout !', '#8fd8ff');
+          poserFxD(e.x, e.y, 'fee');
+        }
+      }
+    }
     if(cr && cr.ko){
       banniereD('💥 LE CRISTAL EST BRISÉ !!', '#ef6b6b');
       D.secousse = 0.9;
@@ -2193,7 +2348,11 @@ function tickDonjon(dt){
     }
   }
   const vivants = D.ents.filter(e => e.camp === 'equipe' && !e.ko && !e.cristal);
-  if(!vivants.length){ finDonjon(false); return; }
+  if(!vivants.length){
+    const enAttente = D.invasion && D.ents.some(e => e.camp === 'equipe' && e.ko
+      && !e.cristal && e.renait !== undefined && e.renait > 0);
+    if(!enAttente){ finDonjon(false); return; }
+  }
   const restants = D.ents.filter(e => e.camp === 'ennemi' && !e.ko);
 
   if(D.peuplement){ /* des renforts arrivent : on ne juge pas la salle vide */ }
@@ -2218,6 +2377,8 @@ function tickDonjon(dt){
         if(!D.salles[D.salleIdx].boss) D.phase = 'combat';
       });
     }
+  } else if(D.phase === 'assaut'){
+    tickAssaut(dt);
   } else if(D.phase === 'vagues'){
     if(D.enAttente > 0){
       D.enAttente -= dt;
@@ -3122,13 +3283,22 @@ function majPupitre(){
   });
   $('#dTitre').textContent = D.def ? D.def.nom : '';
   const crD = D.invasion ? D.ents.find(e => e.cristal) : null;
-  $('#dInfo').textContent = D.invasion
-    ? ('🛡 Vague ' + D.vague + '/' + D.vaguesTotal
-       + (crD ? ' · 💎 ' + Math.max(0, Math.round(crD.pv / crD.pvMax * 100)) + '%' : '')
-       + (D.phase === 'boss' ? ' — 👑 LE VENGEUR !' : ''))
-    : D.phase === 'vagues' ? ('Vague ' + D.vague + '/' + D.vaguesTotal)
-    : D.phase === 'boss' ? '👑 LE BOSS !'
-    : 'salle ' + Math.min(D.salleIdx + 1, D.salles.length) + '/' + D.salles.length;
+  const cristalTxt = crD ? ' · 💎 ' + Math.max(0, Math.round(crD.pv / crD.pvMax * 100)) + '%' : '';
+  let info;
+  if(D.phase === 'assaut'){
+    const reste = D.reserve.length;
+    const passe = D.assautTotal - reste;
+    info = reste
+      ? '⚔ Assaut · ' + passe + '/' + D.assautTotal + ' repoussés' + cristalTxt
+      : '👑 LE BOSS ARRIVE…' + cristalTxt;
+  } else if(D.phase === 'boss'){
+    info = (D.invasion ? '👑 LE VENGEUR !' : '👑 LE BOSS !') + cristalTxt;
+  } else if(D.phase === 'vagues'){
+    info = 'Vague ' + D.vague + '/' + D.vaguesTotal;
+  } else {
+    info = 'salle ' + Math.min(D.salleIdx + 1, D.salles.length) + '/' + D.salles.length;
+  }
+  $('#dInfo').textContent = info;
   $('#dSous').textContent = '🪙 +' + D.butin.sous + '  ⚔ ' + D.tues;
 }
 
@@ -3268,28 +3438,50 @@ async function lancerModeInvasion(){
   chargerDecorPension();
   const moy = defenseurs.reduce((s, p) => s + p.niveau, 0) / defenseurs.length;
   const niv = Math.max(3, Math.round(moy) - 2);
+  const nD = defenseurs.length;
   let def;
   if(type === 'zone'){
+    /* L'ASSAUT DE LA ZONE ENTIÈRE : un CUMUL. Les rôdeurs du donjon 1
+       ouvrent le bal, puis ceux du 2, du 3… jusqu'au plus haut donjon
+       que tu as ouvert — et c'est SON boss qui ferme la marche. */
     const src = INVASIONS.plaine;
+    const haut = Math.min(DONJONS.length - 1, Math.max(0, P.avancee.tuto - 1));
+    const reserve = [];
+    for(let i = 0; i <= haut; i++){
+      const d = DONJONS[i];
+      const part = 13 + i * 4 + Math.round(nD * 1.8);
+      reserve.push(...reserveDe(d.sbires, d.elites,
+        Math.max(3, niv - (haut - i) * 2), part,
+        {palier: (i === 0 ? '⚔ ' : '') + d.nom + ' déferle !', montee: 1}));
+    }
+    const bossSrc = DONJONS[haut].boss;
     def = {
-      type, cle: null, nom: src.nom,
-      sbires: src.sbires, elites: src.elites, miniBoss: src.miniBoss,
-      niv, vagues: 8 + Math.min(3, P.invasion.victoires),
-      cristalPv: Math.round(150 + moy * 12), cristalDef: Math.round(moy * 0.8),
+      type, cle: null, nom: src.nom, reserve, niv,
+      sbires: DONJONS[haut].sbires, elites: DONJONS[haut].elites,
+      cap: Math.max(8, Math.min(20, Math.round(nD * 1.6))), cadence: 0.9, parSalve: 4, durete: 1.9,
+      cristalPv: Math.round(320 + moy * 22), cristalDef: Math.round(moy * 1.2),
       recTickets: 4,
-      boss: Object.assign({}, src.boss,
-        {niv: niv + 5, force: 0.65 + P.invasion.victoires * 0.08})
+      boss: Object.assign({}, bossSrc, {
+        niv: niv + 7, force: 0.75 + P.invasion.victoires * 0.08,
+        taille: (bossSrc.taille || 1.4) + 0.25,
+        titre: (bossSrc.titre || bossSrc.espece) + ' — LE VENGEUR DU PRÉ',
+        escorte: bossSrc.escorte || src.boss.escorte
+      })
     };
   } else {
+    /* LA REVANCHE D'UN DONJON : ses habitants déferlent sans discontinuer,
+       puis son boss entre en dernier. */
     const d = DONJONS.find(o => o.cle === cle);
+    const total = 42 + Math.round(nD * 6.5) + (d.salles || 3) * 4;
     def = {
-      type, cle, nom: 'Revanche — ' + d.nom,
+      type, cle, nom: 'Revanche — ' + d.nom, niv,
       sbires: d.sbires, elites: d.elites,
-      niv, vagues: 4,
-      cristalPv: Math.round(150 + moy * 12), cristalDef: Math.round(moy * 0.8),
+      reserve: reserveDe(d.sbires, d.elites, niv, total, {montee: 3}),
+      cap: Math.max(7, Math.min(16, Math.round(nD * 1.4))), cadence: 1.05, parSalve: 3, durete: 1.9,
+      cristalPv: Math.round(260 + moy * 18), cristalDef: Math.round(moy * 1.1),
       recTickets: 1,
       boss: Object.assign({}, d.boss,
-        {niv: niv + 4, force: 0.55 + P.invasion.victoires * 0.05,
+        {niv: niv + 5, force: 0.6 + P.invasion.victoires * 0.05,
          titre: (d.boss.titre || d.boss.espece) + ', le Revanchard'})
     };
   }
