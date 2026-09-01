@@ -623,10 +623,10 @@ const ESPECES = {
     base:{pv:44, atq:15, def:8, vit:4.3}, sig:{nom:'Éclair', type:'electrik', puiss:65, cd:1.0, por:2.4}},
   'Pyroli':    {num:136, types:['feu'], rarete:'epique', carac:'mauvais', biome:'plaine',
     base:{pv:48, atq:17, def:8, vit:3.6}, sig:{nom:'Flammèche', type:'feu', puiss:70, cd:1.1, por:1.8}},
-  'Ptiravi':   {num:440, types:['normal'], rarete:'epique', carac:'gentil', biome:'plaine',
+  'Ptiravi':   {num:440, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
     base:{pv:40, atq:4, def:4, vit:2.6}, sig:{nom:'Copieuse', type:'normal', puiss:25, cd:1.2, por:1, soin:14},
     evo:{vers:'Leveinard', niv:20}},
-  'Leveinard': {num:113, types:['normal'], rarete:'epique', carac:'gentil', biome:'plaine',
+  'Leveinard': {num:113, types:['normal'], rarete:'rare', carac:'gentil', biome:'plaine',
     base:{pv:90, atq:5, def:5, vit:2.7}, sig:{nom:'Métronome', type:'normal', puiss:30, cd:1.2, por:1.6, soin:24},
     evo:{vers:'Leuphorie', niv:30}},
   'Leuphorie': {num:242, types:['normal'], rarete:'epique', carac:'gentil', biome:'plaine',
@@ -691,8 +691,99 @@ const ESPECES = {
 
   /* ===== légendaire ===== */
   'Shaymin':   {num:492, types:['plante'], rarete:'legendaire', carac:'serieux', biome:'plaine',
-    base:{pv:66, atq:20, def:14, vit:3.8}, sig:{nom:'Vent Violent', type:'vol', puiss:95, cd:1.3, por:3.0, zone:1.6, exclusive:1}}
-};
+    base:{pv:66, atq:20, def:14, vit:3.8}, sig:{nom:'Vent Violent', type:'vol', puiss:95, cd:1.3, por:3.0, zone:1.6, exclusive:1}},
+
+  /* --- les deux derniers de la Grande Plaine --------------------------- */
+  'Miaouss':   {num:52, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
+    base:{pv:26, atq:8, def:5, vit:3.5}, sig:{nom:'Griffe', type:'normal', puiss:40, cd:1.0, por:1},
+    evo:{vers:'Persian', niv:28}},
+  'Persian':   {num:53, types:['normal'], rarete:'peuCommun', carac:'foufou', biome:'plaine',
+    base:{pv:40, atq:14, def:8, vit:4.3}, sig:{nom:'Vive-Attaque', type:'normal', puiss:62, cd:0.95, por:1}},
+
+  /* --- le portail Plaine revu : les habitués des routes ---------------- */
+  'Medhyèna':  {num:261, types:['tenebres'], rarete:'commun', carac:'presse', biome:'reserve',
+    base:{pv:26, atq:8, def:5, vit:3.6}, sig:{nom:'Morsure', type:'tenebres', puiss:38, cd:1.0, por:1},
+    evo:{vers:'Grahyèna', niv:20}},
+  'Grahyèna':  {num:262, types:['tenebres'], rarete:'commun', carac:'mauvais', biome:'reserve',
+    base:{pv:42, atq:13, def:8, vit:4.0}, sig:{nom:'Crocs Éclair', type:'tenebres', puiss:60, cd:1.1, por:1}},
+  'Nirondelle':{num:276, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'canopee',
+    base:{pv:24, atq:9, def:4, vit:4.2}, sig:{nom:'Picpic', type:'vol', puiss:40, cd:0.95, por:1.2},
+    evo:{vers:'Hélédelle', niv:22}},
+  'Hélédelle': {num:277, types:['normal','vol'], rarete:'peuCommun', carac:'presse', biome:'canopee',
+    base:{pv:40, atq:15, def:7, vit:4.8}, sig:{nom:'Cru-Ailes', type:'vol', puiss:68, cd:1.05, por:1.3}},
+  'Tournegrin':{num:191, types:['plante'], rarete:'commun', carac:'timide', biome:'champs',
+    base:{pv:22, atq:6, def:5, vit:2.2}, sig:{nom:'Fouet Lianes', type:'plante', puiss:35, cd:1.15, por:2.6},
+    evo:{vers:'Héliatronc', niv:20}},
+  'Héliatronc':{num:192, types:['plante'], rarete:'commun', carac:'serieux', biome:'champs',
+    base:{pv:40, atq:14, def:8, vit:2.4}, sig:{nom:'Rayon Solaire', type:'plante', puiss:72, cd:1.5, por:3.2}},
+  'Gloupti':   {num:316, types:['poison'], rarete:'commun', carac:'relax', biome:'reserve',
+    base:{pv:34, atq:6, def:6, vit:1.9}, sig:{nom:'Acide', type:'poison', puiss:36, cd:1.2, por:2.2},
+    evo:{vers:'Avaltout', niv:26}},
+  'Avaltout':  {num:317, types:['poison'], rarete:'commun', carac:'relax', biome:'reserve',
+    base:{pv:56, atq:12, def:10, vit:2.0}, sig:{nom:'Bomb-Beurk', type:'poison', puiss:70, cd:1.4, por:2.4, zone:1.4}},
+  'Mangriff':  {num:335, types:['normal'], rarete:'rare', carac:'mauvais', biome:'contreforts',
+    base:{pv:44, atq:15, def:8, vit:4.0}, sig:{nom:'Tranche', type:'normal', puiss:64, cd:1.0, por:1.1}},
+  'Séviper':   {num:336, types:['poison'], rarete:'rare', carac:'mauvais', biome:'reserve',
+    base:{pv:46, atq:16, def:7, vit:3.6}, sig:{nom:'Dard-Venin', type:'poison', puiss:66, cd:1.05, por:1.3}},
+  'Dynavolt':  {num:309, types:['electrik'], rarete:'peuCommun', carac:'presse', biome:'paturage',
+    base:{pv:26, atq:8, def:5, vit:4.0}, sig:{nom:'Étincelle', type:'electrik', puiss:40, cd:1.0, por:1.4},
+    evo:{vers:'Élecsprint', niv:26}},
+  'Élecsprint':{num:310, types:['electrik'], rarete:'peuCommun', carac:'presse', biome:'paturage',
+    base:{pv:42, atq:15, def:8, vit:4.9}, sig:{nom:'Cage-Éclair', type:'electrik', puiss:70, cd:1.1, por:1.6}},
+  'Posipi':    {num:311, types:['electrik'], rarete:'peuCommun', carac:'gentil', biome:'paturage',
+    base:{pv:30, atq:8, def:6, vit:3.4}, sig:{nom:'Étincelle', type:'electrik', puiss:42, cd:1.1, por:1.8}},
+  'Négapi':    {num:312, types:['electrik'], rarete:'peuCommun', carac:'gentil', biome:'paturage',
+    base:{pv:30, atq:8, def:6, vit:3.4}, sig:{nom:'Éclair', type:'electrik', puiss:42, cd:1.1, por:2.2}},
+  'Excelangue':{num:108, types:['normal'], rarete:'rare', carac:'foufou', biome:'reserve',
+    base:{pv:52, atq:12, def:9, vit:2.4}, sig:{nom:'Lèchouille', type:'spectre', puiss:55, cd:1.2, por:2.0}},
+  'Canarticho':{num:83, types:['normal','vol'], rarete:'epique', carac:'assure', biome:'reserve',
+    base:{pv:38, atq:15, def:8, vit:3.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:62, cd:0.95, por:1.2}},
+  'Élekid':    {num:239, types:['electrik'], rarete:'epique', carac:'presse', biome:'machines',
+    base:{pv:30, atq:10, def:6, vit:4.0}, sig:{nom:'Poing-Éclair', type:'electrik', puiss:48, cd:1.0, por:1},
+    evo:{vers:'Élektek', niv:20}},
+  'Élektek':   {num:125, types:['electrik'], rarete:'epique', carac:'presse', biome:'machines',
+    base:{pv:44, atq:16, def:9, vit:4.6}, sig:{nom:'Tonnerre', type:'electrik', puiss:76, cd:1.2, por:2.4},
+    evo:{vers:'Élekable', niv:40}},
+  'Élekable':  {num:466, types:['electrik'], rarete:'epique', carac:'assure', biome:'machines',
+    base:{pv:58, atq:22, def:12, vit:4.7}, sig:{nom:'Poing Éclair', type:'electrik', puiss:92, cd:1.25, por:1.2}},
+
+  /* --- les starters de la plaine, tirage ultra ------------------------- */
+  'Bulbizarre':{num:1, types:['plante','poison'], rarete:'ultra', carac:'serieux', biome:'champs',
+    base:{pv:32, atq:9, def:8, vit:2.6}, sig:{nom:'Fouet Lianes', type:'plante', puiss:45, cd:1.1, por:2.6},
+    evo:{vers:'Herbizarre', niv:20}},
+  'Herbizarre':{num:2, types:['plante','poison'], rarete:'ultra', carac:'serieux', biome:'champs',
+    base:{pv:46, atq:14, def:12, vit:2.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:68, cd:1.15, por:2.8},
+    evo:{vers:'Florizarre', niv:32}},
+  'Florizarre':{num:3, types:['plante','poison'], rarete:'ultra', carac:'hardi', biome:'champs',
+    base:{pv:66, atq:21, def:17, vit:2.7}, sig:{nom:'Lance-Soleil', type:'plante', puiss:98, cd:1.5, por:3.2, zone:1.6}},
+  'Germignon': {num:152, types:['plante'], rarete:'ultra', carac:'gentil', biome:'champs',
+    base:{pv:32, atq:8, def:9, vit:2.6}, sig:{nom:'Écras\'Face', type:'normal', puiss:44, cd:1.1, por:1.2},
+    evo:{vers:'Macronium', niv:20}},
+  'Macronium': {num:153, types:['plante'], rarete:'ultra', carac:'gentil', biome:'champs',
+    base:{pv:46, atq:13, def:13, vit:2.8}, sig:{nom:'Vampigraine', type:'plante', puiss:64, cd:1.2, por:2.6, vole:1},
+    evo:{vers:'Méganium', niv:32}},
+  'Méganium':  {num:154, types:['plante'], rarete:'ultra', carac:'gentil', biome:'champs',
+    base:{pv:68, atq:19, def:18, vit:2.8}, sig:{nom:'Pétale Danse', type:'plante', puiss:94, cd:1.4, por:2.2, zone:1.8}},
+  'Héricendre':{num:155, types:['feu'], rarete:'ultra', carac:'timide', biome:'paturage',
+    base:{pv:30, atq:9, def:7, vit:3.2}, sig:{nom:'Flammèche', type:'feu', puiss:46, cd:1.05, por:2.0},
+    evo:{vers:'Feurisson', niv:20}},
+  'Feurisson': {num:156, types:['feu'], rarete:'ultra', carac:'brave', biome:'paturage',
+    base:{pv:44, atq:14, def:10, vit:3.6}, sig:{nom:'Roue de Feu', type:'feu', puiss:70, cd:1.15, por:1.6},
+    evo:{vers:'Typhlosion', niv:32}},
+  'Typhlosion': {num:157, types:['feu'], rarete:'ultra', carac:'brave', biome:'paturage',
+    base:{pv:62, atq:22, def:14, vit:4.0}, sig:{nom:'Lance-Flammes', type:'feu', puiss:98, cd:1.3, por:2.8}},
+  'Poussifeu': {num:255, types:['feu'], rarete:'ultra', carac:'presse', biome:'cratere',
+    base:{pv:30, atq:10, def:6, vit:3.4}, sig:{nom:'Flammèche', type:'feu', puiss:46, cd:1.0, por:1.8},
+    evo:{vers:'Galifeu', niv:20}},
+  'Galifeu':   {num:256, types:['feu','combat'], rarete:'ultra', carac:'presse', biome:'cratere',
+    base:{pv:44, atq:16, def:9, vit:4.0}, sig:{nom:'Double Pied', type:'combat', puiss:72, cd:1.05, por:1.1},
+    evo:{vers:'Braségali', niv:32}},
+  'Braségali': {num:257, types:['feu','combat'], rarete:'ultra', carac:'assure', biome:'cratere',
+    base:{pv:60, atq:24, def:13, vit:4.3}, sig:{nom:'Pied Brûleur', type:'feu', puiss:100, cd:1.25, por:1.2}},
+
+  /* --- le second légendaire de la plaine ------------------------------- */
+  'Suicune':   {num:245, types:['eau'], rarete:'legendaire', carac:'serieux', biome:'plaine',
+    base:{pv:74, atq:19, def:20, vit:4.4}, sig:{nom:'Blizzard', type:'glace', puiss:96, cd:1.35, por:3.0, zone:1.7, exclusive:1}},};
 
 /* --- décrire une attaque : ce qu'elle FAIT, exactement ----------------
    Généré depuis les vraies stats — la description ne peut pas mentir. */
@@ -734,12 +825,14 @@ const BONUS_SHINY = 1.5;
 
 /* ce que la machine du portail Plaine peut sortir (les bases des lignées) */
 const PORTAIL_PLAINE = [
-  'Rattata', 'Zigzaton', 'Fouinette', 'Granivol',                    /* communs */
-  'Doduo', 'Mystherbe', 'Nidoran♂', 'Nidoran♀', 'Abo', 'Toudoudou', /* peu communs */
-  'Ponyta', 'Girafarig', 'Écrémeuh',                                 /* rares */
-  'Caninos', 'Wattouat', 'Kangourex',                                /* épiques */
-  'Tauros', 'Insécateur',                                            /* ultras */
-  'Shaymin'];                                                        /* légendaire */
+  /* le biome 🌾 La Grande Plaine, à la lettre : formes de base seulement */
+  'Rattata', 'Zigzaton', 'Fouinette', 'Roucool', 'Piafabec',         /* communs */
+  'Abo', 'Nidoran♂', 'Nidoran♀', 'Doduo', 'Miaouss',                 /* peu communs */
+  'Girafarig', 'Écrémeuh', 'Ptiravi',                                /* rares */
+  'Kangourex', 'Évoli',                                              /* épiques */
+  'Tauros',                                                          /* ultra */
+  'Suicune'                                                          /* légendaire */
+];                                                        /* légendaire */
 
 /* --- les niveaux ------------------------------------------------------ */
 /* plus c'est rare, plus c'est fort — mais DOUCEMENT : un commun bien
