@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#f4eee2">
+<meta name="theme-color" content="#131425">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icone.png">
 <title>La Pension</title>
@@ -11,26 +11,28 @@
 <style>
   /* =====================================================================
      LA PENSION — le système de design des menus.
-     Clair, moderne, chaleureux : crème + blanc + or. Une seule couleur
-     d'action (l'or), le rouge réservé au danger, le violet à la zone.
+     « Le Crépuscule » : indigo nocturne, or et pêche. Sombre sans noir pur,
+     texte cassé plutôt que blanc, relief par éclaircissement. Une seule
+     couleur d'action (l'or), le rouge-pêche réservé au danger, le lavande à la zone.
      Grille de 8 px, cibles tactiles ≥ 48 px, corps de texte ≥ 14 px,
      police pixel réservée aux grands titres (illisible en dessous de 18).
      Le donjon, lui, garde sa nuit : c'est la scène, pas un menu.
      ===================================================================== */
   :root{
     /* surfaces */
-    --fond:#f4eee2; --carte:#ffffff; --carte2:#faf6ee; --trait:#e5dbc8; --trait2:#efe7d8;
-    /* encre */
-    --encre:#2a2119; --encre2:#6f6353; --encre3:#9a8d7a;
-    /* l'or : l'action */
-    --or:#e8b132; --or-fonce:#a97d14; --or-doux:#fff3d1; --or-trait:#f0d48a;
+    --fond:#131425; --carte:#1c1e33; --carte2:#262943; --trait:#353857; --trait2:#2e3150;
+    /* encre : un blanc cassé, jamais pur */
+    --encre:#eceaf5; --encre2:#a8a7c2; --encre3:#7d7c9c;
+    /* l'or : l'action. --or-fonce est la version TEXTE (lisible sur le sombre),
+       --or-ombre la tranche du bouton */
+    --or:#ffc857; --or-fonce:#ffd98a; --or-ombre:#b8862a; --or-doux:#332c1c; --or-trait:#6b5a2a;
     /* les états */
-    --danger:#d84a3a; --danger-doux:#fdeae7; --danger-trait:#f3b8b0;
-    --ok:#2f9e5f; --ok-doux:#e6f6ec;
-    --zone:#8e44c9; --zone-doux:#f1e6fb;
-    --eau:#3b8fd9;
-    --ombre:0 1px 2px rgba(60,40,10,.05), 0 6px 18px rgba(60,40,10,.07);
-    --ombre-haut:0 -6px 24px rgba(60,40,10,.10);
+    --danger:#ff7a6e; --danger-texte:#ffb3a8; --danger-doux:#3b2431; --danger-trait:#7a3a44; --danger-ombre:#b04a40;
+    --ok:#82e0b0; --ok-doux:#1f3a2e; --ok-texte:#9fe9c2; --ok-trait:#2f5a47;
+    --zone:#b49cff; --zone-doux:#2a2340; --zone-ombre:#6f58c4;
+    --eau:#8fb4ff;
+    --ombre:0 1px 2px rgba(0,0,0,.25), 0 6px 18px rgba(0,0,0,.28);
+    --ombre-haut:0 -6px 24px rgba(0,0,0,.35);
     --r:16px; --r-petit:12px;
     /* rétro-compat avec les anciens noms utilisés dans le JS */
     --nuit:#16100a; --ecran:var(--carte); --bois:var(--carte2); --lisiere:var(--trait);
@@ -90,9 +92,9 @@
   /* --- les boutons : 48 px minimum, un retour au doigt ------------------ */
   .btnOr{ font-family:'Nunito'; font-weight:800; font-size:17px; cursor:pointer; width:100%;
     background:var(--or); color:#2a2119; border:0; border-radius:14px;
-    min-height:52px; padding:12px 16px; box-shadow:0 2px 0 var(--or-fonce), var(--ombre);
+    min-height:52px; padding:12px 16px; box-shadow:0 2px 0 var(--or-ombre), var(--ombre);
     transition:transform .08s, box-shadow .08s, filter .12s; letter-spacing:.1px; }
-  .btnOr:active{ transform:translateY(2px) scale(.99); box-shadow:0 0 0 var(--or-fonce); }
+  .btnOr:active{ transform:translateY(2px) scale(.99); box-shadow:0 0 0 var(--or-ombre); }
   .btnOr[disabled], .btnOr.off{ filter:grayscale(.6); opacity:.55; box-shadow:none; }
   .btnOr small, .btnOr span{ font-weight:700; font-size:13px; opacity:.8; }
   .btnBois{ font-family:'Nunito'; font-weight:800; font-size:15px; cursor:pointer;
@@ -100,9 +102,9 @@
     border-radius:var(--r-petit); min-height:48px; padding:10px 14px;
     transition:transform .08s, background .12s; }
   .btnBois:active{ transform:scale(.98); background:var(--carte2); }
-  .btnDanger{ background:var(--danger); color:#fff; border:0; border-radius:14px;
+  .btnDanger{ background:var(--danger); color:#1a0f0d; border:0; border-radius:14px;
     font-family:'Nunito'; font-weight:800; font-size:16px; min-height:52px;
-    padding:12px 16px; width:100%; cursor:pointer; box-shadow:0 2px 0 #a8342a;
+    padding:12px 16px; width:100%; cursor:pointer; box-shadow:0 2px 0 var(--danger-ombre);
     transition:transform .08s, box-shadow .08s; }
   .btnDanger:active{ transform:translateY(2px); box-shadow:none; }
 
@@ -129,18 +131,18 @@
     border:1px solid var(--trait); box-shadow:var(--ombre); touch-action:none; }
   #btnGrand{ position:absolute; top:10px; right:10px; width:44px; height:44px;
     min-height:44px; padding:0; font-size:20px; border-radius:12px;
-    background:#ffffffe6; backdrop-filter:blur(6px); }
+    background:#1c1e33e6; backdrop-filter:blur(6px); border-color:var(--trait); }
   #alerteInvasion{ background:var(--danger-doux); border:1.5px solid var(--danger-trait);
     border-radius:var(--r); padding:12px 14px; display:flex; flex-direction:column; gap:8px;
     animation:alerteBat 1.8s ease-in-out infinite; }
-  #alerteInvasion b{ display:block; font-size:15px; color:#8e2a20; }
-  .btnDefendre{ background:var(--danger); border:0; color:#fff; font-family:'Nunito';
+  #alerteInvasion b{ display:block; font-size:15px; color:var(--danger-texte); }
+  .btnDefendre{ background:var(--danger); border:0; color:#1a0f0d; font-family:'Nunito';
     font-weight:800; font-size:16px; border-radius:var(--r-petit); min-height:48px;
-    padding:10px 14px; cursor:pointer; width:100%; box-shadow:0 2px 0 #a8342a;
+    padding:10px 14px; cursor:pointer; width:100%; box-shadow:0 2px 0 var(--danger-ombre);
     transition:transform .08s, box-shadow .08s; }
   .btnDefendre:active{ transform:translateY(2px); box-shadow:none; }
-  .btnDefendre.zone{ background:var(--zone); box-shadow:0 2px 0 #6a2f99; }
-  @keyframes alerteBat{ 50%{ box-shadow:0 0 0 6px rgba(216,74,58,.10); } }
+  .btnDefendre.zone{ background:var(--zone); box-shadow:0 2px 0 var(--zone-ombre); }
+  @keyframes alerteBat{ 50%{ box-shadow:0 0 0 6px rgba(255,122,110,.12); } }
   .puces{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
   .puce2{ display:flex; align-items:center; gap:10px; background:var(--carte2);
     border-radius:var(--r-petit); padding:9px 12px; font-size:14px; color:var(--encre); }
@@ -153,7 +155,7 @@
     transition:transform .08s, border-color .12s, background .12s; }
   .choixMob:active{ transform:scale(.97); }
   .mobImg{ width:56px; height:56px; image-rendering:pixelated; border-radius:12px;
-    display:block; margin:0 auto; background:#fff; border:1px solid var(--trait); }
+    display:block; margin:0 auto; background:var(--carte); border:1px solid var(--trait); }
   .choixMob.pris{ border-color:var(--or); background:var(--or-doux); }
   .choixMob.pris .mobImg{ border-color:var(--or-trait); }
   .choixMob .ordre{ position:absolute; top:6px; left:6px; width:22px; height:22px;
@@ -179,16 +181,16 @@
     background:var(--carte); border:1.5px solid var(--trait); color:var(--encre2);
     white-space:nowrap; }
   .etiquette.or{ background:var(--or-doux); border-color:var(--or-trait); color:var(--or-fonce); }
-  .etiquette.rouge{ background:var(--danger); border-color:var(--danger); color:#fff; }
+  .etiquette.rouge{ background:var(--danger); border-color:var(--danger); color:#1a0f0d; }
   .vengBloc{ display:flex; align-items:center; gap:8px; margin-top:6px; }
-  .vengBarre{ flex:1; max-width:140px; height:6px; background:var(--trait2);
+  .vengBarre{ flex:1; max-width:140px; height:6px; background:var(--trait);
     border-radius:99px; overflow:hidden; }
   .vengBarre i{ display:block; height:100%; background:linear-gradient(90deg,#f0a35e,var(--danger)); border-radius:99px; }
   .vengPct{ font-size:12px; color:var(--encre2); white-space:nowrap; font-weight:700; }
   #colereZone .vengBarre i{ background:linear-gradient(90deg,#c58af0,var(--zone)); }
 
   /* --- les spins --------------------------------------------------------- */
-  .machine{ text-align:center; background:linear-gradient(180deg, #fff8e6, var(--carte));
+  .machine{ text-align:center; background:linear-gradient(180deg, #2b2848, var(--carte));
     border-color:var(--or-trait); }
   .machine .gros{ font-size:52px; line-height:1.1; margin-bottom:4px; }
   .machine .px{ font-size:22px; color:var(--encre); display:block; }
@@ -196,7 +198,7 @@
   .carteSpin{ display:flex; flex-direction:column; align-items:center; gap:6px;
     padding:12px; animation:pose .4s; }
   .carteSpin img{ width:112px; height:112px; image-rendering:pixelated;
-    border-radius:20px; border:4px solid var(--rar, var(--or)); background:#fff;
+    border-radius:20px; border:4px solid var(--rar, var(--or)); background:var(--carte2);
     box-shadow:var(--ombre); }
   .carteSpin b{ font-family:'Pixelify Sans'; font-size:26px; font-weight:600; line-height:1.15; }
   .carteSpin span{ font-size:15px; font-weight:700; }
@@ -212,7 +214,7 @@
   .rarete{ display:flex; align-items:center; gap:10px; padding:10px 12px;
     background:var(--carte2); border-radius:var(--r-petit); font-size:14px; }
   .rarete .pastille{ width:12px; height:12px; border-radius:99px; flex:0 0 auto;
-    box-shadow:inset 0 0 0 2px rgba(0,0,0,.08); }
+    box-shadow:0 0 0 2px rgba(255,255,255,.06); }
   .rarete .nom{ font-weight:800; flex:0 0 auto; }
   .rarete .taux{ color:var(--encre2); font-weight:700; flex:0 0 auto; }
   .rarete .qui{ margin-left:auto; text-align:right; color:var(--encre2); font-size:13px;
@@ -252,15 +254,15 @@
     font-size:15px; font-weight:800; cursor:pointer; margin:4px 0; width:100%;
     transition:transform .08s; }
   .btnReset:active{ transform:scale(.98); }
-  .btnReset.rouge{ background:var(--danger-doux); border-color:var(--danger-trait); color:#8e2a20; }
+  .btnReset.rouge{ background:var(--danger-doux); border-color:var(--danger-trait); color:var(--danger-texte); }
   #confReset p{ font-size:14px; color:var(--encre2); margin:10px 0 8px; }
 
   /* --- les feuilles qui montent du bas : fiche, conseil, table des types --- */
-  #voileFiche, .voileHaut{ position:fixed; inset:0; background:rgba(40,28,12,.45);
+  #voileFiche, .voileHaut{ position:fixed; inset:0; background:rgba(5,5,14,.6);
     display:none; align-items:flex-end; z-index:9; backdrop-filter:blur(2px); }
   .voileHaut{ z-index:10; }
   #voileFiche.actif, .voileHaut.actif{ display:flex; }
-  .fiche{ background:var(--fond); border-radius:24px 24px 0 0; width:100%;
+  .fiche{ background:var(--carte); border-radius:24px 24px 0 0; width:100%;
     padding:8px 16px calc(16px + env(safe-area-inset-bottom)); max-height:86%;
     overflow:auto; box-shadow:var(--ombre-haut); animation:monte .22s ease-out; }
   .fiche::before{ content:''; display:block; width:40px; height:5px; border-radius:99px;
@@ -269,20 +271,20 @@
   .fiche h3{ font-family:'Pixelify Sans'; font-size:24px; font-weight:600; color:var(--encre); }
   .fiche h3 .discret{ font-family:'Nunito'; font-size:14px; font-weight:700; }
   #fichePortrait{ width:64px; height:64px; image-rendering:pixelated; border-radius:16px;
-    border:1px solid var(--trait); background:#fff; float:right; margin:0 0 6px 10px;
+    border:1px solid var(--trait); background:var(--carte2); float:right; margin:0 0 6px 10px;
     box-shadow:var(--ombre); }
-  .fiche .panneau{ margin-top:10px; }
+  .fiche .panneau{ margin-top:10px; background:var(--carte2); box-shadow:none; }
   .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .chip{ font-size:13px; font-weight:800; padding:5px 10px; border-radius:99px;
     background:var(--carte); border:1.5px solid var(--trait); color:var(--encre2); }
   .chip.stat b{ color:var(--encre); margin-left:3px; }
-  .chip.mal{ background:var(--danger-doux); border-color:var(--danger-trait); color:#8e2a20; }
-  .chip.ok{ background:var(--ok-doux); border-color:#b6e3c6; color:#1f6f43; }
+  .chip.mal{ background:var(--danger-doux); border-color:var(--danger-trait); color:var(--danger-texte); }
+  .chip.ok{ background:var(--ok-doux); border-color:var(--ok-trait); color:var(--ok-texte); }
   #ficheActions{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
   #ficheActions .btnBois{ width:100%; }
   .jauges{ display:grid; grid-template-columns:auto 1fr auto; gap:5px 8px;
     align-items:center; font-size:13px; margin-top:8px; }
-  .jauges .barre{ height:10px; background:var(--trait2); border-radius:99px; overflow:hidden; display:block; }
+  .jauges .barre{ height:10px; background:var(--trait); border-radius:99px; overflow:hidden; display:block; }
   .jauges .barre i{ display:block; height:100%; border-radius:99px; }
 
   /* le conseil de défense */
@@ -306,13 +308,13 @@
   #cvGrand{ flex:1; min-height:0; width:100%; display:block; touch-action:none; }
   #fermerGrand{ position:absolute; top:calc(10px + env(safe-area-inset-top));
     right:10px; z-index:2; font-size:20px; width:44px; height:44px;
-    background:#ffffffe6; color:var(--encre); border:0; border-radius:12px; cursor:pointer; }
+    background:#1c1e33e6; color:var(--encre); border:1px solid var(--trait); border-radius:12px; cursor:pointer; }
   #bandePokes{ display:flex; gap:8px; overflow-x:auto; padding:10px 12px calc(10px + env(safe-area-inset-bottom));
     background:var(--carte); border-top:1px solid var(--trait); }
   .puce{ flex:0 0 auto; background:var(--carte2); border:1.5px solid var(--trait);
     border-radius:14px; padding:4px; position:relative; cursor:pointer; }
   .puce img{ width:48px; height:48px; image-rendering:pixelated; display:block;
-    border-radius:10px; background:#fff; }
+    border-radius:10px; background:var(--carte); }
   .puce span{ position:absolute; bottom:3px; right:3px; font-size:11px;
     font-weight:800; background:var(--or); border-radius:6px; padding:0 5px; color:#2a2119; }
   .puce:active{ transform:scale(.94); }
@@ -344,7 +346,7 @@
 
   /* --- le journal (toast) ---------------------------------------------- */
   #journal{ position:fixed; left:16px; right:16px; bottom:calc(156px + env(safe-area-inset-bottom));
-    z-index:20; background:var(--encre); color:#fff; border-radius:14px;
+    z-index:20; background:#3a3d63; color:#fff; border:1px solid #4d5080; border-radius:14px;
     padding:12px 16px; font-size:15px; font-weight:700; opacity:0; transform:translateY(8px);
     transition:.25s; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.25); text-align:center; }
   #journal.vu{ opacity:1; transform:none; }
@@ -4026,8 +4028,8 @@ function majSpins(){
   }).join('');
   majJetons();
 }
-const COULEURS_RARETE = {commun:'#8a7f70', peuCommun:'#2f9e5f', rare:'#3b8fd9',
-  epique:'#8e44c9', legendaire:'#c9921a'};
+const COULEURS_RARETE = {commun:'#c9c2b4', peuCommun:'#7fe0a0', rare:'#6fb6ff',
+  epique:'#c78ff5', legendaire:'#ffd45e'};
 let spinEnCours = false;
 function faireSpin(){
   if(spinEnCours) return;
@@ -4057,7 +4059,7 @@ function faireSpin(){
     const eTire = ESPECES[t.espece];
     const e = especeDe(p);
     const r = RARETES.find(x => x.cle === eTire.rarete);
-    const coul = p.shiny ? '#c9921a' : COULEURS_RARETE[eTire.rarete];
+    const coul = p.shiny ? '#ffd45e' : COULEURS_RARETE[eTire.rarete];
     const port = urlPortrait(p.espece);
     let titre, ligne2;
     if(t.doublon === 'shiny'){
