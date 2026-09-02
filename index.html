@@ -4186,18 +4186,15 @@ function majCompte(){
   const nb = P.pensionnaires.length;
   const shinies = P.pensionnaires.filter(p => p.shiny).length;
   const meilleur = P.pensionnaires.reduce((m, p) => Math.max(m, p.niveau), 0);
-  const ults = P.pensionnaires.filter(p => p.ult).length;
   const donjons = P.avancee.tuto || 0;
   const jours = Math.max(1, Math.ceil((Date.now() - (P.creeLe || Date.now())) / 86400000));
   $('#statsCompte').innerHTML =
       '<div>Pensionnaires<b>' + nb + (shinies ? ' <small>dont ✨' + shinies + '</small>' : '') + '</b></div>'
     + '<div>Meilleur niveau<b>' + (meilleur || '—') + '</b></div>'
     + '<div>Donjons finis<b>' + donjons + ' / ' + DONJONS.length + '</b></div>'
-    + '<div>Ults apprises<b>' + ults + '</b></div>'
     + '<div>Pièces<b>🪙 ' + P.sacs.sous + '</b></div>'
     + '<div>Tickets · Baies<b>🎟 ' + P.sacs.tickets + ' · 🫐 ' + P.sacs.baies + '</b></div>'
     + '<div>Invasions repoussées<b>🛡 ' + ((P.invasion && P.invasion.victoires) || 0) + '</b></div>'
-    + '<div>Places de renfort<b>🤝 ' + (P.invasion.slots || 0) + ' / 10</b></div>'
     + '<div style="grid-column:1/-1;">Compte créé il y a<b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b></div>';
   majJetons();
 }
