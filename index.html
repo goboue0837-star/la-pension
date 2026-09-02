@@ -1694,6 +1694,9 @@ const TYPE_IMG = {
    window.BASE_RES est posé par la page avant de charger ce fichier. */
 const BASE = (typeof window !== 'undefined' && window.BASE_RES) || '/';
 const cacheSp = new Map();
+/* un dossier peut être un CHEMIN (0128/0001, 0025/shiny) : on encode
+   chaque segment, jamais les / — sinon l'URL devient 0025%2Fshiny. */
+const urlD = d => String(d).split('/').map(encodeURIComponent).join('/');
 
 /* Le site statique publie assets/sprites/index.json : la liste des dossiers
    présents. Un seul aller-retour, et plus aucun HEAD à l'aveugle ensuite. */
@@ -1705,6 +1708,16 @@ function indexSprites(){
     .then(l => new Set(l))
     .catch(() => new Set());
   return _indexSprites;
+}
+/* la liste des dossiers qui ont vraiment une planche BRILLANTE */
+let _indexBrillants = null;
+function indexBrillants(){
+  if(_indexBrillants) return _indexBrillants;
+  _indexBrillants = fetch(BASE + 'sprites/brillants.json')
+    .then(r => r.ok ? r.json() : [])
+    .then(l => new Set(l))
+    .catch(() => new Set());
+  return _indexBrillants;
 }
 async function dossierSprite(nom){
   const esp = ESPECES[nom];
@@ -1726,7 +1739,7 @@ async function dossierSprite(nom){
   if(num) candidats.push(num);
   for(const c of candidats){
     try {
-      const r = await fetch(BASE + 'sprites/' + encodeURIComponent(c) + '/AnimData.xml', {method:'HEAD'});
+      const r = await fetch(BASE + 'sprites/' + urlD(c) + '/AnimData.xml', {method:'HEAD'});
       if(r.ok) return c;
     } catch(e){}
   }
@@ -1734,6 +1747,18 @@ async function dossierSprite(nom){
 }
 
 const cachePortrait = new Map();
+/* le portrait d'un BRILLANT : sa propre image, avec le normal en secours —
+   un shiny doit se voir dans les menus aussi, pas seulement sur le terrain */
+function urlPortraitBrillant(espece){
+  const n = urlPortrait(espece);
+  if(window.RESSOURCES) return n;              // rien d'embarqué en brillant
+  const esp = ESPECES[espece];
+  const d = esp && esp.sprite ? esp.sprite
+          : (esp && esp.num ? String(esp.num).padStart(4, '0') : null);
+  if(!d) return n;
+  return {url: BASE + 'sprites/' + urlD(d) + '/shiny/Portraits/Normal.png',
+          secours: n.url};
+}
 function urlPortrait(espece){
   if(cachePortrait.has(espece)) return cachePortrait.get(espece);
   const esp = ESPECES[espece];
@@ -1751,14 +1776,73 @@ function urlPortrait(espece){
   const num = esp && esp.num ? String(esp.num).padStart(4, '0') : null;
   const url = num
     ? BASE + 'sprites/' + num + '/Portraits/Normal.png'
-    : BASE + 'sprites/' + encodeURIComponent(espece) + '/Portraits/Normal.png';
-  const secours = BASE + 'sprites/' + encodeURIComponent(espece) + '/Portraits/Normal.png';
+    : BASE + 'sprites/' + urlD(espece) + '/Portraits/Normal.png';
+  const secours = BASE + 'sprites/' + urlD(espece) + '/Portraits/Normal.png';
   cachePortrait.set(espece, {url, secours});
   return cachePortrait.get(espece);
 }
 
-async function chargerSprite(nom){
-  if(cacheSp.has(nom)) return cacheSp.get(nom);
+/* lit un dossier de planches précis (chemin relatif à sprites/) et rend
+   {nom, anims} — sans cache ni repli : c'est l'affaire de l'appelant. */
+async function chargerDossier(nom, dossier){
+  let txt = '';
+  try { txt = await (await fetch(BASE + 'sprites/' + urlD(dossier) + '/AnimData.xml')).text(); }
+  catch(e){}
+  const xml = new DOMParser().parseFromString(txt, 'text/xml');
+  const brut = {};
+  for(const a of xml.querySelectorAll('Anims > Anim')){
+    const q = t => { const e = a.querySelector(t); return e ? e.textContent : null; };
+    brut[q('Name')] = {
+      nom: q('Name'), copie: q('CopyOf'),
+      w: +q('FrameWidth') || 0, h: +q('FrameHeight') || 0,
+      durees: [...a.querySelectorAll('Durations > Duration')].map(d => +d.textContent),
+      frappe: +q('HitFrame') || 0
+    };
+  }
+  for(const k in brut) if(brut[k].copie && brut[k].copie !== k){
+    const src = brut[brut[k].copie];
+    if(src) brut[k] = Object.assign({}, src, {nom: k});
+  }
+  const anims = {};
+  await Promise.all(Object.keys(brut).map(async k => {
+    const a = brut[k];
+    if(!a.w || !a.durees.length) return;
+    const img = new Image();
+    img.src = BASE + 'sprites/' + urlD(dossier) + '/' + a.nom + '-Anim.png';
+    try { await img.decode(); } catch(e){ return; }
+    a.img = img;
+    a.n = a.durees.length;
+    a.lignes = Math.max(1, Math.round(img.height / a.h));
+    a.total = a.durees.reduce((s, d) => s + d, 0);
+    a.anc = await ancres(dossier, a);
+    anims[k] = a;
+  }));
+  return {nom, anims: Object.keys(anims).length ? anims : null};
+}
+
+/* Un SHINY n'est pas une teinte : PMD Sprite Collab a une vraie planche
+   par Pokémon brillant, rangée chez nous en <dossier>/shiny. On la charge
+   quand elle existe ; sinon on rend le sprite normal marqué `faux`, et
+   dessinerSprite se rabat sur le filtre de teinte d'avant. */
+async function chargerSprite(nom, brillant){
+  const cle = brillant ? nom + ' ✨' : nom;
+  if(cacheSp.has(cle)) return cacheSp.get(cle);
+  if(brillant){
+    const p2 = (async () => {
+      const dossier = await dossierSprite(nom);
+      const dispo = await indexBrillants();
+      /* rien d'embarqué en brillant, et rien si le dossier n'en a pas */
+      if(!window.RESSOURCES && dispo.size && dispo.has(dossier)){
+        const sp = await chargerDossier(nom, dossier + '/shiny');
+        if(sp && sp.anims){ sp.brillant = true; return sp; }
+      }
+      const normal = await chargerSprite(nom);
+      return Object.assign({}, normal, {faux: true});
+    })();
+    cacheSp.set(cle, p2);
+    p2.then(v => cacheSp.set(cle, v));
+    return p2;
+  }
   const p = (async () => {
     const dossier = await dossierSprite(nom);
     /* le monde embarqué : tout vient de RESSOURCES, rien du réseau */
@@ -1778,38 +1862,8 @@ async function chargerSprite(nom){
       cacheSp.set(nom, sp);
       return sp;
     }
-    let txt = '';
-    try { txt = await (await fetch(BASE + 'sprites/' + encodeURIComponent(dossier) + '/AnimData.xml')).text(); }
-    catch(e){}
-    const xml = new DOMParser().parseFromString(txt, 'text/xml');
-    const brut = {};
-    for(const a of xml.querySelectorAll('Anims > Anim')){
-      const q = t => { const e = a.querySelector(t); return e ? e.textContent : null; };
-      brut[q('Name')] = {
-        nom: q('Name'), copie: q('CopyOf'),
-        w: +q('FrameWidth') || 0, h: +q('FrameHeight') || 0,
-        durees: [...a.querySelectorAll('Durations > Duration')].map(d => +d.textContent),
-        frappe: +q('HitFrame') || 0
-      };
-    }
-    for(const k in brut) if(brut[k].copie && brut[k].copie !== k){
-      const src = brut[brut[k].copie];
-      if(src) brut[k] = Object.assign({}, src, {nom: k});
-    }
-    const anims = {};
-    await Promise.all(Object.keys(brut).map(async k => {
-      const a = brut[k];
-      if(!a.w || !a.durees.length) return;
-      const img = new Image();
-      img.src = BASE + 'sprites/' + encodeURIComponent(dossier) + '/' + a.nom + '-Anim.png';
-      try { await img.decode(); } catch(e){ return; }
-      a.img = img;
-      a.n = a.durees.length;
-      a.lignes = Math.max(1, Math.round(img.height / a.h));
-      a.total = a.durees.reduce((s, d) => s + d, 0);
-      a.anc = await ancres(dossier, a);
-      anims[k] = a;
-    }));
+    const lu = await chargerDossier(nom, dossier);
+    const anims = lu.anims || {};
     if(!Object.keys(anims).length){
       /* dossier absent : on essaie le Rattata, sinon le premier qui existe —
          et si vraiment rien, dessinerSprite tracera un jeton de secours */
@@ -1836,7 +1890,7 @@ async function chargerSprite(nom){
 
 async function ancres(dossier, a){
   const im = new Image();
-  im.src = BASE + 'sprites/' + encodeURIComponent(dossier) + '/' + a.nom + '-Shadow.png';
+  im.src = BASE + 'sprites/' + urlD(dossier) + '/' + a.nom + '-Shadow.png';
   try { await im.decode(); } catch(e){ return null; }
   const cols = Math.round(im.width / a.w), lignes = Math.round(im.height / a.h);
   if(!cols || !lignes) return null;
@@ -1894,7 +1948,9 @@ function dessinerSprite(ctx, e, px, py, echelle){
   const anc = ancreDe(a, ligne, f) || {x: a.w / 2, y: a.h * 0.8};
   const w = a.w * echelle, h = a.h * echelle;
   ctx.save();
-  if(e.shiny){ ctx.filter = 'hue-rotate(100deg) saturate(1.3)'; }
+  /* la planche brillante fait tout le travail ; le filtre de teinte n'est
+     plus qu'un secours quand ce Pokémon n'en a pas */
+  if(e.shiny && sp.faux){ ctx.filter = 'hue-rotate(100deg) saturate(1.3)'; }
   if(e.flash && e.flash > 0) ctx.filter = 'brightness(2.2)';
   ctx.drawImage(a.img, f * a.w, ligne * a.h, a.w, a.h,
                 px - anc.x * echelle, py - anc.y * echelle, w, h);
@@ -2398,7 +2454,7 @@ async function creerEnt(espece, camp, x, y, niveau, extra){
     e.atq *= 2.8 * (0.75 + 0.25 * f);
     e.defs *= 1.8; e.taille = e.taille || 1.95;
   }
-  e.sp = await chargerSprite(espece);
+  e.sp = await chargerSprite(espece, e.shiny);
   return e;
 }
 
@@ -2516,23 +2572,42 @@ function posSol(x, y, s){
 
 /* une case DE SOL dans la salle : depuis qu'il y a des rochers dedans,
    on ne peut plus poser un Pokémon les yeux fermés */
+/* AU LARGE : la case est du sol, et ses voisines aussi. Un Pokémon fait
+   deux tuiles de haut — posé au ras d'un mur, son sprite le recouvre et on
+   jurerait qu'il est dedans. On cherche donc de la place autour de lui. */
+function auLarge(x, y){
+  if(!solEn(x, y)) return false;
+  for(const [dx, dy] of [[0.9, 0], [-0.9, 0], [0, 0.9], [0, -0.9], [0, -1.6]])
+    if(!solEn(x + dx, y + dy)) return false;
+  return true;
+}
 /* comme placeLibreDans, mais en haut de la salle : les vagues déboulent
    par le fond. Depuis que les salles sont rongées, la première rangée est
    souvent pleine de mur — on cherche donc une vraie case de sol, et on se
    rabat sur n'importe où dans la salle plutôt que d'apparaître emmuré. */
 function placeHautDans(s){
+  const haut = () => ({x: entre(s.x + 1, s.x + s.w - 1),
+                       y: entre(s.y + 1.5, s.y + Math.min(4.5, s.h - 2))});
   for(let essai = 0; essai < 24; essai++){
-    const x = entre(s.x + 1, s.x + s.w - 1);
-    const y = entre(s.y + 1, s.y + Math.min(4, s.h - 2));
-    if(solEn(x, y)) return {x, y};
+    const p = haut();
+    if(auLarge(p.x, p.y)) return p;
+  }
+  for(let essai = 0; essai < 12; essai++){
+    const p = haut();
+    if(solEn(p.x, p.y)) return p;
   }
   return placeLibreDans(s);
 }
 function placeLibreDans(s){
-  for(let essai = 0; essai < 20; essai++){
-    const x = entre(s.x + 1, s.x + s.w - 1);
-    const y = entre(s.y + 1, s.y + s.h - 1.5);
-    if(solEn(x, y)) return {x, y};
+  const nimporte = () => ({x: entre(s.x + 1, s.x + s.w - 1),
+                           y: entre(s.y + 1, s.y + s.h - 1.5)});
+  for(let essai = 0; essai < 24; essai++){
+    const p = nimporte();
+    if(auLarge(p.x, p.y)) return p;
+  }
+  for(let essai = 0; essai < 12; essai++){
+    const p = nimporte();
+    if(solEn(p.x, p.y)) return p;
   }
   return posSol(s.cx, s.cy, s);
 }
@@ -2630,7 +2705,12 @@ async function goutteAssaut(){
   const promesses = [];
   for(const m of lot){
     const pt = parmi(pts);
-    const p = posSol(pt.x + entre(-1.4, 1.4), pt.y + entre(-0.7, 0.7));
+    let p = null;
+    for(let essai = 0; essai < 10 && !p; essai++){
+      const q = {x: pt.x + entre(-1.6, 1.6), y: pt.y + entre(-0.8, 0.8)};
+      if(auLarge(q.x, q.y)) p = q;
+    }
+    if(!p) p = posSol(pt.x + entre(-1.4, 1.4), pt.y + entre(-0.7, 0.7));
     promesses.push(creerEnt(m.espece, 'ennemi', p.x, p.y, m.niv,
       {elite: m.elite, eveille: true, pilleur: !!m.pilleur}));
   }
@@ -4115,9 +4195,13 @@ async function majPension(){
            pause: Math.random() * 3, dir: Math.random() * 8 | 0,
            anim: 'Idle', animT: Math.random() * 2, bulle: null};
       DOMAINE.ents.push(e);
-      e.sp = await chargerSprite(p.espece);
+      e.sp = await chargerSprite(p.espece, p.shiny);
     }
-    if(e.espece !== p.espece){ e.espece = p.espece; e.sp = await chargerSprite(p.espece); }
+    /* changé d'espèce OU devenu brillant : on recharge la planche */
+    if(e.espece !== p.espece || !!e.brillant !== !!p.shiny){
+      e.espece = p.espece; e.brillant = !!p.shiny;
+      e.sp = await chargerSprite(p.espece, p.shiny);
+    }
   }
   DOMAINE.ents = DOMAINE.ents.filter(e => ici.includes(e.p));
 }
@@ -4168,7 +4252,7 @@ function majBande(){
   for(const p of habitants()){
     const b = document.createElement('button');
     b.className = 'puce';
-    const port = urlPortrait(p.espece);
+    const port = portraitDe(p);
     b.innerHTML = '<img src="' + port.url + '" onerror="this.src=\'' + (port.secours || '') + '\'">'
       + '<span>' + (p.shiny ? '✨' : '') + p.niveau + '</span>';
     b.onclick = () => allerVoir(p);
@@ -4384,7 +4468,7 @@ function rendreFiche(p){
   const st = statsDe(p.espece, p.niveau, p.shiny);
   $('#ficheNom').innerHTML = (p.shiny ? '✨ ' : '') + p.espece
     + ' <span class="discret">Niv. ' + p.niveau + ' / ' + NIVEAU_MAX + '</span>';
-  const port = urlPortrait(p.espece);
+  const port = portraitDe(p);
   const im = $('#fichePortrait');
   im.src = port.url;
   im.onerror = () => { if(port.secours && im.src !== location.origin + port.secours) im.src = port.secours; };
@@ -4453,6 +4537,11 @@ function apprendreUlt(id, type){
   sauver(); rendreFiche(p);
 }
 
+/* le portrait d'un pensionnaire : le brillant a le sien */
+function portraitDe(p){
+  return p && p.shiny ? urlPortraitBrillant(p.espece) : urlPortrait(p.espece);
+}
+
 /* --- l'écran équipe --------------------------------------------------- */
 let selection = [];
 function majEquipe(){
@@ -4466,7 +4555,7 @@ function majEquipe(){
     const b = document.createElement('button');
     b.className = 'choixMob' + (selection.includes(p.id) ? ' pris' : '')
                 + (!enForme(p) ? ' epuise' : '');
-    const port = urlPortrait(p.espece);
+    const port = portraitDe(p);
     const rang = selection.indexOf(p.id);
     b.innerHTML = (rang >= 0 ? '<span class="ordre">' + (rang + 1) + '</span>' : '')
       + '<img class="mobImg" src="' + port.url + '" onerror="this.src=\''
@@ -4782,7 +4871,7 @@ function montrerChoixAide(){
   for(const p of dispo){
     const c = document.createElement('div');
     c.className = 'caseAide';
-    c.innerHTML = '<img src="' + urlPortrait(p.espece).url + '" alt="">' + p.espece;
+    c.innerHTML = '<img src="' + portraitDe(p).url + '" alt="">' + p.espece;
     c.onclick = () => {
       if(P.invasion.aides.length >= P.invasion.slots) return;
       P.invasion.aides.push(p.id);
@@ -5064,7 +5153,7 @@ function faireSpin(){
     const e = especeDe(p);
     const r = RARETES.find(x => x.cle === eTire.rarete);
     const coul = p.shiny ? '#ffd45e' : COULEURS_RARETE[eTire.rarete];
-    const port = urlPortrait(p.espece);
+    const port = portraitDe(p);
     let titre, ligne2;
     if(t.doublon === 'shiny'){
       titre = '✨ DOUBLON MAGIQUE ✨<br>' + p.espece;
