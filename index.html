@@ -1925,7 +1925,7 @@ const D = {
   salleIdx: 0, phase: 'combat', tActuel: 0,
   cam: {x: 0, y: 0}, secousse: 0, graine: 1,
   butin: {sous: 0, baies: 0, xp: 0, tickets: 0}, tues: 0,
-  vague: 0, vaguesTotal: 0, resultat: null, vitesse: 1
+  vague: 0, vaguesTotal: 0, resultat: null, vitesse: 1, fin: null
 };
 
 /* --- l'aléatoire du donjon ------------------------------------------- */
@@ -2150,6 +2150,7 @@ async function lancerDonjon(def, equipe){
   await peuplerSalle(0);
   D.cam.x = s0.cx; D.cam.y = s0.cy;
   banniereD(def.nom, '#f2c14e');
+  D.fin = null;
   D.actif = true;                    // SEULEMENT maintenant : tout est en place
 }
 
@@ -2206,6 +2207,7 @@ async function lancerInvasion(def, defenseurs, positions){
                                    parSalve: def.parSalve || 2, delai: 2.2,
                                    durete: def.durete || 1});
   banniereD('⚔ ' + def.nom + ' — protège le CRISTAL !', '#ef6b6b');
+  D.fin = null;
   D.actif = true;
 }
 
@@ -3026,8 +3028,21 @@ function donnerBaie(){
 }
 
 /* --- la boucle -------------------------------------------------------- */
+/* LE TEMPS DE SOUFFLER. Tuer le dernier ennemi ne renvoie plus à l'écran
+   de butin dans la même image : on laisse l'animation de mort finir, les
+   pièces tomber et la bannière s'afficher. Une seconde et demie où il ne
+   se passe plus rien, mais où on voit ce qu'on vient de faire. */
+function terminerD(victoire, delai){
+  if(D.fin) return;                     // déjà en train de finir
+  D.fin = {victoire: victoire, t: delai === undefined ? 1.5 : delai};
+  D.ralliement = null;
+}
 function tickDonjon(dt){
   if(!D.actif) return;
+  if(D.fin){
+    D.fin.t -= dt;
+    if(D.fin.t <= 0){ const v = D.fin.victoire; D.fin = null; finDonjon(v); return; }
+  }
   D.tActuel += dt;
   if(D.banniere) D.banniere.t -= dt;
   if(D.secousse > 0) D.secousse -= dt;
@@ -3101,14 +3116,17 @@ function tickDonjon(dt){
     if(cr && cr.ko){
       banniereD('💥 LE CRISTAL EST BRISÉ !!', '#ef6b6b');
       D.secousse = 0.9;
-      finDonjon(false); return;
+      terminerD(false, 2.0); return;
     }
   }
   const vivants = D.ents.filter(e => e.camp === 'equipe' && !e.ko && !e.cristal);
   if(!vivants.length){
     const enAttente = D.invasion && D.ents.some(e => e.camp === 'equipe' && e.ko
       && !e.cristal && e.renait !== undefined && e.renait > 0);
-    if(!enAttente){ finDonjon(false); return; }
+    if(!enAttente){
+      banniereD(D.invasion ? 'La pension a plié…' : 'L\'équipe est à terre…', '#ef6b6b');
+      terminerD(false, 1.8); return;
+    }
   }
   const restants = D.ents.filter(e => e.camp === 'ennemi' && !e.ko);
 
@@ -3116,7 +3134,10 @@ function tickDonjon(dt){
   else if(D.phase === 'combat' && !restants.length){
     const s = D.salles[D.salleIdx];
     s.faite = true;
-    if(D.salleIdx === D.salles.length - 1){ finDonjon(true); return; }
+    if(D.salleIdx === D.salles.length - 1){
+      banniereD('Donjon nettoyé !', '#8ff0a4');
+      terminerD(true); return;
+    }
     D.salleIdx++;
     D.phase = 'marche';
     const sv = D.salles[D.salleIdx];
@@ -3153,7 +3174,9 @@ function tickDonjon(dt){
       }
     }
   } else if(D.phase === 'boss' && !restants.length){
-    finDonjon(true); return;
+    banniereD(D.invasion ? '🛡 LA PENSION EST SAUVE !' : '👑 BOSS VAINCU !', '#f2c14e');
+    D.secousse = 0.5;
+    terminerD(true, 2.2); return;
   }
 
   /* la caméra suit le groupe */
