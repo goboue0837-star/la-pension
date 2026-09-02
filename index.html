@@ -1412,26 +1412,26 @@ function statsDe(espece, niveau, shiny){
 const DONJONS = [
   {cle:'zigzaton', horde:5, nom:'Le Donjon Zigzaton', zone:'Le Pré du Grand Départ',
    salles:3, niv:2, sbires:['Zigzaton'], elites:[],
-   boss:{espece:'Zigzaton', niv:5, titre:'Zigzaton Chef', taille:1.4, force:0.6,
+   boss:{espece:'Zigzaton', niv:5, titre:'Zigzaton Chef', taille:1.95, force:0.6,
     escorte:[{espece:'Zigzaton', niv:3}, {espece:'Zigzaton', niv:3}]},
    vagues:2, decor:['AmpPlains','TinyWoods','SkyPeak1stPass','BeachCave']},
   {cle:'prairie', horde:6, nom:'La Prairie Venteuse', zone:'Le Pré du Grand Départ',
    salles:3, niv:3, sbires:['Zigzaton','Rattata'], elites:[],
-   boss:{espece:'Linéon', niv:8, titre:'Linéon le Balafré', taille:1.4, force:0.8, ult:'normal'},
+   boss:{espece:'Linéon', niv:8, titre:'Linéon le Balafré', taille:1.95, force:0.8, ult:'normal'},
    vagues:2, decor:['AmpPlains','TinyWoods','SkyPeak1stPass','BeachCave']},
   {cle:'verger', horde:7, nom:'Le Vieux Verger', zone:'Le Pré du Grand Départ',
    salles:4, niv:5, sbires:['Rattata','Roucool'], elites:['Linéon'],
-   boss:{espece:'Rattatac', niv:12, titre:'Rattatac le Vorace', taille:1.45,
+   boss:{espece:'Rattatac', niv:12, titre:'Rattatac le Vorace', taille:2.05,
     escorte:[{espece:'Rattata', niv:8}, {espece:'Rattata', niv:8}]},
    vagues:3, decor:['TinyWoods','AmpPlains','LushPrairie','BeachCave']},
   {cle:'taupes', horde:8, nom:'La Colline aux Taupes', zone:'Le Pré du Grand Départ',
    salles:4, niv:7, sbires:['Roucool','Piafabec'], elites:['Rattatac'],
-   boss:{espece:'Rapasdepic', niv:13, titre:'Rapasdepic l\'Ouragan', taille:1.45, ult:'vol'},
+   boss:{espece:'Rapasdepic', niv:13, titre:'Rapasdepic l\'Ouragan', taille:2.05, ult:'vol'},
    vagues:3, decor:['SkyPeak1stPass','AmpPlains','TinyWoods','BeachCave']},
   {cle:'grandpre', horde:9, nom:'Le Grand Pré', zone:'Le Pré du Grand Départ',
    salles:5, niv:9, sbires:['Zigzaton','Rattata','Roucool','Piafabec'],
    elites:['Linéon','Rattatac'],
-   boss:{espece:'Tauros', niv:16, titre:'Tauros le Doyen', taille:1.6, ult:'sol',
+   boss:{espece:'Tauros', niv:16, titre:'Tauros le Doyen', taille:2.25, ult:'sol',
     escorte:[{espece:'Linéon', niv:10}, {espece:'Linéon', niv:10}]},
    vagues:4, decor:['AmpPlains','LushPrairie','TinyWoods','BeachCave'], final:1}
 ];
@@ -1445,7 +1445,7 @@ const INVASIONS = {
     sbires: ['Zigzaton', 'Rattata', 'Roucool', 'Piafabec'],
     elites: ['Linéon', 'Rattatac'],
     miniBoss: {espece: 'Rapasdepic', titre: 'Rapasdepic l\'Éclaireur'},
-    boss: {espece: 'Tauros', titre: 'Tauros le Vengeur', taille: 1.7, ult: 'sol',
+    boss: {espece: 'Tauros', titre: 'Tauros le Vengeur', taille: 2.45, ult: 'sol',
            escorte: [{espece: 'Rattatac'}, {espece: 'Linéon'}]}
   }
 };
@@ -1478,6 +1478,72 @@ const TYPE_IMG = {
 "tenebres": "data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2Ij48ZGVmcz48c3R5bGU+IC5jbHMtMSB7IGZpbGw6ICNmZmY7IH0gLmNscy0yIHsgZmlsbDogIzRmNDc0NzsgfSA8L3N0eWxlPjwvZGVmcz48Y2lyY2xlIGNsYXNzPSJjbHMtMiIgY3g9IjEyOCIgY3k9IjEyOCIgcj0iMTI4Ii8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNzQuNDYsODQuMjRjNy40OSw3LjU2LDE3Ljc1LDE0Ljk1LDI3LjA0LDE2LjkzLTEuMzgsMi44NC0xLjg4LDUuMDctMi4zNyw4LjIzLTIuNzgsMTcuODItMS4xOSwzNC42MywxMi4xNSw0OC4zLDEwLjA2LDEwLjMxLDIzLjQ1LDEwLjI4LDMzLjUxLS4wOSwxMy4yOS0xMy43MSwxNC45MS0zMC41MSwxMi4wMS00OC4zMy0uNDMtMi42Mi0xLjkzLTkuMTUtMS44OC05LjI0LC4xLS4xOCwwLS4wOCwxLS4zOCw2LjQ4LTEuNTEsMTguNjItNy45OSwyNi4wNS0xNS41LDE1LjM2LDExLjg4LDIzLjY1LDM2LjkxLDE0LjE4LDU2Ljg1LTEyLjk0LDI3LjI0LTQzLjE2LDUxLjc2LTgxLjQzLDQzLjk2LTI5LjE1LTUuOTQtNDkuMDQtMjQuNDktNTcuOTUtNTMuMjEtNC4xNC0xMy4zMywxLjY3LTM1Ljk4LDE3LjctNDcuNTJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTM5LjkyLDEyNC4zOGMtLjI3LDUuMy0uNzksMTIuNjEtNi4wNSwxOC40NS00LjEyLDQuNTctNy45Niw0LjgzLTExLjY2LS4wMy03LjQzLTkuNzUtNy40Ni0yMC44OS00LjQ4LTMyLjE5LDEuOTYtNy40MiwyLjg2LTcuOSwxMC4yNi03LjksNy40MSwwLDcuOTcsLjU4LDEwLjM4LDcuODUsMS4yOCwzLjg4LDEuNTgsNy43OCwxLjU2LDEzLjgzWiIvPjwvc3ZnPg==",
 "vol": "data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2Ij48ZGVmcz48c3R5bGU+IC5jbHMtMSB7IGZpbGw6ICNmZmY7IH0gLmNscy0yIHsgZmlsbDogIzc0YWFkMDsgfSA8L3N0eWxlPjwvZGVmcz48Y2lyY2xlIGNsYXNzPSJjbHMtMiIgY3g9IjEyOCIgY3k9IjEyOCIgcj0iMTI4Ii8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTUxLjc4LDE0OC40M2MtMTUuNzIsMTguNjYtMzYuNzIsMTguNTQtNTYuODIsMjAuNDktLjg4LC4wOS0xLjcyLC40Ni0yLjM2LDEuMDktMTAuMjcsMTAuMDktMTUuODQsMjQuMTMtMjgsMzMuNjQtLjU1LC40My0xLjM5LC4yLTEuNjMtLjQ1LTIuMjUtNi4wOS0xLjU3LTExLjQtLjgxLTE2LjM5LDQuMjYtMjguMDIsMTEuMTMtNTUuNCwyMS44OC04MS42Niw1LjgzLTE0LjIzLDE1LjEzLTI0LjUxLDMxLjU5LTI3LjIsMjQuMzYtMy45OCw0Ny4zMy0xMy4wMyw3MC41OC0yMC45NywyLjk2LTEuMDEsNi4wNS0xLjk2LDkuMTMtLjc2LC45NywuMzgsMS43NCwxLjE4LDIuMDIsMi4xOCwuOTEsMy4yNS0uOTIsNS44OS0yLjU0LDguNjgtMTMuNSwyMy4zNi0zNC4yNSwzNy41MS01OC45Miw0Ni44MS0zLjU0LDEuMzMtNy45LDIuODEtMTAuOTEsNS42MS0uMzIsLjMtLjA4LC44NiwuMzUsLjg4LDE3LjQ4LC43NCwzMi43Ni01LjcsNDguODItOS4yNCwuNTUtLjEyLDEuMDQsLjQ1LC44NCwuOTgtNy4wNSwxNy45NC0yMy43OSwyNi45OS0zOS45LDMyLjE1LTYuMywyLjAyLTkuMzUsMi40Ni0yMC4zMywzLjQ2LS4zNywuMDMtLjQxLC40OS0uMTEsLjU3LDE1Ljg3LDQsMjEuNzgtLjU1LDM2LjM0LTEuNTUsLjgzLS4wNiwxLjMsMS4wMiwuNzcsMS42NloiLz48L3N2Zz4="
 };
+
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — les objets de décor des donjons.
+   Des planches PMD (RawAsset/Object) posées au sol pour que les salles
+   respirent : souches, rondins, fleurs, buissons. Certaines sont
+   « hautes » et passent devant les Pokémon quand ceux-ci sont derrière,
+   d'autres sont plates et restent sous leurs pattes.
+   ===================================================================== */
+const OBJETS = {
+  /* nom : [cases de large, haut ?, poids du tirage] */
+  'Flowers_Town_1': {w: 1.0, haut: 0, poids: 26},
+  'Logs_Small':     {w: 0.9, haut: 1, poids: 14},
+  'Pot':            {w: 0.7, haut: 1, poids: 7},
+  'Stump_Chair':    {w: 0.8, haut: 1, poids: 8},
+  'Hedge':          {w: 1.0, haut: 1, poids: 14},
+  'Logs_Large':     {w: 1.5, haut: 1, poids: 9},
+  'Trunk_Small':    {w: 1.2, haut: 1, poids: 9},
+  'Trunk_Large':    {w: 1.5, haut: 1, poids: 6},
+  'Logs_Stacked':   {w: 1.7, haut: 1, poids: 4},
+  'Tree_Town':      {w: 2.6, haut: 1, poids: 3}
+};
+const OBJ = {images: {}, pret: false, promesse: null};
+
+function chargerObjets(){
+  if(OBJ.promesse) return OBJ.promesse;
+  const base = (typeof window !== 'undefined' && window.BASE_RES) || '/';
+  OBJ.promesse = Promise.all(Object.keys(OBJETS).map(nom => new Promise(ok => {
+    if(window.RESSOURCES && RESSOURCES.objets && RESSOURCES.objets[nom]){
+      const im = new Image();
+      im.onload = () => { OBJ.images[nom] = im; ok(); };
+      im.onerror = () => ok();
+      im.src = RESSOURCES.objets[nom];
+      return;
+    }
+    const im = new Image();
+    im.onload = () => { OBJ.images[nom] = im; ok(); };
+    im.onerror = () => ok();
+    im.src = base + 'objets/' + nom + '.png';
+  }))).then(() => { OBJ.pret = true; });
+  return OBJ.promesse;
+}
+
+/* tire un objet au hasard, pondéré — les fleurs souvent, l'arbre rarement */
+function objetAuHasard(alea, hautSeulement){
+  const cands = Object.entries(OBJETS).filter(([, o]) => !hautSeulement || o.haut);
+  let tot = cands.reduce((s, [, o]) => s + o.poids, 0);
+  let r = alea() * tot;
+  for(const [nom, o] of cands){ r -= o.poids; if(r <= 0) return nom; }
+  return cands[0][0];
+}
+
+/* dessine un objet posé en (px, py), la base sur le sol */
+function dessinerObjet(ctx, d, px, py, T){
+  const im = OBJ.images[d.nom];
+  const o = OBJETS[d.nom];
+  if(!im || !o) return;
+  const n = im.width > im.height && im.width % im.height === 0
+          ? (im.width / im.height) | 0 : 1;
+  const cw = im.width / n, ch = im.height;
+  const l = T * o.w * (d.ech || 1);
+  const h = l * (ch / cw);
+  ctx.drawImage(im, (d.cadre % n) * cw, 0, cw, ch,
+                px - l / 2, py - h + T * 0.18, l, h);
+}
 
 </script>
 <script>
@@ -1925,7 +1991,7 @@ const D = {
   salleIdx: 0, phase: 'combat', tActuel: 0,
   cam: {x: 0, y: 0}, secousse: 0, graine: 1,
   butin: {sous: 0, baies: 0, xp: 0, tickets: 0}, tues: 0,
-  vague: 0, vaguesTotal: 0, resultat: null, vitesse: 1, fin: null
+  vague: 0, vaguesTotal: 0, resultat: null, vitesse: 1, fin: null, decors: []
 };
 
 /* --- l'aléatoire du donjon ------------------------------------------- */
@@ -1939,6 +2005,133 @@ const entre = (a, b) => a + rngD() * (b - a);
 const parmi = t => t[(rngD() * t.length) | 0];
 
 /* --- la génération : des salles empilées, du bas vers le haut --------- */
+/* ARRONDIR ET GRIGNOTER : une salle taillée au carré fait décor de
+   tableur. On lui mange les coins, on mord ses bords au hasard, et on
+   sème quelques rochers à l'intérieur — jamais au centre, jamais sur le
+   passage, pour ne bloquer ni le combat ni le chemin. */
+function organiser(carte, W, s, opts){
+  const o = opts || {};
+  const mur = (x, y) => { if(x > 0 && y > 0 && x < W - 1) carte[y * W + x] = 0; };
+  const sol = (x, y) => carte[y * W + x] === 1;
+  const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+  /* les quatre coins, rongés en diagonale */
+  for(const [ax, ay] of [[0, 0], [1, 0], [0, 1], [1, 1]]){
+    const r = 1 + ((rngD() * 3) | 0);
+    for(let dy = 0; dy < r; dy++)
+      for(let dx = 0; dx < r - dy; dx++)
+        mur(s.x + (ax ? s.w - 1 - dx : dx), s.y + (ay ? s.h - 1 - dy : dy));
+  }
+  /* les bords : une bouchée de temps en temps, sauf devant les portes */
+  const porte = x => Math.abs(x - cx) < 2.2;
+  for(let x = s.x + 1; x < s.x + s.w - 1; x++){
+    if(!porte(x) && rngD() < 0.3) mur(x, s.y);
+    if(!porte(x) && rngD() < 0.3) mur(x, s.y + s.h - 1);
+  }
+  for(let y = s.y + 1; y < s.y + s.h - 1; y++){
+    if(rngD() < 0.3) mur(s.x, y);
+    if(rngD() < 0.3) mur(s.x + s.w - 1, y);
+  }
+  /* deuxième bouchée : le contour ne fait plus une seule marche mais
+     dentelle sur deux rangs — c'est ce qui donne l'air creusé */
+  for(let y = s.y; y < s.y + s.h; y++)
+    for(let x = s.x; x < s.x + s.w; x++){
+      if(!sol(x, y)) continue;
+      let libre = 0;
+      for(const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]])
+        if(!sol(x + dx, y + dy)) libre++;
+      if(!libre || libre > 2) continue;         // au coeur, ou déjà un goulot
+      if(porte(x) && (y < s.y + 2 || y > s.y + s.h - 3)) continue;
+      if(rngD() < 0.2) mur(x, y);
+    }
+  /* quelques rochers dedans, si la salle est assez grande */
+  const nb = o.rochers !== undefined ? o.rochers
+           : (s.w >= 10 && s.h >= 7 ? 1 + ((rngD() * 3) | 0) : 0);
+  for(let k = 0; k < nb; k++){
+    for(let essai = 0; essai < 12; essai++){
+      const x = s.x + 2 + ((rngD() * (s.w - 4)) | 0);
+      const y = s.y + 2 + ((rngD() * (s.h - 4)) | 0);
+      if(Math.hypot(x - cx, y - cy) < 2.4) continue;   // pas au milieu
+      if(porte(x) && (y < s.y + 2 || y > s.y + s.h - 3)) continue;
+      if(!sol(x, y)) continue;
+      mur(x, y);
+      if(rngD() < 0.45) mur(x + (rngD() < 0.5 ? 1 : -1), y);   // parfois deux
+      break;
+    }
+  }
+  /* LA VEINE VITALE : quoi qu'on ait rongé, une colonne reste ouverte du
+     bord bas au bord haut en passant par le centre — c'est par là que les
+     couloirs se branchent, on ne peut donc jamais s'enfermer. */
+  const xv = Math.round(cx);
+  if(xv > 0 && xv < W - 1)
+    for(let y = s.y; y < s.y + s.h; y++) carte[y * W + xv] = 1;
+  /* et on rebouche les poches coupées du reste : sinon un Pokémon peut
+     apparaître dans un recoin où personne ne peut aller */
+  const dedans = (x, y) => x >= s.x && x < s.x + s.w && y >= s.y && y < s.y + s.h;
+  const vu = {};
+  const pile = [[xv, Math.round(cy)]];
+  vu[xv + ',' + Math.round(cy)] = 1;
+  while(pile.length){
+    const [x, y] = pile.pop();
+    for(const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+      const a = x + dx, b = y + dy, k = a + ',' + b;
+      if(!dedans(a, b) || vu[k] || !sol(a, b)) continue;
+      vu[k] = 1; pile.push([a, b]);
+    }
+  }
+  for(let y = s.y; y < s.y + s.h; y++)
+    for(let x = s.x; x < s.x + s.w; x++)
+      if(sol(x, y) && !vu[x + ',' + y]) mur(x, y);
+}
+
+/* LE DÉCOR : ce qu'on pose sur le sol pour que la salle vive. Rien de tout
+   ça ne bloque : c'est de l'ambiance, pas des obstacles. */
+function semerDecor(carte, W, H, salles){
+  if(typeof objetAuHasard !== 'function') return [];
+  const decors = [];
+  const sol = (x, y) => x > 0 && y > 0 && x < W && y < H && carte[y * W + x] === 1;
+  for(const s of salles){
+    const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+    const n = Math.round(s.w * s.h * (s.arene ? 0.022 : 0.032));
+    for(let k = 0; k < n; k++){
+      for(let essai = 0; essai < 10; essai++){
+        const x = s.x + 1 + rngD() * (s.w - 2);
+        const y = s.y + 1 + rngD() * (s.h - 2);
+        if(!sol(x | 0, y | 0)) continue;
+        const auBord = x < s.x + 2.2 || x > s.x + s.w - 2.2
+                    || y < s.y + 2.2 || y > s.y + s.h - 2.2;
+        /* le centre reste dégagé : c'est là qu'on se bat */
+        if(Math.hypot(x - cx, y - cy) < (s.arene ? 5 : 2.6) && !auBord) continue;
+        const nom = objetAuHasard(rngD, !auBord ? false : rngD() < 0.55);
+        if(decors.some(d => Math.hypot(d.x - x, d.y - y) < 2.2)) continue;
+        decors.push({x, y, nom, cadre: (rngD() * 10) | 0,
+                     ech: 0.85 + rngD() * 0.35});
+        break;
+      }
+    }
+  }
+  return decors;
+}
+
+/* LE DÉCOR DES COULOIRS : au ras des murs, pour border le chemin sans
+   jamais le boucher. Un couloir nu ressemble à un tuyau ; un couloir
+   bordé de fougères et de rondins ressemble à un sentier. */
+function semerCouloirs(carte, W, H, couloirs){
+  if(typeof objetAuHasard !== 'function') return [];
+  const decors = [];
+  const sol = (x, y) => x > 0 && y > 0 && x < W && y < H && carte[y * W + x] === 1;
+  for(const c of couloirs){
+    if(rngD() > 0.16) continue;
+    const cote = rngD() < 0.5 ? -1 : 1;
+    const x = c.x + cote * (c.larg - 0.15) + (rngD() - 0.5) * 0.4;
+    const y = c.y + (rngD() - 0.5) * 0.6;
+    if(!sol(x | 0, y | 0)) continue;
+    if(decors.some(d => Math.hypot(d.x - x, d.y - y) < 3.4)) continue;
+    decors.push({x, y, nom: objetAuHasard(rngD, rngD() < 0.4),
+                 cadre: (rngD() * 10) | 0, ech: 0.75 + rngD() * 0.3});
+  }
+  return decors;
+}
+
 function construireCarte(def){
   const salles = [];
   /* LE DONJON FINAL D'UNE ZONE : pas de couloirs, pas d'étages —
@@ -1949,9 +2142,11 @@ function construireCarte(def){
     const x0 = 2, y0 = 2, w = W - 4, h = H - 4;
     for(let y = y0; y < y0 + h; y++)
       for(let x = x0; x < x0 + w; x++) carte[y * W + x] = 1;
-    salles.push({x: x0, y: y0, w, h, boss: true, vue: true, faite: false,
-                 cx: x0 + w / 2, cy: y0 + h / 2, arene: true});
-    return {carte, W, H, salles};
+    const arene = {x: x0, y: y0, w, h, boss: true, vue: true, faite: false,
+                   cx: x0 + w / 2, cy: y0 + h / 2, arene: true};
+    salles.push(arene);
+    organiser(carte, W, arene, {rochers: 5});
+    return {carte, W, H, salles, decors: semerDecor(carte, W, H, salles)};
   }
   const n = def.salles + 1;                     // + la salle du boss
   const W = 22;
@@ -1965,6 +2160,7 @@ function construireCarte(def){
   }
   const H = rects.reduce((s, r) => s + r.h, 0) + (n - 1) * 8 + 4;
   const carte = new Uint8Array(W * H);          // 0 = mur, 1 = sol
+  const couloirs = [];                          // pour y semer du décor
   let cy = H - 2;
   let precedent = null;
   for(let i = 0; i < n; i++){
@@ -1976,21 +2172,59 @@ function construireCarte(def){
     const salle = {x, y: sy, w: r.w, h: r.h, boss: r.boss, vue: false,
                    cx: x + r.w / 2, cy: sy + r.h / 2, faite: false};
     salles.push(salle);
-    if(precedent){                               // le couloir qui monte
-      const cx = Math.max(Math.min((salle.cx + precedent.cx) / 2 | 0, W - 3), 2);
-      for(let yy = sy + r.h; yy <= precedent.y + 1; yy++)
-        for(let xx = cx - 1; xx <= cx; xx++) carte[yy * W + xx] = 1;
-      /* raccorder le couloir à chaque salle même décalée */
-      for(const py of [sy + r.h - 1, precedent.y]){
-        const versX = py === precedent.y ? precedent.cx | 0 : salle.cx | 0;
-        const [a, b] = cx < versX ? [cx, versX] : [versX, cx];
-        for(let xx = a; xx <= b; xx++) carte[py * W + xx] = 1;
+    organiser(carte, W, salle);          // AVANT le couloir : sinon on le ronge
+    if(precedent){
+      /* LE COULOIR SERPENTE. Une colonne bien droite, c'est un tuyau ;
+         on le fait dériver d'une case de temps en temps et respirer en
+         largeur. Les derniers pas visent la salle pour ne jamais casser
+         le chemin. */
+      const yBas = precedent.y, yHaut = sy + r.h - 1;
+      const xDep = Math.round(precedent.cx), xArr = Math.round(salle.cx);
+      const n2 = Math.max(1, yBas - yHaut);
+      let x = xDep;
+      for(let k = 0; k <= n2; k++){
+        const t = k / n2;
+        const vise = xDep + (xArr - xDep) * t;
+        const avant = x;
+        if(t > 0.72) x += Math.sign(vise - x) * (Math.abs(vise - x) > 0.5 ? 1 : 0);
+        else {
+          if(Math.abs(vise - x) > 1.6) x += Math.sign(vise - x);
+          else if(rngD() < 0.34) x += rngD() < 0.5 ? 1 : -1;
+        }
+        x = Math.max(2, Math.min(W - 3, x));
+        const larg = rngD() < 0.3 ? 2 : 1;          // 2 ou 3 cases de large
+        const y = yBas - k;
+        /* la veine part de la colonne précédente ET de la nouvelle : sans
+           ça, une dérive d'une case ne se touche qu'en diagonale et le
+           couloir est coupé. */
+        const g = Math.min(avant, x), dr = Math.max(avant, x);
+        for(let xx = g - larg; xx <= dr + larg; xx++){
+          if(xx <= 0 || xx >= W - 1) continue;
+          const bord = xx < g || xx > dr;           // les bords s'effritent
+          if(bord && rngD() > 0.55) continue;
+          carte[y * W + xx] = 1;
+        }
+        couloirs.push({x, y, larg});
+      }
+      /* on raccorde franchement aux deux salles : le couloir mange deux
+         rangées dans chacune, pour que ni un coin rongé ni un rocher ne
+         puisse fermer le passage */
+      for(const [py, bout, versX, dedans] of [[yBas, xDep, xDep, 1],
+                                              [yHaut, x, xArr, -1]]){
+        const [a, b] = bout < versX ? [bout, versX] : [versX, bout];
+        for(let d = 0; d < 2; d++)
+          for(let xx = a - 1; xx <= b + 1; xx++){
+            const yy = py + dedans * d;
+            if(xx > 0 && xx < W - 1 && yy > 0 && yy < H - 1) carte[yy * W + xx] = 1;
+          }
       }
     }
     precedent = salle;
     cy = sy - 8;                               // un GRAND couloir entre les salles
   }
-  return {carte, W, H, salles};
+  const decors = semerDecor(carte, W, H, salles);
+  decors.push(...semerCouloirs(carte, W, H, couloirs));
+  return {carte, W, H, salles, decors};
 }
 const solEn = (x, y) => x >= 0 && y >= 0 && x < D.W && y < D.H
                         && D.carte[(y | 0) * D.W + (x | 0)] === 1;
@@ -2106,14 +2340,14 @@ async function creerEnt(espece, camp, x, y, niveau, extra){
     e.atq *= 1 + (D.durete - 1) * 0.2;
   }
   if(e.elite){ e.pv = e.pvMax = Math.round(e.pvMax * 3.2); e.atq *= 2.1;
-               e.defs *= 1.6; e.taille = 1.18; }
+               e.defs *= 1.6; e.taille = 1.32; }
   if(e.boss){
     /* `force` adoucit les premiers boss : le tuto doit rester gagnable
        avec une équipe toute neuve — l'épique grandit avec toi */
     const f = e.force || 1;
     e.pv = e.pvMax = Math.round(e.pvMax * 18 * f);
     e.atq *= 2.8 * (0.75 + 0.25 * f);
-    e.defs *= 1.8; e.taille = e.taille || 1.4;
+    e.defs *= 1.8; e.taille = e.taille || 1.95;
   }
   e.sp = await chargerSprite(espece);
   return e;
@@ -2123,6 +2357,7 @@ async function creerEnt(espece, camp, x, y, niveau, extra){
 async function lancerDonjon(def, equipe){
   rngD = Alea((Date.now() % 100000) | 0);
   const c = construireCarte(def);
+  D.decors = c.decors || [];
   Object.assign(D, {
     actif: false, peuplement: false, durete: 1, def, carte: c.carte, W: c.W, H: c.H,
     salles: c.salles, ents: [], sols: [], fx: [], flottants: [],
@@ -2130,6 +2365,7 @@ async function lancerDonjon(def, equipe){
     vague: 0, resultat: null, butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
   });
   chargerVfx();
+  if(typeof chargerObjets === 'function') chargerObjets();
   /* le décor DTEF : le premier disponible de la liste du donjon */
   if(typeof DTEF !== 'undefined'){
     const dispo = await DTEF.liste();
@@ -2178,6 +2414,7 @@ async function lancerInvasion(def, defenseurs, positions){
     butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
   });
   chargerVfx();
+  if(typeof chargerObjets === 'function') chargerObjets();
   /* TOUS les pensionnaires défendent, là où ils se baladaient */
   for(const p of defenseurs){
     const pos = positions && positions[p.id];
@@ -2212,6 +2449,17 @@ async function lancerInvasion(def, defenseurs, positions){
 }
 
 /* la horde d'une salle : plein de sbires faibles, l'élite en plus haut */
+/* une case DE SOL dans la salle : depuis qu'il y a des rochers dedans,
+   on ne peut plus poser un Pokémon les yeux fermés */
+function placeLibreDans(s){
+  for(let essai = 0; essai < 20; essai++){
+    const x = entre(s.x + 1, s.x + s.w - 1);
+    const y = entre(s.y + 1, s.y + s.h - 1.5);
+    if(solEn(x, y)) return {x, y};
+  }
+  return {x: s.cx, y: s.cy};
+}
+
 async function peuplerSalle(i){
   const s = D.salles[i], def = D.def;
   if(s.boss){
@@ -2236,8 +2484,8 @@ async function peuplerSalle(i){
   for(let k = 0; k < n; k++){
     const elite = def.elites.length && i >= 1 && rngD() < 0.18;
     const espece = elite ? parmi(def.elites) : parmi(def.sbires);
-    promesses.push(creerEnt(espece, 'ennemi',
-      entre(s.x + 1, s.x + s.w - 1), entre(s.y + 1, s.y + s.h - 1.5),
+    const p = placeLibreDans(s);
+    promesses.push(creerEnt(espece, 'ennemi', p.x, p.y,
       def.niv + (elite ? 2 : 0) + ((rngD() * 2) | 0), {elite}));
   }
   (await Promise.all(promesses)).forEach(e => D.ents.push(e));
@@ -2405,7 +2653,7 @@ async function lancerVague(){
       D.secousse = 0.5;
       promesses.push(creerEnt(def.miniBoss.espece, 'ennemi',
         D.breches[0].x, D.breches[0].y, def.niv + 5,
-        {elite: true, eveille: true, taille: 1.3, titre: def.miniBoss.titre}));
+        {elite: true, eveille: true, taille: 1.5, titre: def.miniBoss.titre}));
     }
     (await Promise.all(promesses)).forEach(e => { e.flash = 0.25; D.ents.push(e); });
     return;
@@ -2428,7 +2676,7 @@ async function lancerBoss(){
   D.secousse = 0.8;
   const entree = D.invasion ? D.breches[0] : {x: s.cx, y: s.y + 2};
   const e = await creerEnt(b.espece, 'ennemi', entree.x, entree.y, b.niv,
-    {boss: true, taille: b.taille || 1.4, titre: b.titre, force: b.force,
+    {boss: true, taille: b.taille || 1.95, titre: b.titre, force: b.force,
      ultBoss: b.ult || null});
   e.flash = 0.5;
   /* il RUGIT : une seconde d'intimidation avant la danse */
@@ -3242,9 +3490,20 @@ function rendreDonjon(cv){
      on ne voit JAMAIS ce qui attend de l'autre côté du couloir */
   for(const s of D.salles){
     if(s.vue) continue;
+    /* la nuit épouse la forme de la salle, tuile par tuile : un rectangle
+       noir sur une salle rongée, ça se voit tout de suite */
     ctx.fillStyle = 'rgba(8,5,3,0.94)';
-    ctx.fillRect(px(s.x) - T * 0.5, py(s.y) - T * 0.5,
-                 (s.w + 1) * T, (s.h + 1) * T);
+    for(let yy = s.y - 1; yy <= s.y + s.h; yy++)
+      for(let xx = s.x - 1; xx <= s.x + s.w; xx++){
+        let pres = false;
+        for(let dy = -1; dy <= 1 && !pres; dy++)
+          for(let dx = -1; dx <= 1; dx++){
+            const ax = xx + dx, ay = yy + dy;
+            if(ax >= s.x && ax < s.x + s.w && ay >= s.y && ay < s.y + s.h
+               && estSol(ax, ay)){ pres = true; break; }
+          }
+        if(pres) ctx.fillRect(px(xx) - 1, py(yy) - 1, T + 2, T + 2);
+      }
     ctx.fillStyle = 'rgba(242,193,78,0.5)';
     ctx.font = 'bold ' + Math.round(T * 0.8) + 'px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
@@ -3258,9 +3517,19 @@ function rendreDonjon(cv){
     ctx.fillText(s.quoi === 'sous' ? '🪙' : '🫐', px(s.x), py(s.y));
   }
 
-  /* les entités, du fond vers l'avant */
-  const tri = [...D.ents].sort((a, b) => a.y - b.y);
+  /* le décor plat (fleurs, herbes) : sous les pattes de tout le monde */
+  if(typeof dessinerObjet === 'function')
+    for(const d of D.decors)
+      if(!(OBJETS[d.nom] || {}).haut) dessinerObjet(ctx, d, px(d.x), py(d.y), T);
+
+  /* les entités ET le décor haut, du fond vers l'avant : une souche
+     devant un Pokémon doit le cacher, pas l'inverse */
+  const hauts = typeof dessinerObjet === 'function'
+    ? D.decors.filter(d => (OBJETS[d.nom] || {}).haut).map(d => ({decor: d, y: d.y}))
+    : [];
+  const tri = [...D.ents, ...hauts].sort((a, b) => a.y - b.y);
   for(const e of tri){
+    if(e.decor){ dessinerObjet(ctx, e.decor, px(e.decor.x), py(e.decor.y), T); continue; }
     const ex = px(e.x), ey = py(e.y);
     /* l'ombre */
     ctx.fillStyle = 'rgba(0,0,0,.35)';
@@ -3365,6 +3634,47 @@ function rendreDonjon(cv){
     }
   }
   ctx.globalAlpha = 1;
+
+  /* --- L'ÉCLAIRAGE ------------------------------------------------------
+     Une torche au milieu de l'équipe : la lumière est chaude autour d'elle
+     et la nuit reprend ses droits sur les bords. La flamme respire un peu,
+     sinon on dirait un projecteur. */
+  {
+    let lx = 0, ly = 0, n = 0;
+    for(const e of D.ents)
+      if(e.camp === 'equipe' && !e.ko){ lx += e.x; ly += e.y; n++; }
+    if(n){ lx /= n; ly /= n; } else { lx = D.cam.x; ly = D.cam.y; }
+    const t = performance.now() / 1000;
+    const battement = 1 + Math.sin(t * 2.3) * 0.012 + Math.sin(t * 5.7) * 0.008;
+    const cx = px(lx), cy = py(ly);
+    const r = Math.max(W, H) * 0.82 * battement;
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    const g = ctx.createRadialGradient(cx, cy, r * 0.12, cx, cy, r);
+    g.addColorStop(0.00, '#ffffff');
+    g.addColorStop(0.52, '#f0e6d6');
+    g.addColorStop(0.80, '#b49a7e');
+    g.addColorStop(1.00, '#6b5745');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    /* le halo de la flamme, par-dessus */
+    ctx.globalCompositeOperation = 'lighter';
+    const h = ctx.createRadialGradient(cx, cy, 0, cx, cy, T * 4.2 * battement);
+    h.addColorStop(0, 'rgba(255,206,124,0.20)');
+    h.addColorStop(0.5, 'rgba(255,178,92,0.08)');
+    h.addColorStop(1, 'rgba(255,160,80,0)');
+    ctx.fillStyle = h;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    /* le cadre : les coins de l'écran restent dans le noir */
+    const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42,
+                                       W / 2, H / 2, Math.max(W, H) * 0.78);
+    v.addColorStop(0, 'rgba(6,4,3,0)');
+    v.addColorStop(1, 'rgba(6,4,3,0.42)');
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, W, H);
+  }
+
   for(const f of D.flottants){
     ctx.globalAlpha = 1 - f.t;
     ctx.font = 'bold ' + Math.round(T * 0.42) + 'px sans-serif';
