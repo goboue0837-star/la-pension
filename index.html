@@ -126,6 +126,10 @@
     width:10px; height:10px; border-radius:99px; background:var(--danger);
     border:2px solid var(--carte); }
 
+  .statut .rouage{ margin-left:auto; font-size:18px; line-height:1; cursor:pointer;
+    min-width:40px; min-height:34px; display:flex; align-items:center; justify-content:center; }
+  .statut .rouage:active{ transform:scale(.92); }
+
   /* --- les onglets de zone : une pension par zone achetée ---------------- */
   .ongletsZone{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 2px;
     -webkit-overflow-scrolling:touch; }
@@ -404,6 +408,7 @@
       <span class="titre">La Pension</span>
       <span class="jeton">🪙 <b class="jSous">0</b></span>
       <span class="jeton">🫐 <b class="jBaies">x0</b></span>
+      <button class="jeton rouage" onclick="montrer('compte')" aria-label="Mon compte et les options">⚙</button>
     </div>
     <div class="corps">
       <div class="ongletsZone" hidden></div>
@@ -433,28 +438,44 @@
   <!-- ============ ÉQUIPE ============ -->
   <section class="ecran" data-nom="equipe">
     <div class="statut">
-      <span class="titre">Expédition</span>
+      <span class="titre">Mon équipe</span>
       <button class="jeton" onclick="ouvrirTableTypes()" style="cursor:pointer;">📖 Types</button>
     </div>
     <div class="corps">
       <div class="panneau">
-        <div class="titrePanneau"><span class="etape">1</span>Choisis jusqu'à 3 Pokémon</div>
+        <div class="titrePanneau">Choisis jusqu'à 3 Pokémon</div>
         <div id="rangEquipe"></div>
       </div>
-      <div class="panneau">
-        <div class="titrePanneau"><span class="etape">2</span>Le Pré du Grand Départ</div>
-        <div id="colereZone" hidden>
-          <div class="vengBloc" style="margin:0 0 12px;">
+    </div>
+    <div class="barreAction">
+      <div class="compteur">équipe<b class="compteEquipe">0/3</b></div>
+      <button class="btnOr" onclick="montrer('carte')">🗺 Choisir le donjon</button>
+    </div>
+  </section>
+
+  <!-- ============ LE CHOIX DU DONJON ============ -->
+  <section class="ecran" data-nom="carte">
+    <div class="statut">
+      <span class="titre">Le Grand Départ</span>
+      <button class="jeton" onclick="montrer('equipe')" style="cursor:pointer;">⚔ Mon équipe</button>
+    </div>
+    <div class="corps">
+      <div id="colereZone" hidden>
+        <div class="panneau">
+          <div class="vengBloc" style="margin:0;">
             <span class="vengIco">🌋</span>
             <span class="vengBarre zone" style="max-width:none;"><i id="colereBarre" style="width:0%"></i></span>
             <span class="vengPct" id="colerePct"></span>
           </div>
         </div>
+      </div>
+      <div class="panneau">
+        <div class="titrePanneau">Où part l'équipe ?</div>
         <div class="lignesButin" id="listeDonjons"></div>
       </div>
     </div>
     <div class="barreAction">
-      <div class="compteur">équipe<b id="compteEquipe">0/3</b></div>
+      <div class="compteur">équipe<b class="compteEquipe">0/3</b></div>
       <button class="btnOr" onclick="partirEnDonjon()">🎲 C'est parti !</button>
     </div>
   </section>
@@ -525,8 +546,8 @@
   <!-- ============ ÉCRAN COMPTE ============ -->
   <section class="ecran" data-nom="compte">
     <div class="statut">
+      <button class="jeton" onclick="montrer('pension')" style="cursor:pointer;">← Retour</button>
       <span class="titre">Compte</span>
-      <span class="jeton">🪙 <b class="jSous">0</b></span>
     </div>
     <div class="corps">
       <div class="panneau">
@@ -563,9 +584,9 @@
   <div id="navbas">
     <button data-vers="pension" class="actif"><span class="ico">🏡</span>Pension</button>
     <button data-vers="equipe"><span class="ico">⚔</span>Équipe</button>
+    <button data-vers="carte"><span class="ico">🗺</span>Donjon</button>
     <button data-vers="spins"><span class="ico">🎰</span>Spins</button>
     <button data-vers="boutique"><span class="ico">🛒</span>Boutique</button>
-    <button data-vers="compte"><span class="ico">👤</span>Compte</button>
   </div>
 
   <div id="voileFiche">
@@ -4215,7 +4236,7 @@ function majEquipe(){
     };
     box.appendChild(b);
   }
-  $('#compteEquipe').textContent = selection.length + '/3';
+  $$('.compteEquipe').forEach(e => e.textContent = selection.length + '/3');
   /* la colère de la ZONE, au-dessus de ses donjons */
   const cz = $('#colereZone');
   if(cz){
@@ -4894,7 +4915,7 @@ function montrer(nom){
   fermerFiche();
   if(nom === 'pension'){ majPension(); chargerDecorPension(); }
   else { const g = $('#grandDomaine'); if(g) g.hidden = true; }
-  if(nom === 'equipe') majEquipe();
+  if(nom === 'equipe' || nom === 'carte') majEquipe();
   if(nom === 'spins') majSpins();
   if(nom === 'boutique') majBoutique();
   if(nom === 'compte') majCompte();
