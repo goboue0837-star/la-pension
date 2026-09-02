@@ -1482,72 +1482,6 @@ const TYPE_IMG = {
 </script>
 <script>
 /* =====================================================================
-   LA PENSION — les objets de décor des donjons.
-   Des planches PMD (RawAsset/Object) posées au sol pour que les salles
-   respirent : souches, rondins, fleurs, buissons. Certaines sont
-   « hautes » et passent devant les Pokémon quand ceux-ci sont derrière,
-   d'autres sont plates et restent sous leurs pattes.
-   ===================================================================== */
-const OBJETS = {
-  /* nom : [cases de large, haut ?, poids du tirage] */
-  'Flowers_Town_1': {w: 1.0, haut: 0, poids: 26},
-  'Logs_Small':     {w: 0.9, haut: 1, poids: 14},
-  'Pot':            {w: 0.7, haut: 1, poids: 7},
-  'Stump_Chair':    {w: 0.8, haut: 1, poids: 8},
-  'Hedge':          {w: 1.0, haut: 1, poids: 14},
-  'Logs_Large':     {w: 1.5, haut: 1, poids: 9},
-  'Trunk_Small':    {w: 1.2, haut: 1, poids: 9},
-  'Trunk_Large':    {w: 1.5, haut: 1, poids: 6},
-  'Logs_Stacked':   {w: 1.7, haut: 1, poids: 4},
-  'Tree_Town':      {w: 2.6, haut: 1, poids: 3}
-};
-const OBJ = {images: {}, pret: false, promesse: null};
-
-function chargerObjets(){
-  if(OBJ.promesse) return OBJ.promesse;
-  const base = (typeof window !== 'undefined' && window.BASE_RES) || '/';
-  OBJ.promesse = Promise.all(Object.keys(OBJETS).map(nom => new Promise(ok => {
-    if(window.RESSOURCES && RESSOURCES.objets && RESSOURCES.objets[nom]){
-      const im = new Image();
-      im.onload = () => { OBJ.images[nom] = im; ok(); };
-      im.onerror = () => ok();
-      im.src = RESSOURCES.objets[nom];
-      return;
-    }
-    const im = new Image();
-    im.onload = () => { OBJ.images[nom] = im; ok(); };
-    im.onerror = () => ok();
-    im.src = base + 'objets/' + nom + '.png';
-  }))).then(() => { OBJ.pret = true; });
-  return OBJ.promesse;
-}
-
-/* tire un objet au hasard, pondéré — les fleurs souvent, l'arbre rarement */
-function objetAuHasard(alea, hautSeulement){
-  const cands = Object.entries(OBJETS).filter(([, o]) => !hautSeulement || o.haut);
-  let tot = cands.reduce((s, [, o]) => s + o.poids, 0);
-  let r = alea() * tot;
-  for(const [nom, o] of cands){ r -= o.poids; if(r <= 0) return nom; }
-  return cands[0][0];
-}
-
-/* dessine un objet posé en (px, py), la base sur le sol */
-function dessinerObjet(ctx, d, px, py, T){
-  const im = OBJ.images[d.nom];
-  const o = OBJETS[d.nom];
-  if(!im || !o) return;
-  const n = im.width > im.height && im.width % im.height === 0
-          ? (im.width / im.height) | 0 : 1;
-  const cw = im.width / n, ch = im.height;
-  const l = T * o.w * (d.ech || 1);
-  const h = l * (ch / cw);
-  ctx.drawImage(im, (d.cadre % n) * cw, 0, cw, ch,
-                px - l / 2, py - h + T * 0.18, l, h);
-}
-
-</script>
-<script>
-/* =====================================================================
    LA PENSION — le lecteur de sprites PMD (format AnimData), repris
    d'Expédition Mystère. Un Pokémon a un dossier NOMMÉ (rangé à la main)
    ou un NUMÉRO (RawAsset, 0025 = Pikachu) : le nommé gagne.
@@ -2040,52 +1974,6 @@ function organiser(carte, W, s, opts){
 
 /* LE DÉCOR : ce qu'on pose sur le sol pour que la salle vive. Rien de tout
    ça ne bloque : c'est de l'ambiance, pas des obstacles. */
-function semerDecor(carte, W, H, salles){
-  if(typeof objetAuHasard !== 'function') return [];
-  const decors = [];
-  const sol = (x, y) => x > 0 && y > 0 && x < W && y < H && carte[y * W + x] === 1;
-  for(const s of salles){
-    const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
-    const n = Math.round(s.w * s.h * (s.arene ? 0.022 : 0.032));
-    for(let k = 0; k < n; k++){
-      for(let essai = 0; essai < 10; essai++){
-        const x = s.x + 1 + rngD() * (s.w - 2);
-        const y = s.y + 1 + rngD() * (s.h - 2);
-        if(!sol(x | 0, y | 0)) continue;
-        const auBord = x < s.x + 2.2 || x > s.x + s.w - 2.2
-                    || y < s.y + 2.2 || y > s.y + s.h - 2.2;
-        /* le centre reste dégagé : c'est là qu'on se bat */
-        if(Math.hypot(x - cx, y - cy) < (s.arene ? 5 : 2.6) && !auBord) continue;
-        const nom = objetAuHasard(rngD, !auBord ? false : rngD() < 0.55);
-        if(decors.some(d => Math.hypot(d.x - x, d.y - y) < 2.2)) continue;
-        decors.push({x, y, nom, cadre: (rngD() * 10) | 0,
-                     ech: 0.85 + rngD() * 0.35});
-        break;
-      }
-    }
-  }
-  return decors;
-}
-
-/* LE DÉCOR DES COULOIRS : au ras des murs, pour border le chemin sans
-   jamais le boucher. Un couloir nu ressemble à un tuyau ; un couloir
-   bordé de fougères et de rondins ressemble à un sentier. */
-function semerCouloirs(carte, W, H, couloirs){
-  if(typeof objetAuHasard !== 'function') return [];
-  const decors = [];
-  const sol = (x, y) => x > 0 && y > 0 && x < W && y < H && carte[y * W + x] === 1;
-  for(const c of couloirs){
-    if(rngD() > 0.16) continue;
-    const cote = rngD() < 0.5 ? -1 : 1;
-    const x = c.x + cote * (c.larg - 0.15) + (rngD() - 0.5) * 0.4;
-    const y = c.y + (rngD() - 0.5) * 0.6;
-    if(!sol(x | 0, y | 0)) continue;
-    if(decors.some(d => Math.hypot(d.x - x, d.y - y) < 3.4)) continue;
-    decors.push({x, y, nom: objetAuHasard(rngD, rngD() < 0.4),
-                 cadre: (rngD() * 10) | 0, ech: 0.75 + rngD() * 0.3});
-  }
-  return decors;
-}
 
 function construireCarte(def){
   const salles = [];
@@ -2101,7 +1989,7 @@ function construireCarte(def){
                    cx: x0 + w / 2, cy: y0 + h / 2, arene: true};
     salles.push(arene);
     organiser(carte, W, arene);
-    return {carte, W, H, salles, decors: semerDecor(carte, W, H, salles)};
+    return {carte, W, H, salles, decors: []};
   }
   const n = def.salles + 1;                     // + la salle du boss
   const W = 22;
@@ -2115,7 +2003,6 @@ function construireCarte(def){
   }
   const H = rects.reduce((s, r) => s + r.h, 0) + (n - 1) * 8 + 4;
   const carte = new Uint8Array(W * H);          // 0 = mur, 1 = sol
-  const couloirs = [];                          // pour y semer du décor
   let cy = H - 2;
   let precedent = null;
   for(let i = 0; i < n; i++){
@@ -2164,7 +2051,6 @@ function construireCarte(def){
             if(xx <= 0 || xx >= W - 1) break;
             carte[y * W + xx] = 1;
           }
-        couloirs.push({x, y, larg});
       }
       /* on raccorde franchement aux deux salles : le couloir mange deux
          rangées dans chacune, pour que ni un coin rongé ni un rocher ne
@@ -2182,9 +2068,9 @@ function construireCarte(def){
     precedent = salle;
     cy = sy - 8;                               // un GRAND couloir entre les salles
   }
-  const decors = semerDecor(carte, W, H, salles);
-  decors.push(...semerCouloirs(carte, W, H, couloirs));
-  return {carte, W, H, salles, decors};
+  /* PAS DE DÉCO dans les donjons : posée au hasard, elle tombait toujours
+     au mauvais endroit. C'est la forme des salles qui fait le travail. */
+  return {carte, W, H, salles, decors: []};
 }
 const solEn = (x, y) => x >= 0 && y >= 0 && x < D.W && y < D.H
                         && D.carte[(y | 0) * D.W + (x | 0)] === 1;
@@ -2325,7 +2211,6 @@ async function lancerDonjon(def, equipe){
     vague: 0, resultat: null, butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
   });
   chargerVfx();
-  if(typeof chargerObjets === 'function') chargerObjets();
   /* le décor DTEF : le premier disponible de la liste du donjon */
   if(typeof DTEF !== 'undefined'){
     const dispo = await DTEF.liste();
@@ -2374,7 +2259,6 @@ async function lancerInvasion(def, defenseurs, positions){
     butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
   });
   chargerVfx();
-  if(typeof chargerObjets === 'function') chargerObjets();
   /* TOUS les pensionnaires défendent, là où ils se baladaient */
   for(const p of defenseurs){
     const pos = positions && positions[p.id];
@@ -3453,19 +3337,9 @@ function rendreDonjon(cv){
     ctx.fillText(s.quoi === 'sous' ? '🪙' : '🫐', px(s.x), py(s.y));
   }
 
-  /* le décor plat (fleurs, herbes) : sous les pattes de tout le monde */
-  if(typeof dessinerObjet === 'function')
-    for(const d of D.decors)
-      if(!(OBJETS[d.nom] || {}).haut) dessinerObjet(ctx, d, px(d.x), py(d.y), T);
-
-  /* les entités ET le décor haut, du fond vers l'avant : une souche
-     devant un Pokémon doit le cacher, pas l'inverse */
-  const hauts = typeof dessinerObjet === 'function'
-    ? D.decors.filter(d => (OBJETS[d.nom] || {}).haut).map(d => ({decor: d, y: d.y}))
-    : [];
-  const tri = [...D.ents, ...hauts].sort((a, b) => a.y - b.y);
+  /* les entités, du fond vers l'avant */
+  const tri = [...D.ents].sort((a, b) => a.y - b.y);
   for(const e of tri){
-    if(e.decor){ dessinerObjet(ctx, e.decor, px(e.decor.x), py(e.decor.y), T); continue; }
     const ex = px(e.x), ey = py(e.y);
     /* l'ombre */
     ctx.fillStyle = 'rgba(0,0,0,.35)';
