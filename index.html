@@ -211,6 +211,14 @@
                        75%{ transform:translate(2px,-1px) rotate(.6deg); } }
   .carteSpin.tourne img{ animation:tourbillon .22s infinite; }
   @keyframes tourbillon{ 50%{ transform:scale(.92) rotate(3deg); filter:brightness(1.2); } }
+  .rareteBloc{ background:var(--carte2); border-radius:var(--r-petit); padding:10px 12px;
+    border-left:3px solid var(--c); }
+  .rareteBloc .tete{ display:flex; align-items:center; gap:8px; font-size:14px; }
+  .rareteBloc .nom{ font-weight:800; color:var(--c); }
+  .rareteBloc .taux{ color:var(--encre); font-weight:800; }
+  .rareteBloc .nb{ margin-left:auto; color:var(--encre3); font-size:12.5px; font-weight:700; }
+  .rareteBloc .chips{ margin-top:8px; }
+  .rareteBloc .chip{ font-weight:700; color:var(--encre); background:var(--carte); }
   .rarete{ display:flex; align-items:center; gap:10px; padding:10px 12px;
     background:var(--carte2); border-radius:var(--r-petit); font-size:14px; }
   .rarete .pastille{ width:12px; height:12px; border-radius:99px; flex:0 0 auto;
@@ -460,13 +468,9 @@
         <div class="gros">🎰</div>
         <b class="px">🌾 La Grande Plaine</b>
         <p class="discret">25 familles · une famille = un tirage, tu reçois la forme de base.</p>
+        <button class="btnBois" style="width:100%; margin-top:12px;" onclick="ouvrirRaretes()">📊 Les raretés et les familles</button>
       </div>
       <div class="panneau" id="resultatSpin" hidden></div>
-      <div class="panneau">
-        <div class="titrePanneau">Les raretés</div>
-        <div id="tauxRaretes" style="display:flex; flex-direction:column; gap:6px;"></div>
-        <p class="mini" style="margin-top:10px;">✨ Et 0,1 % de shiny sur chaque tirage — stats ×1,5.</p>
-      </div>
       <p class="mini" style="text-align:center; padding:0 8px;">🔒 Forêt et Grotte arrivent avec les prochaines zones.</p>
     </div>
     <div class="barreAction">
@@ -560,6 +564,18 @@
       </div>
       <button class="btnDanger" id="btnLancerDef" style="margin-top:12px;">⚔ Lancer la défense</button>
       <button class="btnBois" style="width:100%; margin-top:8px;" onclick="fermerConseil()">Pas maintenant</button>
+    </div>
+  </div>
+
+  <div id="voileRaretes" class="voileHaut">
+    <div class="fiche">
+      <h3>📊 Les raretés</h3>
+      <p class="discret" style="margin-top:2px;">Ce que la machine peut sortir, et à quelle fréquence.
+        Tu tires le chef de famille, l'évolution se fait à la pension.</p>
+      <div id="tauxRaretes" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+      <p class="mini" style="margin-top:10px;">✨ Et 0,1 % de shiny sur chaque tirage — n'importe lequel, stats ×1,5.
+        Un doublon n'est jamais perdu : il monte d'un niveau celui que tu as déjà.</p>
+      <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerRaretes()">Fermer</button>
     </div>
   </div>
 
@@ -3480,6 +3496,8 @@ function ouvrirTableTypes(){
   v.classList.add('actif');
 }
 function fermerTableTypes(){ $('#voileTypes').classList.remove('actif'); }
+function ouvrirRaretes(){ majSpins(); $('#voileRaretes').classList.add('actif'); }
+function fermerRaretes(){ $('#voileRaretes').classList.remove('actif'); }
 
 /* --- la fiche (surcouche) --------------------------------------------- */
 let ficheOuverte = null;
@@ -4059,9 +4077,12 @@ function majSpins(){
   const tab = $('#tauxRaretes');
   tab.innerHTML = RARETES.map(r => {
     const dispo = PORTAIL_PLAINE.filter(n => ESPECES[n].rarete === r.cle);
-    return '<div class="rarete"><span class="pastille" style="background:' + COULEURS_RARETE[r.cle] + '"></span>'
+    const c = COULEURS_RARETE[r.cle];
+    return '<div class="rareteBloc" style="--c:' + c + '">'
+      + '<div class="tete"><span class="pastille" style="background:' + c + '"></span>'
       + '<span class="nom">' + r.nom + '</span><span class="taux">' + r.taux + ' %</span>'
-      + '<span class="qui">' + dispo.slice(0, 3).join(', ') + (dispo.length > 3 ? '…' : '') + '</span></div>';
+      + '<span class="nb">' + dispo.length + ' famille' + (dispo.length > 1 ? 's' : '') + '</span></div>'
+      + '<div class="chips">' + dispo.map(n => '<span class="chip">' + n + '</span>').join('') + '</div></div>';
   }).join('');
   majJetons();
 }
