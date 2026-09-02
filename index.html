@@ -2010,77 +2010,32 @@ const parmi = t => t[(rngD() * t.length) | 0];
    sème quelques rochers à l'intérieur — jamais au centre, jamais sur le
    passage, pour ne bloquer ni le combat ni le chemin. */
 function organiser(carte, W, s, opts){
-  const o = opts || {};
-  const mur = (x, y) => { if(x > 0 && y > 0 && x < W - 1) carte[y * W + x] = 0; };
-  const sol = (x, y) => carte[y * W + x] === 1;
-  const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
-  /* les quatre coins, rongés en diagonale */
-  for(const [ax, ay] of [[0, 0], [1, 0], [0, 1], [1, 1]]){
-    const r = 1 + ((rngD() * 3) | 0);
-    for(let dy = 0; dy < r; dy++)
-      for(let dx = 0; dx < r - dy; dx++)
-        mur(s.x + (ax ? s.w - 1 - dx : dx), s.y + (ay ? s.h - 1 - dy : dy));
-  }
-  /* les bords : une bouchée de temps en temps, sauf devant les portes */
-  const porte = x => Math.abs(x - cx) < 2.2;
-  for(let x = s.x + 1; x < s.x + s.w - 1; x++){
-    if(!porte(x) && rngD() < 0.3) mur(x, s.y);
-    if(!porte(x) && rngD() < 0.3) mur(x, s.y + s.h - 1);
-  }
-  for(let y = s.y + 1; y < s.y + s.h - 1; y++){
-    if(rngD() < 0.3) mur(s.x, y);
-    if(rngD() < 0.3) mur(s.x + s.w - 1, y);
-  }
-  /* deuxième bouchée : le contour ne fait plus une seule marche mais
-     dentelle sur deux rangs — c'est ce qui donne l'air creusé */
-  for(let y = s.y; y < s.y + s.h; y++)
-    for(let x = s.x; x < s.x + s.w; x++){
-      if(!sol(x, y)) continue;
-      let libre = 0;
-      for(const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]])
-        if(!sol(x + dx, y + dy)) libre++;
-      if(!libre || libre > 2) continue;         // au coeur, ou déjà un goulot
-      if(porte(x) && (y < s.y + 2 || y > s.y + s.h - 3)) continue;
-      if(rngD() < 0.2) mur(x, y);
+  /* Une salle ne doit pas être un rectangle — mais elle ne doit pas non
+     plus être pleine de bouts de mur. On fait donc respirer le CONTOUR :
+     chaque bord avance et recule doucement, comme une paroi creusée. Rien
+     au milieu, jamais d'îlot. */
+  const cx = s.x + s.w / 2;
+  const porte = x => Math.abs(x - cx) < 2.2;      // le passage reste ouvert
+  const creux = Math.min(3, Math.max(1, Math.round(Math.min(s.w, s.h) * 0.22)));
+  const veine = n => {                            // une marche douce, sans dent
+    const t = [];
+    let v = (rngD() * (creux + 1)) | 0;
+    for(let i = 0; i < n; i++){
+      if(rngD() < 0.42) v += rngD() < 0.5 ? 1 : -1;
+      v = Math.max(0, Math.min(creux, v));
+      t.push(v);
     }
-  /* quelques rochers dedans, si la salle est assez grande */
-  const nb = o.rochers !== undefined ? o.rochers
-           : (s.w >= 10 && s.h >= 7 ? 1 + ((rngD() * 3) | 0) : 0);
-  for(let k = 0; k < nb; k++){
-    for(let essai = 0; essai < 12; essai++){
-      const x = s.x + 2 + ((rngD() * (s.w - 4)) | 0);
-      const y = s.y + 2 + ((rngD() * (s.h - 4)) | 0);
-      if(Math.hypot(x - cx, y - cy) < 2.4) continue;   // pas au milieu
-      if(porte(x) && (y < s.y + 2 || y > s.y + s.h - 3)) continue;
-      if(!sol(x, y)) continue;
-      mur(x, y);
-      if(rngD() < 0.45) mur(x + (rngD() < 0.5 ? 1 : -1), y);   // parfois deux
-      break;
+    return t;
+  };
+  const g = veine(s.h), d = veine(s.h), h = veine(s.w), b = veine(s.w);
+  for(let y = 0; y < s.h; y++)
+    for(let x = 0; x < s.w; x++){
+      const dedans = x >= g[y] && x < s.w - d[y]
+                  && (porte(s.x + x) || (y >= h[x] && y < s.h - b[x]));
+      if(dedans) continue;
+      const ax = s.x + x, ay = s.y + y;
+      if(ax > 0 && ay > 0 && ax < W - 1) carte[ay * W + ax] = 0;
     }
-  }
-  /* LA VEINE VITALE : quoi qu'on ait rongé, une colonne reste ouverte du
-     bord bas au bord haut en passant par le centre — c'est par là que les
-     couloirs se branchent, on ne peut donc jamais s'enfermer. */
-  const xv = Math.round(cx);
-  if(xv > 0 && xv < W - 1)
-    for(let y = s.y; y < s.y + s.h; y++) carte[y * W + xv] = 1;
-  /* et on rebouche les poches coupées du reste : sinon un Pokémon peut
-     apparaître dans un recoin où personne ne peut aller */
-  const dedans = (x, y) => x >= s.x && x < s.x + s.w && y >= s.y && y < s.y + s.h;
-  const vu = {};
-  const pile = [[xv, Math.round(cy)]];
-  vu[xv + ',' + Math.round(cy)] = 1;
-  while(pile.length){
-    const [x, y] = pile.pop();
-    for(const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
-      const a = x + dx, b = y + dy, k = a + ',' + b;
-      if(!dedans(a, b) || vu[k] || !sol(a, b)) continue;
-      vu[k] = 1; pile.push([a, b]);
-    }
-  }
-  for(let y = s.y; y < s.y + s.h; y++)
-    for(let x = s.x; x < s.x + s.w; x++)
-      if(sol(x, y) && !vu[x + ',' + y]) mur(x, y);
 }
 
 /* LE DÉCOR : ce qu'on pose sur le sol pour que la salle vive. Rien de tout
@@ -2145,7 +2100,7 @@ function construireCarte(def){
     const arene = {x: x0, y: y0, w, h, boss: true, vue: true, faite: false,
                    cx: x0 + w / 2, cy: y0 + h / 2, arene: true};
     salles.push(arene);
-    organiser(carte, W, arene, {rochers: 5});
+    organiser(carte, W, arene);
     return {carte, W, H, salles, decors: semerDecor(carte, W, H, salles)};
   }
   const n = def.salles + 1;                     // + la salle du boss
@@ -2198,12 +2153,17 @@ function construireCarte(def){
            ça, une dérive d'une case ne se touche qu'en diagonale et le
            couloir est coupé. */
         const g = Math.min(avant, x), dr = Math.max(avant, x);
-        for(let xx = g - larg; xx <= dr + larg; xx++){
-          if(xx <= 0 || xx >= W - 1) continue;
-          const bord = xx < g || xx > dr;           // les bords s'effritent
-          if(bord && rngD() > 0.55) continue;
-          carte[y * W + xx] = 1;
-        }
+        for(let xx = g; xx <= dr; xx++)
+          if(xx > 0 && xx < W - 1) carte[y * W + xx] = 1;
+        /* les bords s'effritent — mais de l'intérieur vers l'extérieur, on
+           s'arrête au premier refus : jamais de case toute seule dans le noir */
+        for(const sens of [-1, 1])
+          for(let d = 1; d <= larg; d++){
+            if(rngD() > 0.55) break;
+            const xx = (sens < 0 ? g : dr) + sens * d;
+            if(xx <= 0 || xx >= W - 1) break;
+            carte[y * W + xx] = 1;
+          }
         couloirs.push({x, y, larg});
       }
       /* on raccorde franchement aux deux salles : le couloir mange deux
@@ -3485,30 +3445,6 @@ function rendreDonjon(cv){
         else { ctx.fillStyle = '#4a3826'; ctx.fillRect(px(x), py(y), T + 1, T + 1); }
       }
     }
-
-  /* le brouillard : les salles pas encore visitées restent dans la nuit —
-     on ne voit JAMAIS ce qui attend de l'autre côté du couloir */
-  for(const s of D.salles){
-    if(s.vue) continue;
-    /* la nuit épouse la forme de la salle, tuile par tuile : un rectangle
-       noir sur une salle rongée, ça se voit tout de suite */
-    ctx.fillStyle = 'rgba(8,5,3,0.94)';
-    for(let yy = s.y - 1; yy <= s.y + s.h; yy++)
-      for(let xx = s.x - 1; xx <= s.x + s.w; xx++){
-        let pres = false;
-        for(let dy = -1; dy <= 1 && !pres; dy++)
-          for(let dx = -1; dx <= 1; dx++){
-            const ax = xx + dx, ay = yy + dy;
-            if(ax >= s.x && ax < s.x + s.w && ay >= s.y && ay < s.y + s.h
-               && estSol(ax, ay)){ pres = true; break; }
-          }
-        if(pres) ctx.fillRect(px(xx) - 1, py(yy) - 1, T + 2, T + 2);
-      }
-    ctx.fillStyle = 'rgba(242,193,78,0.5)';
-    ctx.font = 'bold ' + Math.round(T * 0.8) + 'px "Pixelify Sans", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('?', px(s.cx), py(s.cy));
-  }
 
   /* le butin au sol */
   for(const s of D.sols){
