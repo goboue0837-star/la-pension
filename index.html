@@ -3640,7 +3640,6 @@ function majEquipe(){
         ? '<span class="vengBloc">'
           + '<span class="vengBarre"><i style="width:' + jv + '%"></i></span>'
           + '<span class="vengPct">🔥 ' + jv + ' %'
-          + (dj && dj.serie > 1 && !dj.due ? ' · <b style="color:var(--danger)">série ×' + dj.serie + '</b>' : '')
           + '</span></span>'
         : '') + '</span>' + etiquette;
     if(ouvert) l.onclick = () => { donjonChoisi = i; majEquipe(); };
@@ -3775,7 +3774,7 @@ function chargerVengeance(cle){
       lignes.push(['🔥 REVANCHE !', (d ? d.nom : cle) + ' attaque la pension !']);
     } else {
       lignes.push(['🔥 ' + (d ? d.nom : cle),
-        dj.jauge + '% (+' + gain + (dj.serie > 1 ? ' · série ×' + dj.serie : '') + ')']);
+        dj.jauge + '% (+' + gain + ')']);
     }
   }
   if(!inv.zone.due){
