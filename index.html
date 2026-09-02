@@ -4238,6 +4238,15 @@ function estDeLaPlaine(espece){
    — la ZONE a une barre TRÈS longue : +2 par victoire n'importe où, +12
      quand une revanche de donjon est repoussée → l'assaut de la zone
      ENTIÈRE, l'événement rare. */
+/* LA SÉRIE SE CASSE si tu ne finis pas le donjon — défaite ou repli.
+   La jauge, elle, ne redescend pas : c'est la VITESSE qui repart de zéro. */
+function casserSerie(cle){
+  const dj = P.invasion.donjons[cle];
+  if(!dj || !dj.serie) return [];
+  const d = DONJONS.find(o => o.cle === cle);
+  dj.serie = 0;
+  return [['😮‍💨 ' + (d ? d.nom : cle) + ' se calme', 'ta série est cassée']];
+}
 function chargerVengeance(cle){
   const lignes = [];
   const inv = P.invasion;
@@ -4249,7 +4258,10 @@ function chargerVengeance(cle){
      tranquillement ne réveille personne. */
   for(const [k, o] of Object.entries(inv.donjons)) if(k !== cle) o.serie = 0;
   dj.serie++;
-  const gain = Math.min(60, Math.round(4 * Math.pow(1.6, dj.serie - 1)));
+  /* La série double presque à chaque passage, mais elle part de très bas :
+     +2 au premier, +36 au huitième. Cumul : la barre se remplit au 8e
+     passage d'affilée — un donjon fait de temps en temps ne réveille rien. */
+  const gain = Math.min(60, Math.round(2.1 * Math.pow(1.5, dj.serie - 1)));
   if(!dj.due){
     dj.jauge = Math.min(100, dj.jauge + gain);
     if(dj.jauge >= 100){
@@ -4522,6 +4534,7 @@ function finExpedition(r){
     }
   } else if(gagne){
     lignes.push(['🏕 Repli réussi', 'le butin est sauf']);
+    lignes.push(...casserSerie(DONJONS[idx].cle));
   }
   /* l'XP : partagée, appliquée maintenant */
   if(gagne && r.butin.xp){
@@ -4541,8 +4554,10 @@ function finExpedition(r){
     lignes.unshift(['⭐ XP de l\'équipe', '+' + r.butin.xp]);
   }
   if(!gagne){
+    const casse = casserSerie(DONJONS[idx].cle);
     lignes.length = 0;
     lignes.push(['💔 Toute l\'équipe est tombée', 'le butin est perdu…']);
+    lignes.push(...casse);
     lignes.push(['🏕 Retour à la pension', 'soigne-les bien']);
   }
   $('#butinTitre').textContent = !gagne ? 'Défaite…'
