@@ -371,6 +371,22 @@
   @keyframes pulser{ 50%{ box-shadow:0 0 16px #f2c14eaa; } }
   .cap.replier{ background:linear-gradient(#463618,#3a2c14); border-color:#f2c14e; }
 
+  /* --- l'écran de chargement -------------------------------------------- */
+  #chargement{ position:fixed; inset:0; z-index:60; background:var(--fond);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; transition:opacity .3s; padding:0 32px; }
+  #chargement.parti{ opacity:0; pointer-events:none; }
+  #chargement .logo{ font-size:56px; line-height:1; animation:respire 2s ease-in-out infinite; }
+  #chargement .nom{ font-size:30px; color:var(--or); letter-spacing:.5px; }
+  #chargement .rail{ width:min(280px, 70vw); height:8px; border-radius:99px;
+    background:var(--carte2); overflow:hidden; }
+  #chargement .rail i{ display:block; height:100%; width:0%; border-radius:99px;
+    background:linear-gradient(90deg, var(--or-ombre), var(--or));
+    transition:width .25s ease-out; }
+  #chargement .ligne{ font-size:13.5px; color:var(--encre3); font-weight:700;
+    min-height:20px; text-align:center; }
+  @keyframes respire{ 50%{ transform:translateY(-6px) scale(1.04); } }
+
   /* --- le journal (toast) ---------------------------------------------- */
   #journal{ position:fixed; left:16px; right:16px; bottom:calc(156px + env(safe-area-inset-bottom));
     z-index:20; background:#3a3d63; color:#fff; border:1px solid #4d5080; border-radius:14px;
@@ -607,6 +623,14 @@
 
   <div id="journal"></div>
   <span id="version"></span>
+
+  <!-- l'écran de chargement : on prépare le terrain avant d'ouvrir -->
+  <div id="chargement">
+    <div class="logo">🏡</div>
+    <div class="nom px">La Pension</div>
+    <div class="rail"><i id="chargeBarre"></i></div>
+    <div class="ligne" id="chargeTexte">Ouverture de la pension…</div>
+  </div>
 <script>window.BASE_RES = "assets/";</script>
 <script>
 /* =====================================================================
@@ -3711,13 +3735,16 @@ function majOngletsZone(){
     }
   }
 }
-function changerZone(cle){
+async function changerZone(cle){
   if(!P.zones.includes(cle) || cle === P.zoneVue) return;
   P.zoneVue = cle;
   sauver();
   construireDomaine();
-  chargerDecorPension();
   majOngletsZone();
+  /* on change de terrain ET de sprites : on repasse par le chargement,
+     sinon on arrive sur une pension vide qui se remplit sous les yeux */
+  montrerChargement();
+  await precharger();
   if(ECRAN === 'pension') majPension();
   if(ECRAN === 'spins') majSpins();
   const c = document.querySelector('.ecran.actif .corps');
@@ -4643,7 +4670,7 @@ function acheter(quoi, type){
 }
 
 /* acheter une zone de pension : avec la clé du Grand Pré, ou avec des pièces */
-function acheterZone(cle){
+async function acheterZone(cle){
   const z = ZONES[cle];
   if(!z || P.zones.includes(cle)) return;
   if(P.cles > 0){
@@ -4659,8 +4686,9 @@ function acheterZone(cle){
   P.zoneVue = cle;
   sauver();
   construireDomaine();
-  chargerDecorPension();
   majOngletsZone();
+  montrerChargement();
+  await precharger();
   montrer('pension');
 }
 
@@ -4830,6 +4858,7 @@ async function demarrer(){
     fetch('/ping').then(r => r.json())
       .then(j => { const v = $('#version'); if(v) v.textContent = 'v' + j.version; })
       .catch(() => {});
+  await precharger();
   if(!P.avancee.bienvenue){
     P.avancee.bienvenue = true;
     sauver();
@@ -4838,6 +4867,59 @@ async function demarrer(){
   } else montrer('pension');
   majPension();
   boucle();
+}
+
+/* --- LE CHARGEMENT ----------------------------------------------------
+   Le jeu ne montre rien tant que le décor et les sprites de la zone ne
+   sont pas là : sinon on voit une pension vide, puis des jetons, puis
+   les Pokémon qui apparaissent un par un. On prépare, puis on ouvre. */
+function etapeChargement(fait, total, texte){
+  const b = $('#chargeBarre'), t = $('#chargeTexte');
+  if(b) b.style.width = Math.round(fait / Math.max(1, total) * 100) + '%';
+  if(t && texte) t.textContent = texte;
+}
+function montrerChargement(){
+  const v = $('#chargement');
+  if(!v) return;
+  v.hidden = false;
+  v.offsetHeight;                 /* on force le calcul, sinon pas de fondu */
+  v.classList.remove('parti');
+  etapeChargement(0, 1, 'Un instant…');
+}
+async function precharger(){
+  const voile = $('#chargement');
+  const debut = performance.now();
+  const zone = ZONES[zoneVue()] || ZONES.plaine;
+  const especes = [...new Set(habitants().map(p => p.espece))];
+  const taches = [];
+  /* 1. le décor du terrain */
+  taches.push(['Le terrain se réveille…', async () => {
+    if(typeof DTEF === 'undefined') return;
+    const dispo = await DTEF.liste();
+    const voulu = (zone.decor || DECOR_PENSION).find(d => dispo.includes(d)) || dispo[0];
+    if(voulu) await DTEF.charger(voulu);
+  }]);
+  /* 2. un sprite par espèce présente */
+  for(const n of especes)
+    taches.push([n + ' arrive…', () => chargerSprite(n).catch(() => {})]);
+  /* 3. les effets, pour que le premier combat ne bégaie pas */
+  taches.push(['Les effets…', async () => {
+    if(typeof chargerVfx === 'function') await chargerVfx().catch(() => {});
+  }]);
+
+  let fait = 0;
+  etapeChargement(0, taches.length, 'Ouverture de la pension…');
+  for(const [texte, faire] of taches){
+    etapeChargement(fait, taches.length, texte);
+    try { await faire(); } catch(e){}
+    etapeChargement(++fait, taches.length);
+  }
+  etapeChargement(1, 1, 'C\'est prêt !');
+  /* on laisse l'écran une demi-seconde : un flash de 80 ms est plus
+     désagréable qu'une attente courte et franche */
+  const reste = 700 - (performance.now() - debut);
+  if(reste > 0) await new Promise(r => setTimeout(r, reste));
+  if(voile){ voile.classList.add('parti'); setTimeout(() => voile.hidden = true, 320); }
 }
 window.addEventListener('load', demarrer);
 
