@@ -2467,7 +2467,8 @@ async function lancerDonjon(def, equipe){
     actif: false, peuplement: false, durete: 1, def, carte: c.carte, W: c.W, H: c.H,
     salles: c.salles, ents: [], sols: [], fx: [], flottants: [],
     salleIdx: 0, phase: 'combat', tActuel: 0, secousse: 0, tues: 0,
-    vague: 0, resultat: null, butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
+    vague: 0, resultat: null, eqX: undefined, eqY: undefined,
+    butin: {sous: 0, baies: 0, xp: 0, tickets: 0}
   });
   chargerVfx();
   /* le décor DTEF : le premier disponible de la liste du donjon */
@@ -2488,7 +2489,11 @@ async function lancerDonjon(def, equipe){
     e.dir = 4;
     D.ents.push(e);
   }
-  await peuplerSalle(0);
+  /* TOUT LE DONJON EST HABITÉ DÈS LE DÉPART. On voit les salles d'avance :
+     les trouver vides et les regarder se remplir à l'arrivée, ça sonnait
+     faux. Seule la salle du boss reste vide — là, ce sont les vagues. */
+  for(let i = 0; i < D.salles.length; i++)
+    if(!D.salles[i].boss || i === 0) await peuplerSalle(i);
   D.cam.x = s0.cx; D.cam.y = s0.cy;
   banniereD(def.nom, '#f2c14e');
   D.fin = null;
@@ -2640,7 +2645,7 @@ async function peuplerSalle(i){
     promesses.push(creerEnt(espece, 'ennemi', p.x, p.y,
       def.niv + (elite ? 2 : 0) + ((rngD() * 2) | 0), {elite}));
   }
-  (await Promise.all(promesses)).forEach(e => D.ents.push(e));
+  (await Promise.all(promesses)).forEach(e => { e.salle = i; D.ents.push(e); });
 }
 
 
@@ -3259,7 +3264,11 @@ function iaEnnemi(e, dt){
   /* endormi : il RÔDE autour de chez lui jusqu'à ce qu'on l'approche,
      qu'on le blesse, ou qu'un copain d'à côté parte au combat */
   if(e.eveille === false){
-    const v = proche(e, ennemisDe(e));
+    /* tout le donjon est peuplé : inutile de faire chercher une cible à
+       un dormeur qui est trois salles plus haut. Il rôde, point. */
+    const loin = D.eqX !== undefined
+      && Math.abs(e.x - D.eqX) + Math.abs(e.y - D.eqY) > 16;
+    const v = loin ? null : proche(e, ennemisDe(e));
     const dv = v ? dist(e, v) : 99;
     if(dv < 3.4 || e.pv < e.pvMax
        || D.ents.some(o => o !== e && o.camp === 'ennemi' && !o.ko
@@ -3532,6 +3541,10 @@ function tickDonjon(dt){
     }
   }
   const vivants = D.ents.filter(e => e.camp === 'equipe' && !e.ko && !e.cristal);
+  if(vivants.length){                    // où est le groupe, pour l'IA lointaine
+    D.eqX = vivants.reduce((t, e) => t + e.x, 0) / vivants.length;
+    D.eqY = vivants.reduce((t, e) => t + e.y, 0) / vivants.length;
+  }
   if(!vivants.length){
     const enAttente = D.invasion && D.ents.some(e => e.camp === 'equipe' && e.ko
       && !e.cristal && e.renait !== undefined && e.renait > 0);
@@ -3540,7 +3553,11 @@ function tickDonjon(dt){
       terminerD(false, 1.8); return;
     }
   }
-  const restants = D.ents.filter(e => e.camp === 'ennemi' && !e.ko);
+  /* seuls comptent les habitants de la salle où on est : le reste du
+     donjon est déjà peuplé et attend son tour. Les vagues, le boss et
+     l'assaut n'ont pas de salle attitrée — ils comptent partout. */
+  const restants = D.ents.filter(e => e.camp === 'ennemi' && !e.ko
+    && (e.salle === undefined || e.salle === D.salleIdx));
 
   if(D.peuplement){ /* des renforts arrivent : on ne juge pas la salle vide */ }
   else if(D.phase === 'combat' && !restants.length){
@@ -3560,12 +3577,12 @@ function tickDonjon(dt){
     const arrives = vivants.every(e => e.x > s.x - 0.5 && e.x < s.x + s.w + 0.5
                                         && e.y < s.y + s.h && e.y > s.y - 0.5);
     if(arrives){
-      D.peuplement = true;
-      D.salles[D.salleIdx].vue = true;      // la salle s'allume en entrant
-      peuplerSalle(D.salleIdx).then(() => {
-        D.peuplement = false;
-        if(!D.salles[D.salleIdx].boss) D.phase = 'combat';
-      });
+      const sv = D.salles[D.salleIdx];
+      sv.vue = true;                        // la salle s'allume en entrant
+      if(sv.boss){                          // elle seule se remplit à l'arrivée
+        D.peuplement = true;
+        peuplerSalle(D.salleIdx).then(() => { D.peuplement = false; });
+      } else D.phase = 'combat';
     }
   } else if(D.phase === 'assaut'){
     tickAssaut(dt);
@@ -3661,6 +3678,9 @@ function rendreDonjon(cv){
   const tri = [...D.ents].sort((a, b) => a.y - b.y);
   for(const e of tri){
     const ex = px(e.x), ey = py(e.y);
+    /* hors champ : rien à dessiner. Un donjon habité d'avance, c'est
+       cent Pokémon en mémoire — inutile de tous les peindre. */
+    if(ex < -T * 3 || ex > W + T * 3 || ey < -T * 4 || ey > H + T * 3) continue;
     /* l'ombre */
     ctx.fillStyle = 'rgba(0,0,0,.35)';
     ctx.beginPath();
