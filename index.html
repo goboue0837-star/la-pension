@@ -2149,7 +2149,10 @@ function organiser(carte, W, s, opts){
      chaque bord avance et recule doucement, comme une paroi creusée. Rien
      au milieu, jamais d'îlot. */
   const cx = s.x + s.w / 2;
-  const porte = x => Math.abs(x - cx) < 2.2;      // le passage reste ouvert
+  /* la colonne du milieu reste ouverte pour que les couloirs se branchent.
+     Une arène n'a pas de couloir : rien à préserver, sinon on lui colle
+     deux excroissances en haut et en bas. */
+  const porte = s.arene ? () => false : x => Math.abs(x - cx) < 2.2;
   const creux = Math.min(3, Math.max(1, Math.round(Math.min(s.w, s.h) * 0.22)));
   const veine = n => {                            // une marche douce, sans dent
     const t = [];
@@ -2421,7 +2424,8 @@ async function lancerDonjon(def, equipe){
   s0.vue = true;
   for(let i = 0; i < equipe.length; i++){
     const p = equipe[i];
-    const e = await creerEnt(p.espece, 'equipe', s0.cx - 1 + i, s0.y + s0.h - 2,
+    const dep = posSol(s0.cx - 1 + i, s0.y + s0.h - 2, s0);
+    const e = await creerEnt(p.espece, 'equipe', dep.x, dep.y,
       p.niveau, {shiny: p.shiny, pensionnaire: p,
                  ultDef: p.ult ? ULTS[p.ult] : null,
                  ultType: p.ult || null, charge: 0});
@@ -2493,15 +2497,44 @@ async function lancerInvasion(def, defenseurs, positions){
 }
 
 /* la horde d'une salle : plein de sbires faibles, l'élite en plus haut */
+/* RAMÈNE UN POINT SUR LE SOL. Les salles ne sont plus des rectangles :
+   un point calculé sur les bords nominaux peut tomber dans le mur, et le
+   Pokémon apparaît alors hors de la carte. On cherche en spirale la case
+   de sol la plus proche. */
+function posSol(x, y, s){
+  if(solEn(x, y)) return {x, y};
+  for(let r = 0.5; r <= 6; r += 0.5)
+    for(let a = 0; a < 12; a++){
+      const t = a * Math.PI / 6;
+      const nx = x + Math.cos(t) * r, ny = y + Math.sin(t) * r;
+      if(!solEn(nx, ny)) continue;
+      if(s && (nx < s.x || nx > s.x + s.w || ny < s.y || ny > s.y + s.h)) continue;
+      return {x: nx, y: ny};
+    }
+  return s ? {x: s.cx, y: s.cy} : {x, y};
+}
+
 /* une case DE SOL dans la salle : depuis qu'il y a des rochers dedans,
    on ne peut plus poser un Pokémon les yeux fermés */
+/* comme placeLibreDans, mais en haut de la salle : les vagues déboulent
+   par le fond. Depuis que les salles sont rongées, la première rangée est
+   souvent pleine de mur — on cherche donc une vraie case de sol, et on se
+   rabat sur n'importe où dans la salle plutôt que d'apparaître emmuré. */
+function placeHautDans(s){
+  for(let essai = 0; essai < 24; essai++){
+    const x = entre(s.x + 1, s.x + s.w - 1);
+    const y = entre(s.y + 1, s.y + Math.min(4, s.h - 2));
+    if(solEn(x, y)) return {x, y};
+  }
+  return placeLibreDans(s);
+}
 function placeLibreDans(s){
   for(let essai = 0; essai < 20; essai++){
     const x = entre(s.x + 1, s.x + s.w - 1);
     const y = entre(s.y + 1, s.y + s.h - 1.5);
     if(solEn(x, y)) return {x, y};
   }
-  return {x: s.cx, y: s.cy};
+  return posSol(s.cx, s.cy, s);
 }
 
 async function peuplerSalle(i){
@@ -2579,14 +2612,16 @@ function ouvrirAssaut(reserve, opts){
   D.respirs = o.respirs ? [0.72, 0.48, 0.24].map(f => Math.round(reserve.length * f)) : [];
 }
 function pointsEntree(){
-  if(D.breches) return D.breches;
+  if(D.breches) return D.breches.map(p => posSol(p.x, p.y));
   const s = D.salles[D.salles.length - 1];
-  if(s.arene) return [
+  const surSol = l => l.map(p => posSol(p.x, p.y, s));
+  if(s.arene) return surSol([
     {x: s.cx, y: s.y + 1.2}, {x: s.x + 2, y: s.y + 1.5}, {x: s.x + s.w - 2, y: s.y + 1.5},
     {x: s.x + 1.5, y: s.cy}, {x: s.x + s.w - 1.5, y: s.cy},
     {x: s.x + 2.5, y: s.y + s.h - 2}, {x: s.x + s.w - 2.5, y: s.y + s.h - 2}
-  ];
-  return [{x: s.cx, y: s.y + 1}, {x: s.x + 2, y: s.y + 1.5}, {x: s.x + s.w - 2, y: s.y + 1.5}];
+  ]);
+  return surSol([{x: s.cx, y: s.y + 1}, {x: s.x + 2, y: s.y + 1.5},
+                 {x: s.x + s.w - 2, y: s.y + 1.5}]);
 }
 async function goutteAssaut(){
   const pts = pointsEntree();
@@ -2595,8 +2630,8 @@ async function goutteAssaut(){
   const promesses = [];
   for(const m of lot){
     const pt = parmi(pts);
-    promesses.push(creerEnt(m.espece, 'ennemi',
-      pt.x + entre(-1.4, 1.4), pt.y + entre(-0.7, 0.7), m.niv,
+    const p = posSol(pt.x + entre(-1.4, 1.4), pt.y + entre(-0.7, 0.7));
+    promesses.push(creerEnt(m.espece, 'ennemi', p.x, p.y, m.niv,
       {elite: m.elite, eveille: true, pilleur: !!m.pilleur}));
   }
   (await Promise.all(promesses)).forEach(e => { e.flash = 0.25; D.ents.push(e); });
@@ -2687,16 +2722,16 @@ async function lancerVague(){
       const br = parmi(D.breches);
       /* les PILLEURS foncent droit sur le cristal — à intercepter ! */
       const pilleur = rngD() < (elite ? 0.3 : 0.4);
-      promesses.push(creerEnt(espece, 'ennemi',
-        br.x + entre(-1.4, 1.4), br.y + entre(-0.6, 0.6),
+      const pv = posSol(br.x + entre(-1.4, 1.4), br.y + entre(-0.6, 0.6));
+      promesses.push(creerEnt(espece, 'ennemi', pv.x, pv.y,
         def.niv + D.vague + (elite ? 2 : 0), {elite, eveille: true, pilleur}));
     }
     /* à mi-invasion, l'ÉCLAIREUR mène l'assaut */
     if(def.miniBoss && D.vague === Math.ceil(D.vaguesTotal / 2)){
       banniereD('⚠ ' + def.miniBoss.titre + ' mène l\'assaut !', '#c78fdd');
       D.secousse = 0.5;
-      promesses.push(creerEnt(def.miniBoss.espece, 'ennemi',
-        D.breches[0].x, D.breches[0].y, def.niv + 5,
+      const pm = posSol(D.breches[0].x, D.breches[0].y);
+      promesses.push(creerEnt(def.miniBoss.espece, 'ennemi', pm.x, pm.y, def.niv + 5,
         {elite: true, eveille: true, taille: 1.5, titre: def.miniBoss.titre}));
     }
     (await Promise.all(promesses)).forEach(e => { e.flash = 0.25; D.ents.push(e); });
@@ -2707,8 +2742,8 @@ async function lancerVague(){
   for(let k = 0; k < n; k++){
     const elite = def.elites.length && rngD() < 0.22;
     const espece = elite ? parmi(def.elites) : parmi(def.sbires);
-    promesses.push(creerEnt(espece, 'ennemi',
-      entre(s.x + 1, s.x + s.w - 1), entre(s.y + 1, s.y + 3),
+    const pv = placeHautDans(s);
+    promesses.push(creerEnt(espece, 'ennemi', pv.x, pv.y,
       def.niv + D.vague + (elite ? 2 : 0), {elite, eveille: true}));
   }
   (await Promise.all(promesses)).forEach(e => { e.flash = 0.25; D.ents.push(e); });
@@ -2718,7 +2753,8 @@ async function lancerBoss(){
   const b = def.boss;
   banniereD('⚠ ' + (b.titre || b.espece + ' arrive !'), '#ef6b6b');
   D.secousse = 0.8;
-  const entree = D.invasion ? D.breches[0] : {x: s.cx, y: s.y + 2};
+  const brut = D.invasion ? D.breches[0] : {x: s.cx, y: s.y + 2};
+  const entree = posSol(brut.x, brut.y, D.invasion ? null : s);
   const e = await creerEnt(b.espece, 'ennemi', entree.x, entree.y, b.niv,
     {boss: true, taille: b.taille || 1.95, titre: b.titre, force: b.force,
      ultBoss: b.ult || null});
@@ -2730,8 +2766,10 @@ async function lancerBoss(){
   /* SON ESCORTE : des gardes d'élite qui débarquent avec lui */
   for(let i = 0; i < (b.escorte || []).length; i++){
     const g = b.escorte[i];
+    const pg = posSol(entree.x - 1.5 + i * 3, entree.y + (D.invasion ? 0.8 : 1),
+                      D.invasion ? null : s);
     const garde = await creerEnt(g.espece, 'ennemi',
-      entree.x - 1.5 + i * 3, entree.y + (D.invasion ? 0.8 : 1), g.niv || Math.max(2, b.niv - 4),
+      pg.x, pg.y, g.niv || Math.max(2, b.niv - 4),
       {elite: true, eveille: true});
     garde.flash = 0.35;
     D.ents.push(garde);
@@ -3107,7 +3145,9 @@ function iaEnnemi(e, dt){
         const nApp = D.invasion ? 3 : 4;
         for(let k = 0; k < nApp; k++){
           let ax, ay;
-          if(D.invasion){ const br = parmi(D.breches); ax = br.x + entre(-1, 1); ay = br.y + entre(-0.5, 0.5); }
+          if(D.invasion){ const br = parmi(D.breches);
+            const pr = posSol(br.x + entre(-1, 1), br.y + entre(-0.5, 0.5));
+            ax = pr.x; ay = pr.y; }
           else { ax = entre(s.x + 1, s.x + s.w - 1); ay = entre(s.y + 1, s.y + 3); }
           const sb = await creerEnt(parmi(D.def.sbires), 'ennemi', ax, ay,
             D.def.niv + 2, {eveille: true});
