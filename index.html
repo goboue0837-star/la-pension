@@ -132,6 +132,7 @@
 
   /* --- les onglets de zone : une pension par zone achetée ---------------- */
   .ongletsZone{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 2px;
+    flex:0 0 auto;                      /* sinon la colonne les écrase */
     -webkit-overflow-scrolling:touch; }
   .ongletZone{ flex:0 0 auto; background:var(--carte); border:1.5px solid var(--trait);
     color:var(--encre2); border-radius:99px; min-height:44px; padding:8px 16px;
@@ -460,6 +461,7 @@
       <button class="jeton" onclick="montrer('equipe')" style="cursor:pointer;">⚔ Mon équipe</button>
     </div>
     <div class="corps">
+      <div class="ongletsZone" id="ongletsZD" hidden></div>
       <div id="colereZone" hidden>
         <div class="panneau">
           <div class="vengBloc" style="margin:0;">
@@ -470,7 +472,8 @@
         </div>
       </div>
       <div class="panneau">
-        <div class="titrePanneau">Où part l'équipe ?</div>
+        <div class="titrePanneau" id="titreZD">Où part l'équipe ?</div>
+        <p class="mini" id="pitchZD" style="margin:-4px 0 10px;"></p>
         <div class="lignesButin" id="listeDonjons"></div>
       </div>
     </div>
@@ -1430,36 +1433,188 @@ function statsDe(espece, niveau, shiny){
 }
 
 /* --- le tuto : le Pré du Grand Départ, 5 donjons, l'escalade ---------- */
-const DONJONS = [
-  {cle:'zigzaton', horde:5, nom:'Le Donjon Zigzaton', zone:'Le Pré du Grand Départ',
+/* --- les zones de donjon ----------------------------------------------
+   ATTENTION : une zone de DONJON n'a rien à voir avec une zone de
+   PENSION. La pension héberge les Pokémon et alimente la Machine ; la
+   zone de donjon est l'endroit où on envoie l'équipe taper.
+
+   Les zones sont rangées par ÉTAGE, et deux zones d'un même étage sont
+   des MIROIRS : même difficulté, types opposés. Si la Forêt bloque parce
+   que l'équipe se fait manger par l'insecte, les Gorges sont aussi dures
+   mais pas sur les mêmes faiblesses — on n'est jamais devant une seule
+   porte. Un étage est une LISTE, pas une paire : on pourra y poser une
+   troisième zone plus tard sans rien casser.
+
+   La courbe, dans chaque zone : les trois premiers crans se passent en
+   sortant du précédent, puis ça décroche. Le dixième demande une équipe
+   pleinement évoluée, et son boss est au plafond du jeu. */
+const ZONES_DONJON = {
+  pre: {
+    cle: 'pre', ico: '🌾', nom: 'Le Pré du Grand Départ', etage: 0,
+    pitch: 'Les cinq premiers pas. On y apprend à se battre.',
+    donjons: [
+{cle:'zigzaton', zd:'pre', rang:1, horde:5, nom:'Le Donjon Zigzaton', zone:'Le Pré du Grand Départ',
    salles:3, niv:2, sbires:['Zigzaton'], elites:[],
    boss:{espece:'Zigzaton', niv:5, titre:'Zigzaton Chef', taille:1.95, force:0.6,
     escorte:[{espece:'Zigzaton', niv:3}, {espece:'Zigzaton', niv:3}]},
    vagues:2, decor:['AmpPlains','TinyWoods','SkyPeak1stPass','BeachCave']},
-  {cle:'prairie', horde:6, nom:'La Prairie Venteuse', zone:'Le Pré du Grand Départ',
+  {cle:'prairie', zd:'pre', rang:2, horde:6, nom:'La Prairie Venteuse', zone:'Le Pré du Grand Départ',
    salles:3, niv:3, sbires:['Zigzaton','Rattata'], elites:[],
    boss:{espece:'Linéon', niv:8, titre:'Linéon le Balafré', taille:1.95, force:0.8, ult:'normal'},
    vagues:2, decor:['AmpPlains','TinyWoods','SkyPeak1stPass','BeachCave']},
-  {cle:'verger', horde:7, nom:'Le Vieux Verger', zone:'Le Pré du Grand Départ',
+  {cle:'verger', zd:'pre', rang:3, horde:7, nom:'Le Vieux Verger', zone:'Le Pré du Grand Départ',
    salles:4, niv:5, sbires:['Rattata','Roucool'], elites:['Linéon'],
    boss:{espece:'Rattatac', niv:12, titre:'Rattatac le Vorace', taille:2.05,
     escorte:[{espece:'Rattata', niv:8}, {espece:'Rattata', niv:8}]},
    vagues:3, decor:['TinyWoods','AmpPlains','LushPrairie','BeachCave']},
-  {cle:'taupes', horde:8, nom:'La Colline aux Taupes', zone:'Le Pré du Grand Départ',
+  {cle:'taupes', zd:'pre', rang:4, horde:8, nom:'La Colline aux Taupes', zone:'Le Pré du Grand Départ',
    salles:4, niv:7, sbires:['Roucool','Piafabec'], elites:['Rattatac'],
    boss:{espece:'Rapasdepic', niv:13, titre:'Rapasdepic l\'Ouragan', taille:2.05, ult:'vol'},
    vagues:3, decor:['SkyPeak1stPass','AmpPlains','TinyWoods','BeachCave']},
-  {cle:'grandpre', horde:9, nom:'Le Grand Pré', zone:'Le Pré du Grand Départ',
+  {cle:'grandpre', zd:'pre', rang:5, horde:9, nom:'Le Grand Pré', zone:'Le Pré du Grand Départ',
    salles:5, niv:9, sbires:['Zigzaton','Rattata','Roucool','Piafabec'],
    elites:['Linéon','Rattatac'],
    boss:{espece:'Tauros', niv:16, titre:'Tauros le Doyen', taille:2.25, ult:'sol',
     escorte:[{espece:'Linéon', niv:10}, {espece:'Linéon', niv:10}]},
    vagues:4, decor:['AmpPlains','LushPrairie','TinyWoods','BeachCave'], final:1}
-];
+    ]
+  },
+  foret: {
+    cle: 'foret', ico: '🌲', nom: 'La Forêt d\'Émeraude', etage: 1,
+    pitch: 'Derrière la haie du Pré. Ça pique, ça colle, et ça évolue vite.',
+    donjons: [
+  {cle: 'foret_sentier', zd: 'foret', rang: 1, horde: 5, nom: 'Le Sentier Mousseux',
+   salles: 3, niv: 10, sbires: ['Chenipan', 'Chenipotte'], elites: [],
+   boss: {espece: 'Papilusion', niv: 15, titre: 'Papilusion la Poudreuse', taille: 1.95, ult: 'insecte'},
+   vagues: 2, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_souches', zd: 'foret', rang: 2, horde: 6, nom: 'Les Souches Creuses',
+   salles: 3, niv: 12, sbires: ['Aspicot', 'Chenipan'], elites: ['Papilusion'],
+   boss: {espece: 'Dardargnan', niv: 17, titre: 'Dardargnan l\'Aiguillon', taille: 1.95, ult: 'poison'},
+   vagues: 2, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_grillons', zd: 'foret', rang: 3, horde: 7, nom: 'Le Pré aux Grillons',
+   salles: 4, niv: 14, sbires: ['Crikzik', 'Aspicot'], elites: ['Coconfort'],
+   boss: {espece: 'Mélokrik', niv: 20, titre: 'Mélokrik le Crieur', taille: 2.0, ult: 'insecte',
+     escorte: [{espece: 'Crikzik', niv: 14}, {espece: 'Crikzik', niv: 14}]},
+   vagues: 2, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_fougeres', zd: 'foret', rang: 4, horde: 8, nom: 'Le Tapis de Fougères',
+   salles: 4, niv: 17, sbires: ['Paras', 'Mimitoss'], elites: ['Mélokrik'],
+   boss: {espece: 'Parasect', niv: 24, titre: 'Parasect le Spore', taille: 2.0, ult: 'plante'},
+   vagues: 3, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_toiles', zd: 'foret', rang: 5, horde: 10, nom: 'La Clairière aux Toiles',
+   salles: 4, niv: 21, sbires: ['Tissenboule', 'Mimigal'], elites: ['Filentrappe'],
+   boss: {espece: 'Migalos', niv: 29, titre: 'Migalos la Fileuse', taille: 2.05, ult: 'insecte',
+     escorte: [{espece: 'Mimigal', niv: 21}, {espece: 'Mimigal', niv: 21}]},
+   vagues: 3, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_ronces', zd: 'foret', rang: 6, horde: 11, nom: 'Les Ronces Basses',
+   salles: 5, niv: 25, sbires: ['Venipatte', 'Scobolide'], elites: ['Parasect'],
+   boss: {espece: 'Brutapode', niv: 35, titre: 'Brutapode le Rouleur', taille: 2.1, ult: 'poison'},
+   vagues: 3, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_dormant', zd: 'foret', rang: 7, horde: 13, nom: 'Le Bois Dormant',
+   salles: 5, niv: 30, sbires: ['Chenipotte', 'Armulys'], elites: ['Papinox'],
+   boss: {espece: 'Charmillon', niv: 41, titre: 'Charmillon des Songes', taille: 2.15, ult: 'insecte',
+     escorte: [{espece: 'Papinox', niv: 32}]},
+   vagues: 4, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_cathedrale', zd: 'foret', rang: 8, horde: 14, nom: 'La Cathédrale de Feuilles',
+   salles: 5, niv: 34, sbires: ['Pomdepik', 'Coxy'], elites: ['Coxyclaque', 'Migalos'],
+   boss: {espece: 'Foretress', niv: 47, titre: 'Foretress la Coque', taille: 2.2, ult: 'acier'},
+   vagues: 4, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_nid', zd: 'foret', rang: 9, horde: 16, nom: 'Le Nid Suspendu',
+   salles: 6, niv: 38, sbires: ['Ningale', 'Larveyette'], elites: ['Manternel', 'Prismillon'],
+   boss: {espece: 'Ninjask', niv: 53, titre: 'Ninjask l\'Éclair', taille: 2.3, ult: 'insecte',
+     escorte: [{espece: 'Munja', niv: 49}, {espece: 'Munja', niv: 49}]},
+   vagues: 4, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
+
+  {cle: 'foret_coeur', zd: 'foret', rang: 10, horde: 18, nom: 'Le Cœur du Bois',
+   salles: 6, niv: 42, sbires: ['Scarabrute', 'Scarhino', 'Yanma'], elites: ['Brutapode', 'Foretress'],
+   boss: {espece: 'Lucanon', niv: 60, titre: 'Lucanon le Gardien', taille: 2.45, ult: 'insecte',
+     escorte: [{espece: 'Scarabrute', niv: 50}, {espece: 'Scarhino', niv: 50}]},
+   vagues: 5, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1'], final: 1}
+    ]
+  },
+  gorges: {
+    cle: 'gorges', ico: '🌊', nom: 'Les Gorges Noyées', etage: 1,
+    pitch: 'La rivière plus haut, là où elle a creusé. Ça encaisse et ça se soigne.',
+    donjons: [
+  {cle: 'gorges_gue', zd: 'gorges', rang: 1, horde: 5, nom: 'Le Gué de Galets',
+   salles: 3, niv: 10, sbires: ['Magicarpe', 'Azurill'], elites: [],
+   boss: {espece: 'Léviator', niv: 15, titre: 'Léviator du Gué', taille: 1.95, ult: 'eau'},
+   vagues: 2, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_bassins', zd: 'gorges', rang: 2, horde: 6, nom: 'Les Bassins Calmes',
+   salles: 3, niv: 12, sbires: ['Azurill', 'Marill'], elites: ['Magicarpe'],
+   boss: {espece: 'Azumarill', niv: 17, titre: 'Azumarill la Digue', taille: 1.95, ult: 'fee'},
+   vagues: 2, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_cascade', zd: 'gorges', rang: 3, horde: 7, nom: 'La Cascade Basse',
+   salles: 4, niv: 14, sbires: ['Psykokwak', 'Magicarpe'], elites: ['Marill'],
+   boss: {espece: 'Akwakwak', niv: 20, titre: 'Akwakwak le Migraineux', taille: 2.0, ult: 'eau'},
+   vagues: 2, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_nenuphars', zd: 'gorges', rang: 4, horde: 8, nom: 'Le Champ de Nénuphars',
+   salles: 4, niv: 17, sbires: ['Nénupiot', 'Lombre'], elites: ['Azumarill'],
+   boss: {espece: 'Ludicolo', niv: 24, titre: 'Ludicolo le Danseur', taille: 2.0, ult: 'plante',
+     escorte: [{espece: 'Lombre', niv: 17}, {espece: 'Lombre', niv: 17}]},
+   vagues: 3, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_grotte', zd: 'gorges', rang: 5, horde: 10, nom: 'La Grotte Ruisselante',
+   salles: 4, niv: 21, sbires: ['Ptitard', 'Têtarte'], elites: ['Akwakwak'],
+   boss: {espece: 'Tartard', niv: 29, titre: 'Tartard le Tourbillon', taille: 2.05, ult: 'combat'},
+   vagues: 3, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_barrage', zd: 'gorges', rang: 6, horde: 11, nom: 'Le Barrage Rompu',
+   salles: 5, niv: 25, sbires: ['Kaiminus', 'Khélocrok'], elites: ['Torgamord'],
+   boss: {espece: 'Crocrodil', niv: 35, titre: 'Crocrodil la Mâchoire', taille: 2.1, ult: 'eau'},
+   vagues: 3, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_recifs', zd: 'gorges', rang: 7, horde: 13, nom: 'Les Récifs de Sel',
+   salles: 5, niv: 30, sbires: ['Écrapince', 'Poissirène'], elites: ['Poissoroy'],
+   boss: {espece: 'Colhomard', niv: 41, titre: 'Colhomard la Pince', taille: 2.15, ult: 'eau',
+     escorte: [{espece: 'Écrapince', niv: 32}, {espece: 'Écrapince', niv: 32}]},
+   vagues: 4, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_chenal', zd: 'gorges', rang: 8, horde: 14, nom: 'Le Chenal Profond',
+   salles: 5, niv: 34, sbires: ['Carapuce', 'Carabaffe'], elites: ['Tartard'],
+   boss: {espece: 'Tortank', niv: 47, titre: 'Tortank le Canonnier', taille: 2.2, ult: 'eau'},
+   vagues: 4, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_trou', zd: 'gorges', rang: 9, horde: 16, nom: 'Le Trou Bleu',
+   salles: 6, niv: 38, sbires: ['Ramoloss', 'Flagadoss'], elites: ['Aligatueur'],
+   boss: {espece: 'Roigada', niv: 53, titre: 'Roigada le Somnolent', taille: 2.3, ult: 'psy'},
+   vagues: 4, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
+
+  {cle: 'gorges_source', zd: 'gorges', rang: 10, horde: 18, nom: 'La Source',
+   salles: 6, niv: 42, sbires: ['Barpau', 'Gobou', 'Flobio'], elites: ['Laggron', 'Tortank'],
+   boss: {espece: 'Milobellus', niv: 60, titre: 'Milobellus la Source', taille: 2.45, ult: 'eau',
+     escorte: [{espece: 'Laggron', niv: 50}, {espece: 'Aligatueur', niv: 50}]},
+   vagues: 5, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1'], final: 1}
+    ]
+  }
+};
+
+/* les étages, dans l'ordre : finir le dernier donjon d'une zone ouvre
+   tout l'étage suivant */
+const ETAGES = [['pre'], ['foret', 'gorges']];
+const ORDRE_ZD = ['pre', 'foret', 'gorges'];
+
+/* tous les donjons à plat — pour retrouver un donjon par sa clé */
+const DONJONS = ORDRE_ZD.reduce((t, z) => t.concat(ZONES_DONJON[z].donjons), []);
+function donjonParCle(cle){ return DONJONS.find(d => d.cle === cle); }
+function listeD(zd){ return (ZONES_DONJON[zd] || ZONES_DONJON.pre).donjons; }
+function etageDe(zd){ return ETAGES.findIndex(e => e.includes(zd)); }
+
 
 /* --- l'invasion : la zone se venge ------------------------------------ */
 const INVASION_TOUS_LES = 3;      // victoires de boss avant la revanche
 const INVASIONS = {
+  /* la clé 'pre' est l'alias de 'plaine' : la zone de donjon du départ */
   plaine: {
     nom: 'La Revanche du Pré',
     alerte: 'Des Zigzaton rôdent autour de la haie… le Pré prépare sa REVANCHE !',
@@ -1468,8 +1623,28 @@ const INVASIONS = {
     miniBoss: {espece: 'Rapasdepic', titre: 'Rapasdepic l\'Éclaireur'},
     boss: {espece: 'Tauros', titre: 'Tauros le Vengeur', taille: 2.45, ult: 'sol',
            escorte: [{espece: 'Rattatac'}, {espece: 'Linéon'}]}
+  },
+  foret: {
+    nom: 'La Colère du Bois',
+    alerte: 'Les toiles vibrent entre les souches… la Forêt prépare sa REVANCHE !',
+    sbires: ['Chenipan', 'Aspicot', 'Venipatte', 'Ningale'],
+    elites: ['Migalos', 'Foretress'],
+    miniBoss: {espece: 'Charmillon', titre: 'Charmillon l\'Éclaireur'},
+    boss: {espece: 'Lucanon', titre: 'Lucanon le Vengeur', taille: 2.45, ult: 'insecte',
+           escorte: [{espece: 'Scarabrute'}, {espece: 'Scarhino'}]}
+  },
+  gorges: {
+    nom: 'La Crue',
+    alerte: 'L\'eau monte entre les galets… les Gorges préparent leur REVANCHE !',
+    sbires: ['Magicarpe', 'Azurill', 'Ptitard', 'Khélocrok'],
+    elites: ['Tartard', 'Tortank'],
+    miniBoss: {espece: 'Colhomard', titre: 'Colhomard l\'Éclaireur'},
+    boss: {espece: 'Milobellus', titre: 'Milobellus la Vengeresse', taille: 2.45, ult: 'eau',
+           escorte: [{espece: 'Laggron'}, {espece: 'Aligatueur'}]}
   }
 };
+
+INVASIONS.pre = INVASIONS.plaine;   // le Pré, côté zone de donjon
 
 /* --- l'économie -------------------------------------------------------- */
 const PRIX = {baie:18, ticket:400, ult:900};
@@ -3581,7 +3756,7 @@ let idPens = 1;
    change au point qu'une vieille partie n'a plus de sens (nouveau roster
    du portail, par exemple) : au prochain chargement, tout le monde
    repart à zéro, une seule fois. */
-const VERSION_SAUVE = 3;
+const VERSION_SAUVE = 4;
 function partieNeuve(){
   return {
     v: VERSION_SAUVE, creeLe: Date.now(), vuLe: Date.now(),
@@ -3592,6 +3767,9 @@ function partieNeuve(){
     sacs: {sous: 80, baies: 3, tickets: 3},
     ults: {},                       // parchemins non appris, par type
     avancee: {tuto: 0, tutoFini: false, bienvenue: false},
+    zonesD: ['pre'],          // les ZONES DE DONJON ouvertes (rien à voir
+                              // avec les zones de pension ci-dessus)
+    progresD: {pre: 0},       // combien de donjons finis dans chacune
     invasion: {zone: {jauge: 0, due: false}, donjons: {}, victoires: 0, slots: 0, aides: []},
     prochainId: 1
   };
@@ -3644,6 +3822,28 @@ const zoneDe = nom => (ESPECES[nom] && ESPECES[nom].biome) || 'plaine';
 const zoneVue = () => (P && P.zoneVue) || 'plaine';
 /* les pensionnaires qui vivent dans la zone regardée */
 const habitants = () => P.pensionnaires.filter(p => zoneDe(p.espece) === zoneVue());
+
+/* --- les zones de DONJON ----------------------------------------------
+   Deux notions à ne pas confondre : la zone de pension (ci-dessus) dit où
+   vivent les Pokémon, la zone de donjon dit où on les envoie taper. */
+let zdVue = 'pre';                       // celle qu'on regarde
+const zonesDOuvertes = () => (P.zonesD && P.zonesD.length ? P.zonesD : ['pre'])
+  .filter(z => ZONES_DONJON[z]);
+const progresD = zd => (P.progresD && P.progresD[zd]) || 0;
+function poserProgresD(zd, n){
+  if(!P.progresD) P.progresD = {};
+  P.progresD[zd] = n;
+  if(zd === 'pre') P.avancee.tuto = n;    // le reste du jeu lit encore ça
+}
+/* ouvrir un étage entier : les deux miroirs arrivent ensemble */
+function ouvrirEtage(n){
+  const zs = ETAGES[n];
+  if(!zs) return [];
+  if(!P.zonesD) P.zonesD = ['pre'];
+  const neuves = zs.filter(z => !P.zonesD.includes(z));
+  for(const z of neuves){ P.zonesD.push(z); if(!P.progresD[z]) P.progresD[z] = 0; }
+  return neuves;
+}
 const enForme = p => true;               // plus de fatigue : toujours prêts
 
 /* --- monter de niveau : un BOUTON, payé en pièces --------------------
@@ -4237,6 +4437,41 @@ function majEquipe(){
     box.appendChild(b);
   }
   $$('.compteEquipe').forEach(e => e.textContent = selection.length + '/3');
+  majCarte();
+}
+
+/* --- l'écran du choix de donjon ---------------------------------------
+   Les zones ouvertes en onglets, les donjons de la zone regardée dessous.
+   Deux zones d'un même étage sont des miroirs : même difficulté, autres
+   types — bloqué sur l'une, on va tenter l'autre. */
+function majCarte(){
+  const ouvertes = zonesDOuvertes();
+  if(!ouvertes.includes(zdVue)) zdVue = ouvertes[0];
+  const zone = ZONES_DONJON[zdVue];
+
+  /* les onglets : on ne les montre que s'il y a un choix à faire */
+  const ong = $('#ongletsZD');
+  if(ong){
+    ong.hidden = ouvertes.length < 2;
+    ong.innerHTML = '';
+    for(const z of ouvertes){
+      const zz = ZONES_DONJON[z];
+      const b = document.createElement('button');
+      b.className = 'ongletZone' + (z === zdVue ? ' actif' : '');
+      b.innerHTML = '<span class="i">' + zz.ico + '</span>' + zz.nom;
+      b.onclick = () => { zdVue = z; donjonChoisi = 0; majCarte(); };
+      ong.appendChild(b);
+      /* l'onglet ouvert doit être visible : la barre défile jusqu'à lui */
+      if(z === zdVue) setTimeout(() => {
+        ong.scrollLeft = b.offsetLeft - (ong.clientWidth - b.offsetWidth) / 2;
+      }, 0);
+    }
+  }
+  const t = $('#titreZD');
+  if(t) t.textContent = zone.ico + ' ' + zone.nom;
+  const pi = $('#pitchZD');
+  if(pi) pi.textContent = zone.pitch;
+
   /* la colère de la ZONE, au-dessus de ses donjons */
   const cz = $('#colereZone');
   if(cz){
@@ -4245,13 +4480,15 @@ function majEquipe(){
     $('#colereBarre').style.width = z.jauge + '%';
     $('#colerePct').textContent = z.due ? 'LA ZONE ATTAQUE !' : '';
   }
-  /* la liste des donjons du tuto */
+
+  /* les donjons de la zone regardée */
+  const fait0 = progresD(zdVue);
   const dl = $('#listeDonjons');
   dl.innerHTML = '';
-  DONJONS.forEach((d, i) => {
+  zone.donjons.forEach((d, i) => {
     const l = document.createElement('div');
-    const ouvert = i <= P.avancee.tuto;
-    const fait = i < P.avancee.tuto;
+    const ouvert = i <= fait0;
+    const fait = i < fait0;
     const dj = (P.invasion && P.invasion.donjons && P.invasion.donjons[d.cle]) || null;
     const jv = dj ? dj.jauge : 0;
     l.className = 'l' + (ouvert ? ' cliquable' : ' ferme')
@@ -4260,26 +4497,28 @@ function majEquipe(){
     const etiquette = dj && dj.due ? '<span class="etiquette rouge">🔥 revanche !</span>'
       : fait ? '<span class="etiquette">' + (d.final ? '👑 ' : '') + 'rejouable</span>'
       : ouvert ? '<span class="etiquette or">' + (d.final ? '👑 ' : '') + 'à toi !</span>'
-      : '<span class="etiquette">🔒 clé du donjon ' + i + '</span>';
-    l.innerHTML = '<span><span class="nomDj">' + (fait ? '✅ ' : ouvert ? '▶ ' : '') + (i + 1) + ' · ' + d.nom + '</span>'
+      : '<span class="etiquette">🔒 finis le n° ' + i + '</span>';
+    l.innerHTML = '<span><span class="nomDj">' + (fait ? '✅ ' : ouvert ? '▶ ' : '')
+      + (i + 1) + ' · ' + d.nom + '</span>'
       + (ouvert
         ? '<span class="vengBloc"><span class="vengIco">🔥</span>'
           + barreJauge(jv) + '</span>'
         : '') + '</span>' + etiquette;
-    if(ouvert) l.onclick = () => { donjonChoisi = i; majEquipe(); };
+    if(ouvert) l.onclick = () => { donjonChoisi = i; majCarte(); };
     dl.appendChild(l);
   });
 }
+
 let donjonChoisi = 0;
 async function partirEnDonjon(){
   const equipe = selection.map(id => P.pensionnaires.find(p => p.id === id)).filter(Boolean);
   if(!equipe.length) return direJeu('Choisis au moins un Pokémon !');
   P.equipe = [...selection];                 // on s'en souvient pour la prochaine
   sauver();
-  if(donjonChoisi > P.avancee.tuto) return;
+  if(donjonChoisi > progresD(zdVue)) return;
   montrer('donjon');
   construirePupitre(equipe);
-  await lancerDonjon(DONJONS[donjonChoisi], equipe);
+  await lancerDonjon(listeD(zdVue)[donjonChoisi], equipe);
 }
 
 /* --- le pupitre du donjon --------------------------------------------- */
@@ -4525,27 +4764,31 @@ async function lancerModeInvasion(){
     /* L'ASSAUT DE LA ZONE ENTIÈRE : un CUMUL. Les rôdeurs du donjon 1
        ouvrent le bal, puis ceux du 2, du 3… jusqu'au plus haut donjon
        que tu as ouvert — et c'est SON boss qui ferme la marche. */
-    const src = INVASIONS.plaine;
-    const haut = Math.min(DONJONS.length - 1, Math.max(0, P.avancee.tuto - 1));
+    /* la zone de donjon où on est allé le plus loin : c'est elle qui se venge */
+    const zdV = zonesDOuvertes()
+      .reduce((a, z) => progresD(z) > progresD(a) ? z : a, 'pre');
+    const suiteV = listeD(zdV);
+    const src = INVASIONS[zdV] || INVASIONS.plaine;
+    const haut = Math.min(suiteV.length - 1, Math.max(0, progresD(zdV) - 1));
     const reserve = [];
     for(let i = 0; i <= haut; i++){
-      const d = DONJONS[i];
+      const d = suiteV[i];
       const part = 13 + i * 4 + Math.round(nD * 1.8);
       reserve.push(...reserveDe(d.sbires, d.elites,
         Math.max(3, niv - (haut - i) * 2), part,
         {palier: (i === 0 ? '⚔ ' : '') + d.nom + ' déferle !', montee: 1}));
     }
-    const bossSrc = DONJONS[haut].boss;
+    const bossSrc = suiteV[haut].boss;
     def = {
       type, cle: null, nom: src.nom, reserve, niv,
-      sbires: DONJONS[haut].sbires, elites: DONJONS[haut].elites,
+      sbires: suiteV[haut].sbires, elites: suiteV[haut].elites,
       cap: Math.max(8, Math.min(20, Math.round(nD * 1.6))), cadence: 0.9, parSalve: 4, durete: 1.9,
       cristalPv: Math.round(320 + moy * 22), cristalDef: Math.round(moy * 1.2),
       recTickets: 4,
       boss: Object.assign({}, bossSrc, {
         niv: niv + 7, force: 0.75 + P.invasion.victoires * 0.08,
         taille: (bossSrc.taille || 1.4) + 0.25,
-        titre: (bossSrc.titre || bossSrc.espece) + ' — LE VENGEUR DU PRÉ',
+        titre: (bossSrc.titre || bossSrc.espece) + ' — ' + (src.nom || 'LA REVANCHE').toUpperCase(),
         escorte: bossSrc.escorte || src.boss.escorte
       })
     };
@@ -4638,7 +4881,9 @@ function finInvasion(r){
 
 /* --- la fin d'expédition ---------------------------------------------- */
 function finExpedition(r){
-  const idx = DONJONS.indexOf(D.def);
+  const zd = (D.def && D.def.zd) || 'pre';
+  const suite = listeD(zd);
+  const idx = suite.indexOf(D.def);
   const gagne = r.victoire;
   const lignes = [];
   if(gagne){
@@ -4651,31 +4896,42 @@ function finExpedition(r){
   const auBout = gagne && D.salleIdx === D.salles.length - 1
                  && !D.ents.some(e => e.camp === 'ennemi' && !e.ko) && D.phase === 'boss';
   if(auBout){
-    if(idx === P.avancee.tuto){
-      P.avancee.tuto++;
-      if(DONJONS[idx].final){
-        P.avancee.tutoFini = true;
-        P.sacs.tickets += 2;
-        lignes.push(['👑 LE PRÉ EST À TOI', 'boss vaincu !']);
-        lignes.push(['🎟 Tickets de spin', '+2']);
-        if(!P.cles && P.zones.length < 2){
-          P.cles = 1;
-          lignes.push(['🗝 CLÉ DE PORTAIL', 'ouvre la zone de ton choix — en boutique !']);
+    if(idx === progresD(zd)){
+      poserProgresD(zd, idx + 1);
+      if(suite[idx].final){
+        if(zd === 'pre'){
+          P.avancee.tutoFini = true;
+          P.sacs.tickets += 2;
+          lignes.push(['👑 LE PRÉ EST À TOI', 'boss vaincu !']);
+          lignes.push(['🎟 Tickets de spin', '+2']);
+          if(!P.cles && P.zones.length < 2){
+            P.cles = 1;
+            lignes.push(['🗝 CLÉ DE PORTAIL', 'ouvre la zone de ton choix — en boutique !']);
+          }
+        } else {
+          P.sacs.tickets += 3;
+          lignes.push(['👑 ' + ZONES_DONJON[zd].nom.toUpperCase(), 'zone terminée !']);
+          lignes.push(['🎟 Tickets de spin', '+3']);
         }
+        /* le dernier boss d'une zone ouvre TOUT l'étage du dessus : les
+           deux miroirs arrivent ensemble, jamais l'un sans l'autre */
+        const neuves = ouvrirEtage(etageDe(zd) + 1);
+        for(const z of neuves)
+          lignes.push(['🗝 NOUVELLE ZONE', ZONES_DONJON[z].ico + ' ' + ZONES_DONJON[z].nom + ' s\'ouvre !']);
       } else {
-        lignes.push(['🗝 CLÉ obtenue', DONJONS[idx + 1].nom + ' s\'ouvre !']);
+        lignes.push(['🗝 CLÉ obtenue', suite[idx + 1].nom + ' s\'ouvre !']);
       }
     } else lignes.push(['👑 Donjon rejoué', 'bien joué !']);
     /* LA JAUGE DE VENGEANCE : un premier passage chauffe à peine la zone —
        c'est le FARM qui la met en rage. Plus tu repasses, plus ça charge. */
-    lignes.push(...chargerVengeance(DONJONS[idx].cle));
-    if(Math.random() < 0.35 && !DONJONS[idx].final){
+    lignes.push(...chargerVengeance(suite[idx].cle));
+    if(Math.random() < 0.35 && !suite[idx].final){
       P.sacs.tickets++;
       lignes.push(['🎟 Ticket de spin', '+1 !']);
     }
   } else if(gagne){
     lignes.push(['🏕 Repli réussi', 'le butin est sauf']);
-    lignes.push(...casserSerie(DONJONS[idx].cle));
+    lignes.push(...casserSerie(suite[idx].cle));
   }
   /* l'XP : partagée, appliquée maintenant */
   if(gagne && r.butin.xp){
@@ -4695,7 +4951,7 @@ function finExpedition(r){
     lignes.unshift(['⭐ XP de l\'équipe', '+' + r.butin.xp]);
   }
   if(!gagne){
-    const casse = casserSerie(DONJONS[idx].cle);
+    const casse = casserSerie(suite[idx].cle);
     lignes.length = 0;
     lignes.push(['💔 Toute l\'équipe est tombée', 'le butin est perdu…']);
     lignes.push(...casse);
@@ -4876,7 +5132,7 @@ function majCompte(){
   const nb = P.pensionnaires.length;
   const shinies = P.pensionnaires.filter(p => p.shiny).length;
   const meilleur = P.pensionnaires.reduce((m, p) => Math.max(m, p.niveau), 0);
-  const donjons = P.avancee.tuto || 0;
+  const donjons = ORDRE_ZD.reduce((t, z) => t + progresD(z), 0);
   const jours = Math.max(1, Math.ceil((Date.now() - (P.creeLe || Date.now())) / 86400000));
   $('#statsCompte').innerHTML =
       '<div>Pensionnaires<b>' + nb + (shinies ? ' <small>dont ✨' + shinies + '</small>' : '') + '</b></div>'
