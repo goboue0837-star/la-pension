@@ -183,11 +183,15 @@
   .etiquette.or{ background:var(--or-doux); border-color:var(--or-trait); color:var(--or-fonce); }
   .etiquette.rouge{ background:var(--danger); border-color:var(--danger); color:#1a0f0d; }
   .vengBloc{ display:flex; align-items:center; gap:8px; margin-top:6px; }
-  .vengBarre{ flex:1; max-width:140px; height:6px; background:var(--trait);
+  .vengBarre{ flex:1; max-width:140px; height:7px; background:var(--trait);
     border-radius:99px; overflow:hidden; }
   .vengBarre i{ display:block; height:100%; background:linear-gradient(90deg,#f0a35e,var(--danger)); border-radius:99px; }
-  .vengPct{ font-size:12px; color:var(--encre2); white-space:nowrap; font-weight:700; }
-  #colereZone .vengBarre i{ background:linear-gradient(90deg,#c58af0,var(--zone)); }
+  .vengPct{ font-size:12px; color:var(--danger-texte); white-space:nowrap; font-weight:800; }
+  .vengPct:empty{ display:none; }
+  .vengIco{ font-size:13px; line-height:1; }
+  .vengBarre.zone i{ background:linear-gradient(90deg,#c58af0,var(--zone)); }
+  .lignesButin .l b .vengBarre, .puce2 .vengBarre{ display:inline-block; width:110px; vertical-align:middle; margin-left:6px; }
+  .puce2 .vengBarre{ width:90px; }
 
   /* --- les spins --------------------------------------------------------- */
   .machine{ text-align:center; background:linear-gradient(180deg, #2b2848, var(--carte));
@@ -412,12 +416,11 @@
       <div class="panneau">
         <div class="titrePanneau"><span class="etape">2</span>Le Pré du Grand Départ</div>
         <div id="colereZone" hidden>
-          <div class="vengBloc" style="margin-top:0;">
-            <span class="vengBarre" style="max-width:none;"><i id="colereBarre" style="width:0%"></i></span>
-            <span class="vengPct" id="colerePct">🌋 0%</span>
+          <div class="vengBloc" style="margin:0 0 12px;">
+            <span class="vengIco">🌋</span>
+            <span class="vengBarre zone" style="max-width:none;"><i id="colereBarre" style="width:0%"></i></span>
+            <span class="vengPct" id="colerePct"></span>
           </div>
-          <p class="mini" style="margin:4px 0 10px;">Colère de la zone — chaque donjon vaincu
-            l'attise un peu, chaque revanche repoussée beaucoup.</p>
         </div>
         <div class="lignesButin" id="listeDonjons"></div>
       </div>
@@ -3032,6 +3035,11 @@ function icoType(t, px){
   return TYPE_ICO[t] || '';
 }
 
+/* une jauge muette : la barre, sans chiffre */
+function barreJauge(pct, classe){
+  return '<span class="vengBarre' + (classe ? ' ' + classe : '') + '"><i style="width:' + pct + '%"></i></span>';
+}
+
 /* --- la partie -------------------------------------------------------- */
 let P = null;
 let idPens = 1;
@@ -3245,7 +3253,7 @@ async function majPension(){
       alertes.push(['⬆', p.espece + ' peut monter — ' + coutNiveau(p.niveau) + ' 🪙']);
   }
   if(P.invasion && P.invasion.zone && P.invasion.zone.jauge > 0 && !P.invasion.zone.due)
-    alertes.unshift(['🌋', 'Colère du Pré : ' + P.invasion.zone.jauge + ' %']);
+    alertes.unshift(['🌋', 'Colère du Pré ' + barreJauge(P.invasion.zone.jauge, 'zone')]);
   if(!alertes.length)
     alertes.push(['🏡', P.pensionnaires.length + ' pensionnaire' + (P.pensionnaires.length > 1 ? 's' : '')
       + ' à la pension' + (P.sacs.tickets ? ' · ' + P.sacs.tickets + ' ticket' + (P.sacs.tickets > 1 ? 's' : '') + ' à tirer' : '')]);
@@ -3617,7 +3625,7 @@ function majEquipe(){
     const z = (P.invasion && P.invasion.zone) || {jauge: 0, due: false};
     cz.hidden = false;
     $('#colereBarre').style.width = z.jauge + '%';
-    $('#colerePct').textContent = z.due ? '🌋 LA ZONE ATTAQUE !' : '🌋 ' + z.jauge + '%';
+    $('#colerePct').textContent = z.due ? 'LA ZONE ATTAQUE !' : '';
   }
   /* la liste des donjons du tuto */
   const dl = $('#listeDonjons');
@@ -3637,10 +3645,8 @@ function majEquipe(){
       : '<span class="etiquette">🔒 clé du donjon ' + i + '</span>';
     l.innerHTML = '<span><span class="nomDj">' + (fait ? '✅ ' : ouvert ? '▶ ' : '') + (i + 1) + ' · ' + d.nom + '</span>'
       + (ouvert
-        ? '<span class="vengBloc">'
-          + '<span class="vengBarre"><i style="width:' + jv + '%"></i></span>'
-          + '<span class="vengPct">🔥 ' + jv + ' %'
-          + '</span></span>'
+        ? '<span class="vengBloc"><span class="vengIco">🔥</span>'
+          + barreJauge(jv) + '</span>'
         : '') + '</span>' + etiquette;
     if(ouvert) l.onclick = () => { donjonChoisi = i; majEquipe(); };
     dl.appendChild(l);
@@ -3774,7 +3780,7 @@ function chargerVengeance(cle){
       lignes.push(['🔥 REVANCHE !', (d ? d.nom : cle) + ' attaque la pension !']);
     } else {
       lignes.push(['🔥 ' + (d ? d.nom : cle),
-        dj.jauge + '% (+' + gain + ')']);
+        barreJauge(dj.jauge)]);
     }
   }
   if(!inv.zone.due){
@@ -3783,7 +3789,7 @@ function chargerVengeance(cle){
       inv.zone.due = true;
       lignes.push(['🌋 LA ZONE ENTIÈRE ATTAQUE', 'le Pré marche sur la pension !!']);
     } else if(inv.zone.jauge % 10 === 0)
-      lignes.push(['🌋 Colère du Pré', inv.zone.jauge + '%']);
+      lignes.push(['🌋 Colère du Pré', barreJauge(inv.zone.jauge, 'zone')]);
   }
   return lignes;
 }
@@ -3953,7 +3959,7 @@ function finInvasion(r){
         if(P.invasion.zone.jauge >= 100){
           P.invasion.zone.due = true;
           lignes.push(['🌋 LA ZONE ENTIÈRE ATTAQUE', 'ta victoire a mis le Pré en RAGE !']);
-        } else lignes.push(['🌋 Colère du Pré', P.invasion.zone.jauge + '%']);
+        } else lignes.push(['🌋 Colère du Pré', barreJauge(P.invasion.zone.jauge, 'zone')]);
       }
     }
     const tk = D.def.recTickets || 3;
