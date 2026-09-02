@@ -126,6 +126,17 @@
     width:10px; height:10px; border-radius:99px; background:var(--danger);
     border:2px solid var(--carte); }
 
+  /* --- les onglets de zone : une pension par zone achetée ---------------- */
+  .ongletsZone{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 2px;
+    -webkit-overflow-scrolling:touch; }
+  .ongletZone{ flex:0 0 auto; background:var(--carte); border:1.5px solid var(--trait);
+    color:var(--encre2); border-radius:99px; min-height:44px; padding:8px 16px;
+    font-family:'Nunito'; font-weight:800; font-size:14px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:7px; transition:transform .08s, background .12s; }
+  .ongletZone .i{ font-size:17px; }
+  .ongletZone:active{ transform:scale(.97); }
+  .ongletZone.actif{ background:var(--or-doux); border-color:var(--or-trait); color:var(--or-fonce); }
+
   /* --- la pension --------------------------------------------------------- */
   #cvJardin{ width:100%; height:44vh; border-radius:var(--r); display:block;
     border:1px solid var(--trait); box-shadow:var(--ombre); touch-action:none; }
@@ -379,6 +390,7 @@
       <span class="jeton">🫐 <b class="jBaies">x0</b></span>
     </div>
     <div class="corps">
+      <div class="ongletsZone" hidden></div>
       <div id="alerteInvasion" hidden></div>
       <div style="position:relative;">
         <canvas id="cvJardin"></canvas>
@@ -467,14 +479,15 @@
       <span class="jeton">🪙 <b class="jSous">0</b></span>
     </div>
     <div class="corps">
+      <div class="ongletsZone" hidden></div>
       <div class="panneau machine">
         <div class="gros">🎰</div>
-        <b class="px">🌾 La Grande Plaine</b>
-        <p class="discret">25 familles · une famille = un tirage, tu reçois la forme de base.</p>
+        <b class="px" id="titrePortail">🌾 La Grande Plaine</b>
+        <p class="discret" id="pitchPortail">25 familles · une famille = un tirage, tu reçois la forme de base.</p>
         <button class="btnBois" style="width:100%; margin-top:12px;" onclick="ouvrirRaretes()">📊 Les raretés et les familles</button>
       </div>
       <div class="panneau" id="resultatSpin" hidden></div>
-      <p class="mini" style="text-align:center; padding:0 8px;">🔒 Forêt et Grotte arrivent avec les prochaines zones.</p>
+      <p class="mini" style="text-align:center; padding:0 8px;">Les autres portails s'ouvrent avec les zones de pension.</p>
     </div>
     <div class="barreAction">
       <div class="compteur">tickets<b id="nbTickets">0</b></div>
@@ -572,7 +585,7 @@
 
   <div id="voileRaretes" class="voileHaut">
     <div class="fiche">
-      <h3>📊 Les raretés</h3>
+      <h3 id="titreRaretes">📊 Les raretés</h3>
       <p class="discret" style="margin-top:2px;">Ce que la machine peut sortir, et à quelle fréquence.
         Tu tires le chef de famille, l'évolution se fait à la pension.</p>
       <div id="tauxRaretes" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
@@ -680,7 +693,8 @@ const ULTS = {
    -------------------------------------------------------------------- */
 const ESPECES = {
 
-  /* ═══ COMMUNS ═══ 6 familles ═══════════════════════ */
+  /* ══════════════════ 🌾 LA GRANDE PLAINE ══════════════════ */
+  /* ── COMMUNS ── 6 familles ──
   /* Rattata — le premier venu, mord vite et souvent */
   'Rattata':      {num:19, types:['normal'], rarete:'commun', carac:'brave', biome:'plaine',
     base:{pv:24, atq:8, def:4, vit:3.2}, sig:{nom:'Vive-Attaque', type:'normal', puiss:40, cd:1, por:1},
@@ -720,8 +734,7 @@ const ESPECES = {
     evo:{vers:'Grahyèna', niv:18}},
   'Grahyèna':     {num:262, types:['tenebres'], rarete:'commun', carac:'presse', biome:'plaine',
     base:{pv:42, atq:13, def:8, vit:4}, sig:{nom:'Crocs Éclair', type:'tenebres', puiss:60, cd:1.1, por:1}},
-
-  /* ═══ PEU COMMUNS ═══ 6 familles ═══════════════════════ */
+  /* ── PEU COMMUNS ── 6 familles ──
   /* Abo — plus il souffre, plus son venin mord */
   'Abo':          {num:23, types:['poison'], rarete:'peuCommun', carac:'mauvais', biome:'plaine',
     base:{pv:26, atq:8, def:4, vit:3}, sig:{nom:'Piqûre', type:'poison', puiss:40, cd:1.05, por:1},
@@ -764,8 +777,7 @@ const ESPECES = {
     evo:{vers:'Hypnomade', niv:26}},
   'Hypnomade':    {num:97, types:['psy'], rarete:'peuCommun', carac:'serieux', biome:'plaine',
     base:{pv:48, atq:14, def:10, vit:2.9}, sig:{nom:'Psyko', type:'psy', puiss:72, cd:1.3, por:2.6, zone:1.4}},
-
-  /* ═══ RARES ═══ 5 familles ═══════════════════════ */
+  /* ── RARES ── 5 familles ──
   /* Girafarig — sa queue voit dans le dos et frappe seule */
   'Girafarig':    {num:203, types:['normal', 'psy'], rarete:'rare', carac:'serieux', biome:'plaine',
     base:{pv:38, atq:12, def:8, vit:3.4}, sig:{nom:'Psyko', type:'psy', puiss:55, cd:1.15, por:2.4},
@@ -793,8 +805,7 @@ const ESPECES = {
   /* Canarticho — son poireau vaut une épée : il défie le plus fort */
   'Canarticho':   {num:83, types:['normal', 'vol'], rarete:'rare', carac:'assure', biome:'plaine',
     base:{pv:38, atq:15, def:8, vit:3.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:62, cd:0.95, por:1.2}},
-
-  /* ═══ ÉPIQUES ═══ 4 familles ═══════════════════════ */
+  /* ── ÉPIQUES ── 4 familles ──
   /* Kangourex — protège les siens avant de cogner */
   'Kangourex':    {num:115, types:['normal'], rarete:'epique', carac:'hardi', biome:'plaine',
     base:{pv:74, atq:17, def:14, vit:3.2}, sig:{nom:'Écras\'Face', type:'normal', puiss:72, cd:1.2, por:1}},
@@ -828,8 +839,7 @@ const ESPECES = {
     base:{pv:66, atq:22, def:14, vit:3.9}, sig:{nom:'Corne Ardente', type:'feu', puiss:86, cd:1.15, por:1.2}},
   'Tauros de Paldea Aquatique': {num:128, types:['combat', 'eau'], rarete:'epique', carac:'brave', biome:'plaine', sprite:'0128/0003',
     base:{pv:66, atq:22, def:14, vit:3.9}, sig:{nom:'Corne Torrent', type:'eau', puiss:86, cd:1.15, por:1.4}},
-
-  /* ═══ LÉGENDAIRES ═══ 4 familles ═══════════════════════ */
+  /* ── LÉGENDAIRES ── 4 familles ──
   /* Suicune — il court purifier les eaux du monde */
   'Suicune':      {num:245, types:['eau'], rarete:'legendaire', carac:'serieux', biome:'plaine',
     base:{pv:74, atq:19, def:20, vit:4.4}, sig:{nom:'Blizzard', type:'glace', puiss:96, cd:1.35, por:3, zone:1.7}},
@@ -843,8 +853,303 @@ const ESPECES = {
   'Électhor de Galar': {num:145, types:['combat', 'vol'], rarete:'legendaire', carac:'assure', biome:'plaine', sprite:'0145/0001',
     base:{pv:72, atq:25, def:15, vit:4.5}, sig:{nom:'Coup Croix', type:'combat', puiss:98, cd:1.2, por:1.2}},
 
-  /* ═══ LA RÉSERVE ═══ écrites pour les biomes à venir, pas
-     tirables au portail de la Plaine ══════════════════════ */
+  /* ══════════════════ 🐛 LE BOIS AUX INSECTES ══════════════════ */
+  /* ── COMMUNS ── 6 familles ──
+  /* Chenipan — trois formes avant le niveau 12 — la lignée qui bouge le plus vite */
+  'Chenipan':     {num:10, types:['insecte'], rarete:'commun', carac:'docile', biome:'bois',
+    base:{pv:24, atq:7, def:4, vit:3}, sig:{nom:'Sécrétion', type:'insecte', puiss:35, cd:1.1, por:2.4},
+    evo:{vers:'Chrysacier', niv:7}},
+  'Chrysacier':   {num:11, types:['insecte'], rarete:'commun', carac:'docile', biome:'bois',
+    base:{pv:36, atq:6, def:12, vit:2.2}, sig:{nom:'Charge', type:'normal', puiss:42, cd:1.3, por:1},
+    evo:{vers:'Papilusion', niv:10}},
+  'Papilusion':   {num:12, types:['insecte', 'vol'], rarete:'commun', carac:'docile', biome:'bois',
+    base:{pv:46, atq:13, def:8, vit:3.6}, sig:{nom:'Bourdon', type:'insecte', puiss:78, cd:1.4, por:2.8, zone:1.4}},
+  /* Aspicot — le dard d'abord, la question ensuite */
+  'Aspicot':      {num:13, types:['insecte', 'poison'], rarete:'commun', carac:'mauvais', biome:'bois',
+    base:{pv:24, atq:9, def:3, vit:3.2}, sig:{nom:'Dard-Venin', type:'poison', puiss:38, cd:1, por:1},
+    evo:{vers:'Coconfort', niv:7}},
+  'Coconfort':    {num:14, types:['insecte', 'poison'], rarete:'commun', carac:'mauvais', biome:'bois',
+    base:{pv:36, atq:7, def:12, vit:2.2}, sig:{nom:'Charge', type:'normal', puiss:42, cd:1.3, por:1},
+    evo:{vers:'Dardargnan', niv:10}},
+  'Dardargnan':   {num:15, types:['insecte', 'poison'], rarete:'commun', carac:'mauvais', biome:'bois',
+    base:{pv:44, atq:16, def:6, vit:4}, sig:{nom:'Double Dard', type:'insecte', puiss:80, cd:1, por:1}},
+  /* Chenipotte — elle choisit son camp au niveau 7 : papillon de jour ou de nuit */
+  'Chenipotte':   {num:265, types:['insecte'], rarete:'commun', carac:'foufou', biome:'bois',
+    base:{pv:24, atq:8, def:4, vit:3.1}, sig:{nom:'Piqûre', type:'insecte', puiss:36, cd:1, por:1},
+    evo:{choix:['Armulys', 'Blindalys'], niv:7}},
+  'Armulys':      {num:266, types:['insecte'], rarete:'commun', carac:'foufou', biome:'bois',
+    base:{pv:34, atq:7, def:11, vit:2.3}, sig:{nom:'Charge', type:'normal', puiss:42, cd:1.3, por:1},
+    evo:{vers:'Charmillon', niv:12}},
+  'Charmillon':   {num:267, types:['insecte', 'vol'], rarete:'commun', carac:'foufou', biome:'bois',
+    base:{pv:44, atq:14, def:7, vit:3.7}, sig:{nom:'Vent Argenté', type:'insecte', puiss:72, cd:1.3, por:2.6}},
+  'Blindalys':    {num:268, types:['insecte'], rarete:'commun', carac:'foufou', biome:'bois',
+    base:{pv:34, atq:7, def:11, vit:2.3}, sig:{nom:'Charge', type:'normal', puiss:42, cd:1.3, por:1},
+    evo:{vers:'Papinox', niv:12}},
+  'Papinox':      {num:269, types:['insecte', 'poison'], rarete:'commun', carac:'foufou', biome:'bois',
+    base:{pv:48, atq:13, def:9, vit:3.2}, sig:{nom:'Poudre Toxik', type:'poison', puiss:70, cd:1.35, por:2.6, zone:1.4}},
+  /* Crikzik — son crissement porte à travers tout le bois */
+  'Crikzik':      {num:401, types:['insecte'], rarete:'commun', carac:'serieux', biome:'bois',
+    base:{pv:22, atq:5, def:4, vit:2.8}, sig:{nom:'Charge', type:'normal', puiss:32, cd:1.15, por:1},
+    evo:{vers:'Mélokrik', niv:10}},
+  'Mélokrik':     {num:402, types:['insecte'], rarete:'commun', carac:'serieux', biome:'bois',
+    base:{pv:40, atq:13, def:8, vit:3.4}, sig:{nom:'Bourdon', type:'insecte', puiss:66, cd:1.25, por:2.4}},
+  /* Tissenboule — elle tend son fil en travers du sentier et attend */
+  'Tissenboule':  {num:917, types:['insecte'], rarete:'commun', carac:'malin', biome:'bois',
+    base:{pv:26, atq:7, def:6, vit:2.8}, sig:{nom:'Sécrétion', type:'insecte', puiss:36, cd:1.1, por:2.2},
+    evo:{vers:'Filentrappe', niv:15}},
+  'Filentrappe':  {num:918, types:['insecte'], rarete:'commun', carac:'malin', biome:'bois',
+    base:{pv:46, atq:14, def:13, vit:2.9}, sig:{nom:'Fil Collant', type:'insecte', puiss:68, cd:1.2, por:2.4}},
+  /* Venipatte — cent pattes, aucune marche arrière */
+  'Venipatte':    {num:543, types:['insecte', 'poison'], rarete:'commun', carac:'brave', biome:'bois',
+    base:{pv:26, atq:8, def:6, vit:3}, sig:{nom:'Piqûre', type:'insecte', puiss:38, cd:1.05, por:1},
+    evo:{vers:'Scobolide', niv:12}},
+  'Scobolide':    {num:544, types:['insecte', 'poison'], rarete:'commun', carac:'brave', biome:'bois',
+    base:{pv:38, atq:10, def:12, vit:2.6}, sig:{nom:'Dard-Venin', type:'poison', puiss:54, cd:1.2, por:1.3},
+    evo:{vers:'Brutapode', niv:24}},
+  'Brutapode':    {num:545, types:['insecte', 'poison'], rarete:'commun', carac:'brave', biome:'bois',
+    base:{pv:56, atq:19, def:13, vit:4.1}, sig:{nom:'Queue Poison', type:'poison', puiss:88, cd:1.15, por:1}},
+  /* ── PEU COMMUNS ── 5 familles ──
+  /* Paras — ce ne sont pas les pattes qui décident, ce sont les spores */
+  'Paras':        {num:46, types:['insecte', 'plante'], rarete:'peuCommun', carac:'mauvais', biome:'bois',
+    base:{pv:28, atq:9, def:5, vit:2.7}, sig:{nom:'Griffe', type:'normal', puiss:40, cd:1.05, por:1},
+    evo:{vers:'Parasect', niv:24}},
+  'Parasect':     {num:47, types:['insecte', 'plante'], rarete:'peuCommun', carac:'mauvais', biome:'bois',
+    base:{pv:46, atq:15, def:12, vit:2.6}, sig:{nom:'Spore', type:'plante', puiss:70, cd:1.35, por:2.2, zone:1.4}},
+  /* Mimitoss — il poudre de loin et ne descend jamais */
+  'Mimitoss':     {num:48, types:['insecte', 'poison'], rarete:'peuCommun', carac:'timide', biome:'bois',
+    base:{pv:30, atq:7, def:5, vit:2.9}, sig:{nom:'Poudre Toxik', type:'poison', puiss:38, cd:1.2, por:2.6},
+    evo:{vers:'Aéromite', niv:26}},
+  'Aéromite':     {num:49, types:['insecte', 'poison'], rarete:'peuCommun', carac:'timide', biome:'bois',
+    base:{pv:48, atq:14, def:10, vit:3.2}, sig:{nom:'Choc Mental', type:'psy', puiss:72, cd:1.3, por:2.8}},
+  /* Coxy — tant qu'il n'a pas évolué, il soigne — Coxyclaque, lui, cogne */
+  'Coxy':         {num:165, types:['insecte', 'vol'], rarete:'peuCommun', carac:'gentil', biome:'bois',
+    base:{pv:30, atq:6, def:6, vit:3.2}, sig:{nom:'Réconfort', type:'insecte', soin:14, cd:1.5, por:2.2},
+    evo:{vers:'Coxyclaque', niv:18}},
+  'Coxyclaque':   {num:166, types:['insecte', 'vol'], rarete:'peuCommun', carac:'gentil', biome:'bois',
+    base:{pv:46, atq:16, def:12, vit:3.5}, sig:{nom:'Torgnoles', type:'normal', puiss:70, cd:1, por:1}},
+  /* Mimigal — il tend sa toile et attend le bon moment */
+  'Mimigal':      {num:167, types:['insecte', 'poison'], rarete:'peuCommun', carac:'malin', biome:'bois',
+    base:{pv:26, atq:9, def:5, vit:3}, sig:{nom:'Piqûre', type:'insecte', puiss:40, cd:1, por:1},
+    evo:{vers:'Migalos', niv:22}},
+  'Migalos':      {num:168, types:['insecte', 'poison'], rarete:'peuCommun', carac:'malin', biome:'bois',
+    base:{pv:44, atq:16, def:9, vit:3.4}, sig:{nom:'Toile', type:'insecte', puiss:68, cd:1.2, por:2.4}},
+  /* Lumivole — elle dessine des figures lumineuses au-dessus des clairières */
+  'Lumivole':     {num:314, types:['insecte'], rarete:'peuCommun', carac:'foufou', biome:'bois',
+    base:{pv:40, atq:12, def:10, vit:3.5}, sig:{nom:'Éclat Magique', type:'fee', puiss:62, cd:1.2, por:2.4}},
+  /* ── RARES ── 5 familles ──
+  /* Pomdepik — il se referme et encaisse tout, puis il explose */
+  'Pomdepik':     {num:204, types:['insecte'], rarete:'rare', carac:'hardi', biome:'bois',
+    base:{pv:34, atq:8, def:12, vit:2.4}, sig:{nom:'Bélier', type:'normal', puiss:48, cd:1.3, por:1},
+    evo:{vers:'Foretress', niv:31}},
+  'Foretress':    {num:205, types:['insecte', 'acier'], rarete:'rare', carac:'hardi', biome:'bois',
+    base:{pv:62, atq:16, def:20, vit:2.4}, sig:{nom:'Gyroballe', type:'acier', puiss:84, cd:1.4, por:1, zone:1.5}},
+  /* Ningale — au niveau 20 il mue : Ninjask s'envole, et la carcasse vide se met à bouger */
+  'Ningale':      {num:290, types:['insecte', 'sol'], rarete:'rare', carac:'presse', biome:'bois',
+    base:{pv:28, atq:9, def:7, vit:3}, sig:{nom:'Griffe', type:'insecte', puiss:40, cd:1, por:1},
+    evo:{choix:['Ninjask', 'Munja'], niv:20}},
+  'Ninjask':      {num:291, types:['insecte', 'vol'], rarete:'rare', carac:'presse', biome:'bois',
+    base:{pv:42, atq:16, def:6, vit:4.8}, sig:{nom:'Furie', type:'insecte', puiss:72, cd:0.9, por:1}},
+  'Munja':        {num:292, types:['insecte', 'spectre'], rarete:'rare', carac:'presse', biome:'bois', garde:1,
+    base:{pv:1, atq:20, def:1, vit:3.6}, sig:{nom:'Ombre Portée', type:'spectre', puiss:78, cd:1.2, por:1.6}},
+  /* Larveyette — elle se coud une feuille sur le dos et suit le groupe */
+  'Larveyette':   {num:540, types:['insecte', 'plante'], rarete:'rare', carac:'docile', biome:'bois',
+    base:{pv:28, atq:8, def:6, vit:2.9}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:40, cd:1.05, por:1},
+    evo:{vers:'Couverdure', niv:20}},
+  'Couverdure':   {num:541, types:['insecte', 'plante'], rarete:'rare', carac:'docile', biome:'bois',
+    base:{pv:40, atq:11, def:10, vit:2.7}, sig:{nom:'Feuille Magik', type:'plante', puiss:58, cd:1.2, por:2.4},
+    evo:{vers:'Manternel', niv:30}},
+  'Manternel':    {num:542, types:['insecte', 'plante'], rarete:'rare', carac:'docile', biome:'bois',
+    base:{pv:56, atq:18, def:13, vit:3.3}, sig:{nom:'Lame Feuille', type:'plante', puiss:86, cd:1.2, por:1.2}},
+  /* Lilliterelle — elle saute, elle frappe, elle est déjà repartie */
+  'Lilliterelle': {num:919, types:['insecte'], rarete:'rare', carac:'presse', biome:'bois',
+    base:{pv:26, atq:9, def:5, vit:3.4}, sig:{nom:'Fracasse', type:'insecte', puiss:42, cd:1, por:1},
+    evo:{vers:'Gambex', niv:24}},
+  'Gambex':       {num:920, types:['insecte', 'tenebres'], rarete:'rare', carac:'presse', biome:'bois',
+    base:{pv:50, atq:20, def:9, vit:4.4}, sig:{nom:'Coup Bas', type:'tenebres', puiss:84, cd:1.05, por:1}},
+  /* Lépidonille — ses ailes prennent le motif du coin où elle est née */
+  'Lépidonille':  {num:664, types:['insecte'], rarete:'rare', carac:'timide', biome:'bois',
+    base:{pv:24, atq:6, def:5, vit:2.9}, sig:{nom:'Sécrétion', type:'insecte', puiss:34, cd:1.1, por:2.4},
+    evo:{vers:'Pérégrain', niv:9}},
+  'Pérégrain':    {num:665, types:['insecte'], rarete:'rare', carac:'timide', biome:'bois',
+    base:{pv:34, atq:7, def:12, vit:2.3}, sig:{nom:'Charge', type:'normal', puiss:42, cd:1.3, por:1},
+    evo:{vers:'Prismillon', niv:12}},
+  'Prismillon':   {num:666, types:['insecte', 'vol'], rarete:'rare', carac:'timide', biome:'bois',
+    base:{pv:50, atq:17, def:9, vit:3.8}, sig:{nom:'Vent Argenté', type:'insecte', puiss:82, cd:1.25, por:2.8, zone:1.3}},
+  /* ── ÉPIQUES ── 4 familles ──
+  /* Scarabrute — il défie le plus fort et serre jusqu'à ce que ça cède */
+  'Scarabrute':   {num:127, types:['insecte'], rarete:'epique', carac:'assure', biome:'bois',
+    base:{pv:62, atq:21, def:13, vit:3.4}, sig:{nom:'Cisaille Croix', type:'insecte', puiss:88, cd:1.2, por:1}},
+  /* Scarhino — il fonce cornes en avant, sans jamais ralentir */
+  'Scarhino':     {num:214, types:['insecte', 'combat'], rarete:'epique', carac:'brave', biome:'bois',
+    base:{pv:66, atq:22, def:12, vit:3.6}, sig:{nom:'Close Combat', type:'combat', puiss:90, cd:1.25, por:1}},
+  /* Yanma — il frappe et repart avant qu'on l'ait vu */
+  'Yanma':        {num:193, types:['insecte', 'vol'], rarete:'epique', carac:'presse', biome:'bois',
+    base:{pv:32, atq:11, def:6, vit:4.2}, sig:{nom:'Ultrason', type:'insecte', puiss:46, cd:0.95, por:2.2},
+    evo:{vers:'Yanmega', niv:33}},
+  'Yanmega':      {num:469, types:['insecte', 'vol'], rarete:'epique', carac:'presse', biome:'bois',
+    base:{pv:58, atq:20, def:11, vit:4.3}, sig:{nom:'Bourdon', type:'insecte', puiss:92, cd:1.2, por:2.8, zone:1.4}},
+  /* Larvibule — l'électricité monte pendant qu'il souffre */
+  'Larvibule':    {num:736, types:['insecte'], rarete:'epique', carac:'mauvais', biome:'bois',
+    base:{pv:30, atq:9, def:7, vit:2.8}, sig:{nom:'Piqûre', type:'insecte', puiss:42, cd:1.05, por:1},
+    evo:{vers:'Chrysapile', niv:20}},
+  'Chrysapile':   {num:737, types:['insecte', 'electrik'], rarete:'epique', carac:'mauvais', biome:'bois',
+    base:{pv:42, atq:10, def:16, vit:2.2}, sig:{nom:'Étincelle', type:'electrik', puiss:56, cd:1.25, por:1.6},
+    evo:{vers:'Lucanon', niv:30}},
+  'Lucanon':      {num:738, types:['insecte', 'electrik'], rarete:'epique', carac:'mauvais', biome:'bois',
+    base:{pv:60, atq:22, def:14, vit:3.4}, sig:{nom:'Tonnerre', type:'electrik', puiss:94, cd:1.3, por:2.4}},
+  /* ── LÉGENDAIRES ── 3 familles ──
+  /* Genesect — l'insecte fossile que l'on a réarmé */
+  'Genesect':     {num:649, types:['insecte', 'acier'], rarete:'legendaire', carac:'malin', biome:'bois',
+    base:{pv:72, atq:23, def:17, vit:3.9}, sig:{nom:'Rayon Punition', type:'insecte', puiss:96, cd:1.3, por:3}},
+  /* Volcanion — la source chaude au fond du bois — la vapeur monte entre les arbres */
+  'Volcanion':    {num:721, types:['feu', 'eau'], rarete:'legendaire', carac:'serieux', biome:'bois',
+    base:{pv:76, atq:22, def:18, vit:3.3}, sig:{nom:'Vapeur Brûlante', type:'feu', puiss:96, cd:1.35, por:2.6, zone:1.5}},
+  /* Zygarde — ses cellules dorment sous la mousse — il se réveille quand le bois est menacé */
+  'Zygarde':      {num:718, types:['dragon', 'sol'], rarete:'legendaire', carac:'hardi', biome:'bois',
+    base:{pv:78, atq:22, def:20, vit:3.4}, sig:{nom:'Éclat Terrestre', type:'sol', puiss:96, cd:1.35, por:1.4, zone:1.6}},
+
+  /* ══════════════════ 🏞 LA RIVIÈRE ══════════════════ */
+  /* ── COMMUNS ── 4 familles ──
+  /* Magicarpe — il ne sait rien faire… jusqu'au jour où il sait tout faire */
+  'Magicarpe':    {num:129, types:['eau'], rarete:'commun', carac:'relax', biome:'riviere',
+    base:{pv:26, atq:4, def:6, vit:3}, sig:{nom:'Trempette', type:'eau', puiss:20, cd:1.4, por:1},
+    evo:{vers:'Léviator', niv:20}},
+  'Léviator':     {num:130, types:['eau', 'vol'], rarete:'commun', carac:'relax', biome:'riviere',
+    base:{pv:70, atq:24, def:13, vit:3.6}, sig:{nom:'Colère', type:'dragon', puiss:92, cd:1.3, por:1}},
+  /* Azurill — la bulle sur sa queue rebondit plus haut que lui */
+  'Azurill':      {num:298, types:['normal', 'fee'], rarete:'commun', carac:'gentil', biome:'riviere',
+    base:{pv:28, atq:5, def:6, vit:2.8}, sig:{nom:'Charge', type:'normal', puiss:32, cd:1.1, por:1},
+    evo:{vers:'Marill', niv:12}},
+  'Marill':       {num:183, types:['eau', 'fee'], rarete:'commun', carac:'gentil', biome:'riviere',
+    base:{pv:38, atq:9, def:9, vit:3}, sig:{nom:'Pistolet à O', type:'eau', puiss:52, cd:1.15, por:2.4},
+    evo:{vers:'Azumarill', niv:24}},
+  'Azumarill':    {num:184, types:['eau', 'fee'], rarete:'commun', carac:'gentil', biome:'riviere',
+    base:{pv:58, atq:17, def:13, vit:3.2}, sig:{nom:'Éclat Magique', type:'fee', puiss:78, cd:1.2, por:2.4}},
+  /* Nénupiot — il suit le courant, et l'équipe avec */
+  'Nénupiot':     {num:270, types:['eau', 'plante'], rarete:'commun', carac:'docile', biome:'riviere',
+    base:{pv:26, atq:7, def:5, vit:2.9}, sig:{nom:'Feuille Magik', type:'plante', puiss:36, cd:1.1, por:2.2},
+    evo:{vers:'Lombre', niv:14}},
+  'Lombre':       {num:271, types:['eau', 'plante'], rarete:'commun', carac:'docile', biome:'riviere',
+    base:{pv:38, atq:11, def:9, vit:3.1}, sig:{nom:'Pistolet à O', type:'eau', puiss:54, cd:1.15, por:2.6},
+    evo:{vers:'Ludicolo', niv:28}},
+  'Ludicolo':     {num:272, types:['eau', 'plante'], rarete:'commun', carac:'docile', biome:'riviere',
+    base:{pv:56, atq:17, def:12, vit:3.5}, sig:{nom:'Giga-Sangsue', type:'plante', puiss:80, cd:1.25, por:2.6}},
+  /* Khélocrok — il mord, et il ne lâche plus */
+  'Khélocrok':    {num:833, types:['eau'], rarete:'commun', carac:'brave', biome:'riviere',
+    base:{pv:30, atq:10, def:8, vit:2.9}, sig:{nom:'Morsure', type:'eau', puiss:44, cd:1.1, por:1},
+    evo:{vers:'Torgamord', niv:22}},
+  'Torgamord':    {num:834, types:['eau', 'roche'], rarete:'commun', carac:'brave', biome:'riviere',
+    base:{pv:60, atq:21, def:16, vit:3}, sig:{nom:'Éboulement', type:'roche', puiss:86, cd:1.3, por:1.6, zone:1.4}},
+  /* ── PEU COMMUNS ── 4 familles ──
+  /* Psykokwak — sa migraine est une arme — il ne l'a pas encore compris */
+  'Psykokwak':    {num:54, types:['eau'], rarete:'peuCommun', carac:'relax', biome:'riviere',
+    base:{pv:30, atq:8, def:6, vit:2.9}, sig:{nom:'Pistolet à O', type:'eau', puiss:40, cd:1.15, por:2.4},
+    evo:{vers:'Akwakwak', niv:33}},
+  'Akwakwak':     {num:55, types:['eau'], rarete:'peuCommun', carac:'relax', biome:'riviere',
+    base:{pv:52, atq:18, def:12, vit:3.4}, sig:{nom:'Psyko', type:'psy', puiss:82, cd:1.25, por:2.6}},
+  /* Poissirène — sa corne perce, mais elle préfère la distance */
+  'Poissirène':   {num:118, types:['eau'], rarete:'peuCommun', carac:'timide', biome:'riviere',
+    base:{pv:26, atq:8, def:5, vit:3.1}, sig:{nom:'Koud\'Korne', type:'eau', puiss:40, cd:1.05, por:1},
+    evo:{vers:'Poissoroy', niv:33}},
+  'Poissoroy':    {num:119, types:['eau'], rarete:'peuCommun', carac:'timide', biome:'riviere',
+    base:{pv:48, atq:16, def:10, vit:3.6}, sig:{nom:'Aqua-Jet', type:'eau', puiss:74, cd:1.1, por:1}},
+  /* Écrapince — une pince énorme, un corps minuscule */
+  'Écrapince':    {num:341, types:['eau'], rarete:'peuCommun', carac:'mauvais', biome:'riviere',
+    base:{pv:28, atq:10, def:6, vit:2.8}, sig:{nom:'Pince', type:'eau', puiss:44, cd:1.1, por:1},
+    evo:{vers:'Colhomard', niv:30}},
+  'Colhomard':    {num:342, types:['eau', 'tenebres'], rarete:'peuCommun', carac:'mauvais', biome:'riviere',
+    base:{pv:52, atq:20, def:12, vit:3}, sig:{nom:'Pince-Masse', type:'eau', puiss:84, cd:1.25, por:1}},
+  /* Bargantua — il remonte le courant et ne s'arrête jamais */
+  'Bargantua':    {num:550, types:['eau'], rarete:'peuCommun', carac:'brave', biome:'riviere',
+    base:{pv:42, atq:15, def:8, vit:3.8}, sig:{nom:'Aqua-Jet', type:'eau', puiss:62, cd:1.05, por:1}},
+  /* ── RARES ── 5 familles ──
+  /* Carapuce — il rentre dans sa carapace et laisse passer l'orage */
+  'Carapuce':     {num:7, types:['eau'], rarete:'rare', carac:'hardi', biome:'riviere',
+    base:{pv:30, atq:8, def:8, vit:2.9}, sig:{nom:'Pistolet à O', type:'eau', puiss:42, cd:1.1, por:2.4},
+    evo:{vers:'Carabaffe', niv:16}},
+  'Carabaffe':    {num:8, types:['eau'], rarete:'rare', carac:'hardi', biome:'riviere',
+    base:{pv:44, atq:12, def:13, vit:3}, sig:{nom:'Bulles d\'O', type:'eau', puiss:60, cd:1.2, por:2.6},
+    evo:{vers:'Tortank', niv:36}},
+  'Tortank':      {num:9, types:['eau'], rarete:'rare', carac:'hardi', biome:'riviere',
+    base:{pv:66, atq:19, def:19, vit:3}, sig:{nom:'Hydrocanon', type:'eau', puiss:88, cd:1.35, por:2.8, zone:1.4}},
+  /* Kaiminus — il mord d'abord, il réfléchit éventuellement */
+  'Kaiminus':     {num:158, types:['eau'], rarete:'rare', carac:'mauvais', biome:'riviere',
+    base:{pv:30, atq:10, def:6, vit:3.1}, sig:{nom:'Morsure', type:'eau', puiss:44, cd:1.05, por:1},
+    evo:{vers:'Crocrodil', niv:18}},
+  'Crocrodil':    {num:159, types:['eau'], rarete:'rare', carac:'mauvais', biome:'riviere',
+    base:{pv:44, atq:14, def:10, vit:3.3}, sig:{nom:'Croc Fatal', type:'eau', puiss:62, cd:1.15, por:1},
+    evo:{vers:'Aligatueur', niv:30}},
+  'Aligatueur':   {num:160, types:['eau'], rarete:'rare', carac:'mauvais', biome:'riviere',
+    base:{pv:64, atq:22, def:14, vit:3.5}, sig:{nom:'Mâchouille', type:'tenebres', puiss:90, cd:1.2, por:1}},
+  /* Gobou — il se plante devant les autres et ne bouge plus */
+  'Gobou':        {num:258, types:['eau'], rarete:'rare', carac:'hardi', biome:'riviere',
+    base:{pv:32, atq:9, def:7, vit:2.8}, sig:{nom:'Pistolet à O', type:'eau', puiss:42, cd:1.15, por:2.2},
+    evo:{vers:'Flobio', niv:16}},
+  'Flobio':       {num:259, types:['eau', 'sol'], rarete:'rare', carac:'hardi', biome:'riviere',
+    base:{pv:46, atq:13, def:12, vit:2.8}, sig:{nom:'Coud\'Boue', type:'sol', puiss:62, cd:1.2, por:2.2},
+    evo:{vers:'Laggron', niv:36}},
+  'Laggron':      {num:260, types:['eau', 'sol'], rarete:'rare', carac:'hardi', biome:'riviere',
+    base:{pv:70, atq:21, def:16, vit:2.9}, sig:{nom:'Séisme', type:'sol', puiss:90, cd:1.35, por:1.2, zone:1.6}},
+  /* Oyacata — il fait deux mètres de long et laisse passer l'orage sur son dos */
+  'Oyacata':      {num:977, types:['eau'], rarete:'rare', carac:'hardi', biome:'riviere',
+    base:{pv:78, atq:16, def:18, vit:2.4}, sig:{nom:'Aqua Queue', type:'eau', puiss:76, cd:1.35, por:1.3}},
+  /* Ptitard — la spirale de son ventre hypnotise ceux qui la fixent */
+  'Ptitard':      {num:60, types:['eau'], rarete:'rare', carac:'serieux', biome:'riviere',
+    base:{pv:28, atq:7, def:6, vit:2.9}, sig:{nom:'Bulles d\'O', type:'eau', puiss:38, cd:1.15, por:2.2},
+    evo:{vers:'Têtarte', niv:20}},
+  'Têtarte':      {num:61, types:['eau'], rarete:'rare', carac:'serieux', biome:'riviere',
+    base:{pv:42, atq:11, def:10, vit:3}, sig:{nom:'Pistolet à O', type:'eau', puiss:56, cd:1.2, por:2.4},
+    evo:{choix:['Tartard', 'Tarpaud'], niv:32}},
+  'Tartard':      {num:62, types:['eau', 'combat'], rarete:'rare', carac:'serieux', biome:'riviere',
+    base:{pv:60, atq:20, def:13, vit:3.2}, sig:{nom:'Dynamo-Poing', type:'combat', puiss:86, cd:1.25, por:1}},
+  'Tarpaud':      {num:186, types:['eau'], rarete:'rare', carac:'serieux', biome:'riviere',
+    base:{pv:62, atq:16, def:15, vit:3}, sig:{nom:'Surf', type:'eau', puiss:84, cd:1.3, por:2.6, zone:1.6}},
+  /* ── ÉPIQUES ── 4 familles ──
+  /* Minidraco — quarante-cinq niveaux de patience, un dragon au bout */
+  'Minidraco':    {num:147, types:['dragon'], rarete:'epique', carac:'assure', biome:'riviere',
+    base:{pv:32, atq:10, def:7, vit:3}, sig:{nom:'Draco-Rage', type:'dragon', puiss:46, cd:1.15, por:2.2},
+    evo:{vers:'Draco', niv:30}},
+  'Draco':        {num:148, types:['dragon'], rarete:'epique', carac:'assure', biome:'riviere',
+    base:{pv:50, atq:16, def:12, vit:3.2}, sig:{nom:'Draco-Griffe', type:'dragon', puiss:70, cd:1.2, por:1.2},
+    evo:{vers:'Dracolosse', niv:45}},
+  'Dracolosse':   {num:149, types:['dragon', 'vol'], rarete:'epique', carac:'assure', biome:'riviere',
+    base:{pv:74, atq:25, def:17, vit:4}, sig:{nom:'Draco-Choc', type:'dragon', puiss:98, cd:1.3, por:2.6}},
+  /* Barpau — le plus laid du fleuve devient le plus beau */
+  'Barpau':       {num:349, types:['eau'], rarete:'epique', carac:'gentil', biome:'riviere',
+    base:{pv:26, atq:6, def:6, vit:2.6}, sig:{nom:'Trempette', type:'eau', puiss:28, cd:1.3, por:1},
+    evo:{vers:'Milobellus', niv:30}},
+  'Milobellus':   {num:350, types:['eau'], rarete:'epique', carac:'gentil', biome:'riviere',
+    base:{pv:72, atq:18, def:20, vit:3.4}, sig:{nom:'Cascade', type:'eau', puiss:90, cd:1.3, por:1.4}},
+  /* Ramoloss — il met trois secondes à comprendre, puis il frappe très fort */
+  'Ramoloss':     {num:79, types:['eau', 'psy'], rarete:'epique', carac:'relax', biome:'riviere',
+    base:{pv:40, atq:9, def:9, vit:2.2}, sig:{nom:'Choc Mental', type:'psy', puiss:46, cd:1.4, por:2.4},
+    evo:{choix:['Flagadoss', 'Roigada'], niv:37}},
+  'Flagadoss':    {num:80, types:['eau', 'psy'], rarete:'epique', carac:'relax', biome:'riviere',
+    base:{pv:66, atq:16, def:20, vit:2.3}, sig:{nom:'Psyko', type:'psy', puiss:84, cd:1.4, por:2.6, zone:1.4}},
+  'Roigada':      {num:199, types:['eau', 'psy'], rarete:'epique', carac:'relax', biome:'riviere',
+    base:{pv:62, atq:20, def:16, vit:2.5}, sig:{nom:'Choc Psy', type:'psy', puiss:88, cd:1.35, por:2.8}},
+  /* Bargantua de Hisui — les âmes de ceux qui n'ont pas réussi à remonter le courant */
+  'Bargantua de Hisui': {num:550, types:['eau'], rarete:'epique', carac:'mauvais', biome:'riviere', sprite:'0550/0002',
+    base:{pv:44, atq:16, def:9, vit:3.7}, sig:{nom:'Aqua-Jet', type:'eau', puiss:64, cd:1.05, por:1},
+    evo:{vers:'Paragruel', niv:34}},
+  'Paragruel':    {num:902, types:['eau', 'spectre'], rarete:'epique', carac:'mauvais', biome:'riviere',
+    base:{pv:68, atq:23, def:14, vit:3.6}, sig:{nom:'Vague Fantôme', type:'spectre', puiss:94, cd:1.25, por:1.2}},
+  /* ── LÉGENDAIRES ── 4 familles ──
+  /* Créhelf — le lac du Savoir — il sait ce que tu vas faire */
+  'Créhelf':      {num:480, types:['psy'], rarete:'legendaire', carac:'serieux', biome:'riviere',
+    base:{pv:66, atq:20, def:18, vit:3.8}, sig:{nom:'Psyko', type:'psy', puiss:90, cd:1.25, por:2.8, zone:1.4}},
+  /* Créfollet — le lac de l'Émotion — il rend leur force à ceux qui flanchent */
+  'Créfollet':    {num:481, types:['psy'], rarete:'legendaire', carac:'gentil', biome:'riviere',
+    base:{pv:70, atq:17, def:19, vit:3.6}, sig:{nom:'Vœu de Soin', type:'psy', soin:40, cd:1.5, por:3}},
+  /* Créfadet — le lac de la Volonté — il choisit sa cible et ne la lâche plus */
+  'Créfadet':     {num:482, types:['psy'], rarete:'legendaire', carac:'malin', biome:'riviere',
+    base:{pv:66, atq:22, def:16, vit:3.9}, sig:{nom:'Choc Psy', type:'psy', puiss:92, cd:1.2, por:2.6}},
+  /* Keldeo — le poulain qui a traversé le torrent pour devenir chevalier */
+  'Keldeo':       {num:647, types:['eau', 'combat'], rarete:'legendaire', carac:'assure', biome:'riviere',
+    base:{pv:72, atq:23, def:16, vit:4.3}, sig:{nom:'Lame Sacrée', type:'combat', puiss:96, cd:1.25, por:1.3}},
+
+  /* ══════════════════ LA RÉSERVE ══════════════════
+     écrites pour les biomes à venir, tirables nulle part */
   'Ponyta':    {num:77, types:['feu'], rarete:'rare', carac:'brave', biome:'plaine',
     base:{pv:30, atq:9, def:6, vit:3.7}, sig:{nom:'Flammèche', type:'feu', puiss:42, cd:1.1, por:1.6},
     evo:{vers:'Galopa', niv:20}},
@@ -876,14 +1181,6 @@ const ESPECES = {
     evo:{vers:'Ronflex', niv:20}},
   'Ronflex':   {num:143, types:['normal'], rarete:'epique', carac:'relax', biome:'plaine',
     base:{pv:110, atq:18, def:12, vit:2.2}, sig:{nom:'Plaquage', type:'normal', puiss:95, cd:1.9, por:1, zone:1.3}},
-  'Minidraco': {num:147, types:['dragon'], rarete:'epique', carac:'serieux', biome:'plaine',
-    base:{pv:32, atq:10, def:6, vit:3.0}, sig:{nom:'Draco-Rage', type:'dragon', puiss:50, cd:1.2, por:2.6},
-    evo:{vers:'Draco', niv:20}},
-  'Draco':     {num:148, types:['dragon'], rarete:'epique', carac:'serieux', biome:'plaine',
-    base:{pv:46, atq:14, def:8, vit:3.3}, sig:{nom:'Danse Draco', type:'dragon', puiss:70, cd:1.3, por:2.4},
-    evo:{vers:'Dracolosse', niv:30}},
-  'Dracolosse':{num:149, types:['dragon','vol'], rarete:'epique', carac:'serieux', biome:'plaine',
-    base:{pv:70, atq:20, def:13, vit:3.5}, sig:{nom:'Colère', type:'dragon', puiss:95, cd:1.5, por:1.8, zone:1.5}},
   'Granivol':  {num:187, types:['plante','vol'], rarete:'commun', carac:'docile', biome:'plaine',
     base:{pv:24, atq:6, def:4, vit:2.8}, sig:{nom:'Tranch\'Herbe', type:'plante', puiss:32, cd:1.1, por:2.4},
     evo:{vers:'Floravol', niv:20}},
@@ -1022,16 +1319,55 @@ const RARETES = [
 const TAUX_SHINY = 0.001;          // 0,1 % — et ses stats sont ×1,5
 const BONUS_SHINY = 1.5;
 
-/* ce que la machine du portail Plaine peut sortir (les bases des lignées) */
-const PORTAIL_PLAINE = [
-  /* 🌾 La Grande Plaine — 25 FAMILLES. Une famille = un tirage : on
-     obtient le chef de famille et on le fait évoluer soi-même. */
-  'Rattata', 'Zigzaton', 'Fouinette', 'Roucool', 'Piafabec', 'Medhyèna', /* communs */
-  'Abo', 'Nidoran♂', 'Nidoran♀', 'Doduo', 'Miaouss', 'Soporifik', /* peu communs */
-  'Girafarig', 'Écrémeuh', 'Ptiravi', 'Excelangue', 'Canarticho', /* rares */
-  'Kangourex', 'Évoli', 'Tauros', 'Tauros de Paldea',        /* épiques */
-  'Suicune', 'Jirachi', 'Tokotoro', 'Électhor de Galar',     /* légendaires */
-];
+/* --- LES ZONES DE PENSION : un terrain + son portail ------------------
+   Chacune s'achète en boutique. Le terrain est le décor du domaine, le
+   portail est ce que la machine à spins peut sortir dans cette zone. */
+const ZONES = {
+  plaine: {
+    cle:'plaine', ico:'🌾', nom:'La Grande Plaine',
+    pitch:'Herbe haute, un étang, des bosquets. Le terrain de départ.',
+    prix:0, prixTard:0,
+    decor:['LushPrairie', 'GrassMaze', 'AmpPlains', 'TinyWoods'],
+    portail:[
+      'Rattata', 'Zigzaton', 'Fouinette', 'Roucool', 'Piafabec',
+      'Medhyèna',                                              /* communs */
+      'Abo', 'Nidoran♂', 'Nidoran♀', 'Doduo', 'Miaouss', 'Soporifik', /* peu communs */
+      'Girafarig', 'Écrémeuh', 'Ptiravi', 'Excelangue', 'Canarticho', /* rares */
+      'Kangourex', 'Évoli', 'Tauros', 'Tauros de Paldea',      /* épiques */
+      'Suicune', 'Jirachi', 'Tokotoro', 'Électhor de Galar',   /* légendaires */
+    ]
+  },
+  bois: {
+    cle:'bois', ico:'🐛', nom:'Le Bois aux Insectes',
+    pitch:'Souches, fougères et toiles tendues. Ça évolue vite, ici.',
+    prix:0, prixTard:6000,
+    decor:['AppleWoods', 'TinyWoods', 'ForestPath', 'FoggyForest'],
+    portail:[
+      'Chenipan', 'Aspicot', 'Chenipotte', 'Crikzik', 'Tissenboule',
+      'Venipatte',                                             /* communs */
+      'Paras', 'Mimitoss', 'Coxy', 'Mimigal', 'Lumivole',      /* peu communs */
+      'Pomdepik', 'Ningale', 'Larveyette', 'Lilliterelle', 'Lépidonille', /* rares */
+      'Scarabrute', 'Scarhino', 'Yanma', 'Larvibule',          /* épiques */
+      'Genesect', 'Volcanion', 'Zygarde',                      /* légendaires */
+    ]
+  },
+  riviere: {
+    cle:'riviere', ico:'🏞', nom:'La Rivière',
+    pitch:'Des berges de galets et un courant. Les plus longues lignées du jeu.',
+    prix:0, prixTard:6000,
+    decor:['WaterfallPond', 'WaterMaze', 'DrenchedBluff', 'CraggyCoast'],
+    portail:[
+      'Magicarpe', 'Azurill', 'Nénupiot', 'Khélocrok',         /* communs */
+      'Psykokwak', 'Poissirène', 'Écrapince', 'Bargantua',     /* peu communs */
+      'Carapuce', 'Kaiminus', 'Gobou', 'Oyacata', 'Ptitard',   /* rares */
+      'Minidraco', 'Barpau', 'Ramoloss', 'Bargantua de Hisui', /* épiques */
+      'Créhelf', 'Créfollet', 'Créfadet', 'Keldeo',            /* légendaires */
+    ]
+  }
+};
+/* les zones qu'on peut acheter après le tuto — le Grand Choix */
+const ZONES_CHOIX = ['bois', 'riviere'];
+const PORTAIL_PLAINE = ZONES.plaine.portail;   /* compatibilité */
 /* --- les niveaux ------------------------------------------------------ */
 /* plus c'est rare, plus c'est fort — mais DOUCEMENT : un commun bien
    monté reste jouable, la rareté donne l'avantage, pas la victoire */
@@ -2093,6 +2429,9 @@ function degatsD(att, cible, coup){
   /* les soigneurs purs n'ont PAS de puissance : quand personne n'est
      blessé ils tapent quand même, mais du bout des pattes. Et on ne
      laisse JAMAIS passer un NaN : une cible à PV NaN ne meurt jamais. */
+  /* GARDE MERVEILLE (Munja) : seules les attaques SUPER EFFICACES le
+     touchent. Tout le reste glisse sur la carcasse vide. */
+  if(cible.def.garde && eff < 2) return {d: 0, eff: -1};
   const puiss = coup.puiss != null ? coup.puiss
               : Math.max(20, Math.round((coup.soin || 0) * 0.9));
   let d = att.atq * (puiss / (att.camp === 'equipe' ? 38 : 58)) * eff * humeur * entre(0.9, 1.1);
@@ -2118,6 +2457,11 @@ function frapperD(att, cible, coup, opts){
   } else cibles.push(cible);
   for(const c of cibles){
     const {d, eff} = degatsD(att, c, coup);
+    if(eff === -1){                       // garde merveille : rien ne passe
+      c.flash = 0.14;
+      flotterD(c, 'immunisé', '#c9b6ff');
+      continue;
+    }
     c.pv -= d;
     c.flash = 0.14;
     const couleur = eff >= 2 ? '#ffd45e' : eff === 0 ? '#8a8a8a' : eff < 1 ? '#9fb0d8' : '#ff8b96';
@@ -3049,11 +3393,14 @@ let idPens = 1;
    change au point qu'une vieille partie n'a plus de sens (nouveau roster
    du portail, par exemple) : au prochain chargement, tout le monde
    repart à zéro, une seule fois. */
-const VERSION_SAUVE = 2;
+const VERSION_SAUVE = 3;
 function partieNeuve(){
   return {
     v: VERSION_SAUVE, creeLe: Date.now(), vuLe: Date.now(),
     pensionnaires: [],
+    zones: ['plaine'],        // les zones de pension possédées
+    zoneVue: 'plaine',        // celle qu'on regarde (pension ET portail)
+    cles: 0,                  // clés de portail à dépenser
     sacs: {sous: 80, baies: 3, tickets: 3},
     ults: {},                       // parchemins non appris, par type
     avancee: {tuto: 0, tutoFini: false, bienvenue: false},
@@ -3076,6 +3423,9 @@ function charger(){
         return;
       }
       P = vieille; idPens = P.prochainId || 1;
+      if(!Array.isArray(P.zones) || !P.zones.length) P.zones = ['plaine'];
+      if(!P.zones.includes(P.zoneVue)) P.zoneVue = P.zones[0];
+      P.cles = P.cles || 0;
       if(P.sacs.tickets === undefined) P.sacs.tickets = 0;
       if(!P.invasion) P.invasion = {};
       if(!P.invasion.zone)
@@ -3101,6 +3451,11 @@ function nouveauPensionnaire(espece, shiny){
   return p;
 }
 const especeDe = p => ESPECES[p.espece];
+/* la zone de pension où vit une espèce (son biome) */
+const zoneDe = nom => (ESPECES[nom] && ESPECES[nom].biome) || 'plaine';
+const zoneVue = () => (P && P.zoneVue) || 'plaine';
+/* les pensionnaires qui vivent dans la zone regardée */
+const habitants = () => P.pensionnaires.filter(p => zoneDe(p.espece) === zoneVue());
 const enForme = p => true;               // plus de fatigue : toujours prêts
 
 /* --- monter de niveau : un BOUTON, payé en pièces --------------------
@@ -3171,8 +3526,9 @@ function spin(){
   if(P.sacs.tickets <= 0){ direJeu('Plus de ticket. Ils se gagnent en donjon !'); return null; }
   P.sacs.tickets--;
   const rarete = tirerRarete();
-  const choix = PORTAIL_PLAINE.filter(n => ESPECES[n].rarete === rarete);
-  const espece = choix[(Math.random() * choix.length) | 0] || 'Rattata';
+  const portail = (ZONES[zoneVue()] || ZONES.plaine).portail;
+  const choix = portail.filter(n => ESPECES[n].rarete === rarete);
+  const espece = choix[(Math.random() * choix.length) | 0] || portail[0];
   const shiny = Math.random() < TAUX_SHINY;
   /* PAS DE DOUBLON : si sa lignée vit déjà à la pension, le tirage
      profite à celui qu'on a — un niveau (ou mieux) */
@@ -3197,11 +3553,23 @@ function spin(){
    BALADE : on glisse le doigt pour se déplacer, on tape un Pokémon
    pour sa fiche, et la barre du bas t'amène directement à celui que
    tu cherches. */
-const DOMAINE = {W: 28, H: 20, carte: null, ents: [], cam: {x: 14, y: 10},
+const DOMAINE = {W: 28, H: 20, carte: null, zone: null, ents: [], cam: {x: 14, y: 10},
                  glisse: null, cibleCam: null, ficheApres: null};
+/* chaque zone a SON terrain : sa graine, son eau, sa densité de bosquets */
+const TERRAINS = {
+  plaine:  {graine: 20260901, etang: 1, riviere: 0, bosquets: 6},
+  bois:    {graine: 20260902, etang: 0, riviere: 0, bosquets: 15},
+  riviere: {graine: 20260903, etang: 0, riviere: 1, bosquets: 3}
+};
 function construireDomaine(){
-  if(DOMAINE.carte) return;
-  const alea = Alea(20260901);
+  const cle = zoneVue();
+  if(DOMAINE.carte && DOMAINE.zone === cle) return;
+  const T = TERRAINS[cle] || TERRAINS.plaine;
+  DOMAINE.zone = cle;
+  DOMAINE.ents = [];
+  DOMAINE.cam = {x: DOMAINE.W / 2, y: DOMAINE.H / 2};
+  DOMAINE.cibleCam = null; DOMAINE.ficheApres = null;
+  const alea = Alea(T.graine);
   const W = DOMAINE.W, H = DOMAINE.H;
   const c = new Uint8Array(W * H);          // 0 herbe · 1 eau · 2 haie
   for(let y = 0; y < H; y++)
@@ -3211,13 +3579,27 @@ function construireDomaine(){
         c[y * W + x] = 2;
   /* l'étang, en bas à gauche */
   const ex = 6, ey = H - 6;
-  for(let y = 2; y < H - 2; y++)
-    for(let x = 2; x < W - 2; x++)
-      if(Math.hypot((x - ex) / 3.1, (y - ey) / 2.1) < 1) c[y * W + x] = 1;
-  /* les bosquets et rochers, loin de l'étang */
-  for(let k = 0; k < 6; k++){
+  if(T.etang)
+    for(let y = 2; y < H - 2; y++)
+      for(let x = 2; x < W - 2; x++)
+        if(Math.hypot((x - ex) / 3.1, (y - ey) / 2.1) < 1) c[y * W + x] = 1;
+  /* la rivière : elle serpente du haut vers le bas et coupe le terrain */
+  if(T.riviere){
+    let rx = 8;
+    for(let y = 1; y < H - 1; y++){
+      rx += (alea() - 0.5) * 2.4;
+      rx = Math.max(4, Math.min(W - 5, rx));
+      for(let d = -1; d <= 1; d++){
+        const x = Math.round(rx) + d;
+        if(x > 1 && x < W - 2) c[y * W + x] = 1;
+      }
+    }
+  }
+  /* les bosquets et rochers, loin de l'eau */
+  for(let k = 0; k < T.bosquets; k++){
     const bx = 3 + (alea() * (W - 7) | 0), by = 3 + (alea() * (H - 7) | 0);
-    if(Math.hypot(bx - ex, by - ey) < 5) continue;
+    if(T.etang && Math.hypot(bx - ex, by - ey) < 5) continue;
+    if(c[by * W + bx] === 1) continue;
     for(let i = 0; i < 2 + (alea() * 4 | 0); i++){
       const x = bx + (alea() * 3 | 0) - 1, y = by + (alea() * 2 | 0) - 1;
       if(x > 1 && y > 1 && x < W - 2 && y < H - 2 && c[y * W + x] === 0)
@@ -3240,7 +3622,8 @@ const DECOR_PENSION = ['LushPrairie', 'GrassMaze', 'AmpPlains', 'TinyWoods'];
 function chargerDecorPension(){
   if(typeof DTEF === 'undefined') return;
   DTEF.liste().then(dispo => {
-    const voulu = DECOR_PENSION.find(d => dispo.includes(d)) || dispo[0];
+    const liste = (ZONES[zoneVue()] && ZONES[zoneVue()].decor) || DECOR_PENSION;
+    const voulu = liste.find(d => dispo.includes(d)) || dispo[0];
     if(voulu) DTEF.charger(voulu);
   });
 }
@@ -3262,6 +3645,7 @@ async function majPension(){
   const b = $('#coupDoeil');
   if(b) b.innerHTML = alertes.slice(0, 3).map(a =>
     '<div class="puce2"><span class="i">' + a[0] + '</span><span>' + a[1] + '</span></div>').join('');
+  majOngletsZone();
   const al = $('#alerteInvasion');
   if(al){
     const dues = [];
@@ -3290,7 +3674,8 @@ async function majPension(){
   majJetons();
   majBande();
 
-  for(const p of P.pensionnaires){
+  const ici = habitants();
+  for(const p of ici){
     let e = DOMAINE.ents.find(o => o.p === p);
     if(!e){
       const pos = placeHerbe();
@@ -3302,7 +3687,42 @@ async function majPension(){
     }
     if(e.espece !== p.espece){ e.espece = p.espece; e.sp = await chargerSprite(p.espece); }
   }
-  DOMAINE.ents = DOMAINE.ents.filter(e => P.pensionnaires.includes(e.p));
+  DOMAINE.ents = DOMAINE.ents.filter(e => ici.includes(e.p));
+}
+
+/* --- LES ONGLETS DE ZONE ----------------------------------------------
+   Une pension par zone achetée. Le même sélecteur pilote le terrain
+   qu'on regarde et le portail qu'on fait tourner : une seule notion de
+   « zone active », pas deux réglages à tenir en tête. */
+function majOngletsZone(){
+  const barres = $$('.ongletsZone');
+  if(!barres.length) return;
+  const mes = P.zones.filter(c => ZONES[c]);
+  for(const box of barres){
+    box.hidden = mes.length < 2;
+    box.innerHTML = '';
+    for(const c of mes){
+      const z = ZONES[c];
+      const b = document.createElement('button');
+      b.className = 'ongletZone' + (c === zoneVue() ? ' actif' : '');
+      b.innerHTML = '<span class="i">' + z.ico + '</span>' + z.nom;
+      b.onclick = () => changerZone(c);
+      box.appendChild(b);
+    }
+  }
+}
+function changerZone(cle){
+  if(!P.zones.includes(cle) || cle === P.zoneVue) return;
+  P.zoneVue = cle;
+  sauver();
+  construireDomaine();
+  chargerDecorPension();
+  majOngletsZone();
+  if(ECRAN === 'pension') majPension();
+  if(ECRAN === 'spins') majSpins();
+  const c = document.querySelector('.ecran.actif .corps');
+  if(c) c.scrollTop = 0;
+  direJeu(ZONES[cle].ico + ' ' + ZONES[cle].nom);
 }
 
 /* la bande du bas : tape un portrait, la caméra t'AMÈNE à lui */
@@ -3310,7 +3730,7 @@ function majBande(){
   const bande = $('#bandePokes');
   if(!bande) return;
   bande.innerHTML = '';
-  for(const p of P.pensionnaires){
+  for(const p of habitants()){
     const b = document.createElement('button');
     b.className = 'puce';
     const port = urlPortrait(p.espece);
@@ -3506,7 +3926,12 @@ function ouvrirTableTypes(){
   v.classList.add('actif');
 }
 function fermerTableTypes(){ $('#voileTypes').classList.remove('actif'); }
-function ouvrirRaretes(){ majSpins(); $('#voileRaretes').classList.add('actif'); }
+function ouvrirRaretes(){
+  majSpins();
+  const z = ZONES[zoneVue()] || ZONES.plaine;
+  const t = $('#titreRaretes'); if(t) t.textContent = '📊 ' + z.ico + ' ' + z.nom;
+  $('#voileRaretes').classList.add('actif');
+}
 function fermerRaretes(){ $('#voileRaretes').classList.remove('actif'); }
 
 /* --- la fiche (surcouche) --------------------------------------------- */
@@ -4030,6 +4455,10 @@ function finExpedition(r){
         P.sacs.tickets += 2;
         lignes.push(['👑 LE PRÉ EST À TOI', 'boss vaincu !']);
         lignes.push(['🎟 Tickets de spin', '+2']);
+        if(!P.cles && P.zones.length < 2){
+          P.cles = 1;
+          lignes.push(['🗝 CLÉ DE PORTAIL', 'ouvre la zone de ton choix — en boutique !']);
+        }
       } else {
         lignes.push(['🗝 CLÉ obtenue', DONJONS[idx + 1].nom + ' s\'ouvre !']);
       }
@@ -4079,10 +4508,16 @@ function finExpedition(r){
 /* --- les spins -------------------------------------------------------- */
 function majSpins(){
   $('#nbTickets').textContent = P.sacs.tickets;
+  majOngletsZone();
+  const z = ZONES[zoneVue()] || ZONES.plaine;
+  const t = $('#titrePortail'); if(t) t.textContent = z.ico + ' ' + z.nom;
+  const sp = $('#pitchPortail');
+  if(sp) sp.textContent = z.portail.length + ' familles · une famille = un tirage, tu reçois la forme de base.';
   const tab = $('#tauxRaretes');
   tab.innerHTML = RARETES.map(r => {
-    const dispo = PORTAIL_PLAINE.filter(n => ESPECES[n].rarete === r.cle);
+    const dispo = z.portail.filter(n => ESPECES[n].rarete === r.cle);
     const c = COULEURS_RARETE[r.cle];
+    if(!dispo.length) return '';
     return '<div class="rareteBloc" style="--c:' + c + '">'
       + '<div class="tete"><span class="pastille" style="background:' + c + '"></span>'
       + '<span class="nom">' + r.nom + '</span><span class="taux">' + r.taux + ' %</span>'
@@ -4162,7 +4597,24 @@ function majBoutique(){
     + '><span class="gros">' + ico + '</span><div><b>' + nom + '</b><span>' + txt
     + '</span></div><span class="prix">' + prix + '</span></div>';
   const FORME = {cible: 'un seul ennemi', zone: 'explose en zone', ligne: 'traverse en ligne'};
-  let h = '<div class="rayonTitre">Consommables</div>';
+  let h = '';
+  /* LES ZONES DE PENSION : la clé du Grand Pré en ouvre une, l'autre s'achète */
+  const aVendre = ZONES_CHOIX.filter(c => !P.zones.includes(c));
+  if(aVendre.length && P.avancee.tutoFini){
+    h += '<div class="rayonTitre">Zones de pension · terrain + portail</div>';
+    if(P.cles > 0)
+      h += '<p class="mini" style="margin:0 2px 8px">🗝 Tu as <b>' + P.cles + ' clé</b> — elle en ouvre '
+         + 'une, gratuitement. L\'autre restera achetable.</p>';
+    for(const c of aVendre){
+      const z = ZONES[c];
+      const gratuit = P.cles > 0;
+      const prix = gratuit ? '🗝 clé' : z.prixTard + ' 🪙';
+      const off = !gratuit && P.sacs.sous < z.prixTard;
+      h += art(z.ico, z.nom, z.pitch + ' · ' + z.portail.length + ' familles',
+               prix, 'acheterZone(\'' + c + '\')', off);
+    }
+  }
+  h += '<div class="rayonTitre">Consommables</div>';
   h += art('🫐', 'Baies ×3', 'soigne un Pokémon en plein donjon', (PRIX.baie * 3) + ' 🪙', 'acheter(\'baies\')');
   h += art('🎟', 'Ticket de spin', 'un tirage de plus au portail', PRIX.ticket + ' 🪙', 'acheter(\'ticket\')');
   if(typesPossedes.length) h += '<div class="rayonTitre">Parchemins d\'Ult · un par Pokémon</div>';
@@ -4170,9 +4622,11 @@ function majBoutique(){
     h += art(icoType(t, 36), ULTS[t].nom,
       'puissance ' + ULTS[t].puiss + ' · ' + FORME[ULTS[t].forme] + ' · pour un type ' + t,
       PRIX.ult + ' 🪙', 'acheter(\'ult\',\'' + t + '\')');
-  h += '<div class="rayonTitre">Bientôt</div>';
-  h += art('🌲', 'Biome Forêt', 'arrive avec la prochaine zone', '🔒', '', true);
-  h += art('🕳', 'Biome Grotte', 'arrive avec la prochaine zone', '🔒', '', true);
+  if(!P.avancee.tutoFini){
+    h += '<div class="rayonTitre">Verrouillé</div>';
+    h += art('🗝', 'Zones de pension', 'bats le boss du Grand Pré : tu gagneras une clé',
+             '🔒', '', true);
+  }
   box.innerHTML = h;
   majJetons();
 }
@@ -4186,6 +4640,28 @@ function acheter(quoi, type){
   else if(quoi === 'ult') P.ults[type] = (P.ults[type] || 0) + 1;
   direJeu('Acheté !');
   sauver(); majBoutique();
+}
+
+/* acheter une zone de pension : avec la clé du Grand Pré, ou avec des pièces */
+function acheterZone(cle){
+  const z = ZONES[cle];
+  if(!z || P.zones.includes(cle)) return;
+  if(P.cles > 0){
+    P.cles--;
+    direJeu('🗝 ' + z.nom + ' ouvre ses portes !');
+  } else {
+    if(P.sacs.sous < z.prixTard)
+      return direJeu('Il te faut ' + z.prixTard + ' pièces pour ouvrir ' + z.nom + '.');
+    P.sacs.sous -= z.prixTard;
+    direJeu(z.nom + ' est à toi !');
+  }
+  P.zones.push(cle);
+  P.zoneVue = cle;
+  sauver();
+  construireDomaine();
+  chargerDecorPension();
+  majOngletsZone();
+  montrer('pension');
 }
 
 /* --- l'onglet compte -------------------------------------------------- */
@@ -4224,6 +4700,9 @@ function importerCode(code){
 /* --- les écrans ------------------------------------------------------- */
 function montrer(nom){
   $$('.ecran').forEach(e => e.classList.toggle('actif', e.dataset.nom === nom));
+  /* on remonte en haut : sinon on arrive au milieu de l'écran précédent */
+  const c = document.querySelector('.ecran[data-nom="' + nom + '"] .corps');
+  if(c) c.scrollTop = 0;
   $$('#navbas button').forEach(b => b.classList.toggle('actif', b.dataset.vers === nom));
   $('#navbas').style.display = nom === 'donjon' ? 'none' : 'flex';
   fermerFiche();
