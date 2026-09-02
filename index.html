@@ -1315,11 +1315,13 @@ function frameA(a, t){
 function dessinerSprite(ctx, e, px, py, echelle){
   const sp = e.sp;
   if(!sp || !sp.anims){
-    /* le jeton de secours : un rond coloré, pour ne jamais être invisible */
-    const r = 11 * echelle * 26 / 26 * (e.taille || 1) * 12;
+    /* le jeton de secours, le temps que le sprite arrive : un petit rond
+       discret de la taille d'un Pokémon — pas un soleil */
+    const r = 12 * echelle * (e.taille || 1);
     ctx.save();
+    ctx.globalAlpha = 0.7;
     ctx.fillStyle = e.camp === 'ennemi' ? '#b48ad0' : '#f7d051';
-    ctx.strokeStyle = '#00000088'; ctx.lineWidth = 2;
+    ctx.strokeStyle = '#00000088'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.arc(px, py - r * 0.6, r * 0.55, 0, 7);
     ctx.fill(); ctx.stroke();
     ctx.restore();
