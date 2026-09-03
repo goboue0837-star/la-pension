@@ -2940,7 +2940,14 @@ function poserFxD(x, y, type, opts){
 function banniereD(txt, coul){ D.banniere = {txt, coul, t: 2.2}; }
 
 /* --- l'IA : chaque caractère joue à sa façon -------------------------- */
-const ennemisDe = e => D.ents.filter(o => o.camp !== e.camp && !o.ko);
+/* Tout le donjon est peuplé d'avance. Sans garde-fou, l'équipe visait le
+   dormeur le plus proche — souvent deux salles plus haut — et traversait
+   le couloir en plein combat. Elle ne voit donc QUE ce qui la concerne :
+   les habitants de sa salle, ceux qui n'appartiennent à aucune (vagues,
+   boss, assaut), et ceux qui se sont réveillés et la poursuivent. */
+const engageable = o => o.salle === undefined || o.salle === D.salleIdx || o.eveille;
+const ennemisDe = e => D.ents.filter(o => o.camp !== e.camp && !o.ko
+  && (e.camp !== 'equipe' || engageable(o)));
 const alliesDe  = e => D.ents.filter(o => o.camp === e.camp && !o.ko && o !== e);
 const proche = (e, liste) => liste.reduce((m, o) => !m ||
   Math.hypot(o.x - e.x, o.y - e.y) < Math.hypot(m.x - e.x, m.y - e.y) ? o : m, null);
@@ -3273,7 +3280,9 @@ function iaEnnemi(e, dt){
     if(dv < 3.4 || e.pv < e.pvMax
        || D.ents.some(o => o !== e && o.camp === 'ennemi' && !o.ko
                         && o.eveille && !o.boss && dist(e, o) < 2.4)){
-      e.eveille = true; e.flash = 0.15;
+      /* réveillé, il rejoint le combat en cours : c'est maintenant un
+         habitant de la salle où l'on se bat, et il compte comme tel */
+      e.eveille = true; e.flash = 0.15; e.salle = D.salleIdx;
     } else {
       e.tRode -= dt;
       if(e.tRode <= 0){
