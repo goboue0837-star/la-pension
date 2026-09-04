@@ -244,6 +244,18 @@
     </div>
   </div>
 
+  <!-- LE RAYON CT : les 18 capsules, toutes visibles, on choisit la sienne -->
+  <div id="voileCT" class="voileHaut">
+    <div class="fiche">
+      <h3>💿 Le rayon des CT</h3>
+      <p class="discret" style="margin-top:2px;">Une capsule par type. Elle apprend
+        l'attaque ultime de ce type à un Pokémon qui le porte — définitivement,
+        et une seule par Pokémon. Ouvre sa fiche pour la lui donner.</p>
+      <div id="listeCT" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+      <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerCT()">Fermer</button>
+    </div>
+  </div>
+
   <div id="voileTypes" class="voileHaut">
     <div class="fiche">
       <h3>📖 La table des types</h3>
@@ -524,6 +536,12 @@
   .article .gros{ font-size:28px; text-align:center; line-height:1; }
   .article b{ display:block; font-size:15px; }
   .article span{ font-size:13px; color:var(--encre2); display:block; margin-top:2px; }
+  /* la porte d'un rayon : elle mène ailleurs, elle ne s'achète pas */
+  .rayonCT{ background:linear-gradient(135deg, var(--carte2), var(--carte));
+    border-color:var(--zone); }
+  .rayonCT .prix{ background:transparent; border-color:var(--zone);
+    color:var(--zone); }
+
   .article .prix{ color:var(--or-fonce); font-weight:800; font-size:14px; display:inline-flex;
     align-items:center; justify-content:center; background:var(--or-doux);
     border:1.5px solid var(--or-trait); border-radius:99px; padding:8px 12px; min-height:40px;
@@ -4667,7 +4685,7 @@ function partieNeuve(){
     zoneVue: 'plaine',        // celle qu'on regarde (pension ET portail)
     cles: 0,                  // clés de portail à dépenser
     sacs: {sous: 80, baies: 3, tickets: 3},
-    ults: {},                       // parchemins non appris, par type
+    ults: {},                       // les CT en poche, comptées par type
     avancee: {tuto: 0, tutoFini: false, bienvenue: false},
     zonesD: ['pre'],          // les ZONES DE DONJON ouvertes (rien à voir
                               // avec les zones de pension ci-dessus)
@@ -5314,13 +5332,16 @@ function rendreFiche(p){
   } else h += '<p class="discret" style="margin-top:6px">Pas d\'évolution — il grimpe jusqu\'au niveau '
       + NIVEAU_MAX + '.</p>';
   if(!p.ult){
+    /* UNE CT PAR TYPE PORTÉ : un double-type peut apprendre l'une ou
+       l'autre, on lui propose donc chacune de celles qu'on a en poche. */
     const dispo = e.types.filter(t => (P.ults[t] || 0) > 0);
-    h += dispo.length
-      ? '<button class="btnBois" style="margin-top:8px; width:100%" onclick="apprendreUlt('
-        + p.id + ',\'' + dispo[0] + '\')">📜 APPRENDRE ' + ULTS[dispo[0]].nom + ' (1 parchemin)</button>'
-        + '<p class="mini">' + decrireUlt(dispo[0]) + '</p>'
-      : '<p class="discret" style="margin-top:6px">📜 Apprendre : aucun parchemin '
-        + e.types.join('/') + ' — la boutique en vend.</p>';
+    if(dispo.length){
+      for(const t of dispo)
+        h += '<button class="btnBois" style="margin-top:8px; width:100%" onclick="apprendreUlt('
+          + p.id + ',\'' + t + '\')">💿 APPRENDRE ' + ULTS[t].nom + '</button>'
+          + '<p class="mini">' + decrireUlt(t) + '</p>';
+    } else h += '<p class="discret" style="margin-top:6px">💿 Aucune CT '
+        + e.types.join('/') + ' en poche — le rayon des CT en vend, à la boutique.</p>';
   }
   $('#ficheActions').innerHTML = h;
 }
@@ -5331,7 +5352,7 @@ function apprendreUlt(id, type){
   if(!p || p.ult || (P.ults[type] || 0) <= 0) return;
   P.ults[type]--;
   p.ult = type;
-  direJeu(p.espece + ' apprend ' + ULTS[type].nom + ' ! Le parchemin s\'efface.');
+  direJeu(p.espece + ' apprend ' + ULTS[type].nom + ' ! La CT s\'efface.');
   sauver(); rendreFiche(p);
 }
 
@@ -6039,11 +6060,18 @@ function majBoutique(){
   h += '<div class="rayonTitre">Consommables</div>';
   h += art('🫐', 'Baies ×3', 'soigne un Pokémon en plein donjon', (PRIX.baie * 3) + ' 🪙', 'acheter(\'baies\')');
   h += art('🎟', 'Ticket de spin', 'un tirage de plus au portail', PRIX.ticket + ' 🪙', 'acheter(\'ticket\')');
-  if(typesPossedes.length) h += '<div class="rayonTitre">Parchemins d\'Ult · un par Pokémon</div>';
-  for(const t of typesPossedes.slice(0, 6))
-    h += art(icoType(t, 36), ULTS[t].nom,
-      'puissance ' + ULTS[t].puiss + ' · ' + FORME[ULTS[t].forme] + ' · pour un type ' + t,
-      PRIX.ult + ' 🪙', 'acheter(\'ult\',\'' + t + '\')');
+  /* LES CT : dix-huit capsules, une par type. Les aligner dans le rayon
+     principal noyait le reste, et n'en montrer que six cachait la moitié
+     du catalogue — elles ont donc leur propre rayon. */
+  h += '<div class="rayonTitre">Capsules Techniques</div>';
+  const enPoche = Object.values(P.ults || {}).reduce((t, n) => t + n, 0);
+  h += '<div class="article rayonCT" onclick="ouvrirCT()">'
+     + '<span class="gros">💿</span><div><b>Le rayon des CT</b><span>'
+     + 'les 18 attaques ultimes, une par type'
+     + (typesPossedes.length ? ' · <b style="color:var(--or)">' + typesPossedes.length
+        + '</b> utilisable' + (typesPossedes.length > 1 ? 's' : '') + ' tout de suite' : '')
+     + (enPoche ? ' · ' + enPoche + ' en poche' : '')
+     + '</span></div><span class="prix">Ouvrir →</span></div>';
   if(!P.avancee.tutoFini){
     h += '<div class="rayonTitre">Verrouillé</div>';
     h += art('🗝', 'Zones de pension', 'bats le boss du Grand Pré : tu gagneras une clé',
@@ -6052,6 +6080,58 @@ function majBoutique(){
   box.innerHTML = h;
   majJetons();
 }
+/* LE RAYON DES CT — toutes les capsules, rangées par ce qu'on peut en faire :
+   celles qu'un de nos Pokémon sait porter d'abord, le reste ensuite. On les
+   voit toutes, y compris celles qu'on ne peut pas encore utiliser : c'est
+   comme ça qu'on sait quoi aller chercher à la Machine. */
+function ouvrirCT(){
+  majListeCT();
+  $('#voileCT').classList.add('actif');
+}
+function fermerCT(){ $('#voileCT').classList.remove('actif'); }
+
+function majListeCT(){
+  const box = $('#listeCT');
+  if(!box) return;
+  const FORME = {cible: 'un seul ennemi', zone: 'explose en zone', ligne: 'traverse en ligne'};
+  /* qui, dans la pension, pourrait porter cette CT ? */
+  const porteurs = t => P.pensionnaires.filter(p => especeDe(p).types.includes(t) && !p.ult);
+  const types = Object.keys(ULTS).sort((a, b) => {
+    const pa = porteurs(a).length, pb = porteurs(b).length;
+    if(!!pa !== !!pb) return pb - pa;                 // les utilisables en tête
+    return ULTS[b].puiss - ULTS[a].puiss;
+  });
+  let h = '';
+  let coupe = false;
+  for(const t of types){
+    const u = ULTS[t], n = porteurs(t).length, ai = (P.ults[t] || 0);
+    if(!n && !coupe){
+      coupe = true;
+      h += '<div class="rayonTitre" style="margin-top:6px;">Personne ne sait encore la porter</div>';
+    }
+    const trop = P.sacs.sous < PRIX.ult;
+    const detail = 'puissance ' + u.puiss + ' · ' + FORME[u.forme]
+      + (n ? ' · ' + n + ' Pokémon ' + (n > 1 ? 'peuvent' : 'peut') + ' l\'apprendre'
+           : ' · aucun Pokémon de type ' + t)
+      + (ai ? ' · <b style="color:var(--or)">' + ai + ' en poche</b>' : '');
+    h += '<div class="article' + (trop ? ' off' : '') + '"'
+       + (trop ? '' : ' onclick="acheterCT(\'' + t + '\')"')
+       + '><span class="gros">' + icoType(t, 36) + '</span><div><b>' + u.nom
+       + '</b><span>' + detail + '</span></div>'
+       + '<span class="prix">' + PRIX.ult + ' 🪙</span></div>';
+  }
+  box.innerHTML = h;
+}
+
+/* acheter une CT sans quitter le rayon : on en prend souvent plusieurs */
+function acheterCT(type){
+  if(P.sacs.sous < PRIX.ult) return direJeu('Pas assez de pièces ! Le donjon en regorge.');
+  P.sacs.sous -= PRIX.ult;
+  P.ults[type] = (P.ults[type] || 0) + 1;
+  direJeu('💿 ' + ULTS[type].nom + ' — donne-la sur la fiche d\'un Pokémon ' + type + ' !');
+  sauver(); majListeCT(); majJetons();
+}
+
 function acheter(quoi, type){
   const cout = quoi === 'baies' ? PRIX.baie * 3
              : quoi === 'ticket' ? PRIX.ticket : PRIX.ult;
