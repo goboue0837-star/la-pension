@@ -2452,7 +2452,10 @@ async function creerEnt(espece, camp, x, y, niveau, extra){
     const f = e.force || 1;
     /* un boss doit TENIR : le combat est une épreuve, pas un échange de
        deux coups. Il encaisse quarante fois un Pokémon de son niveau. */
-    e.pv = e.pvMax = Math.round(e.pvMax * 62 * f);
+    /* `force` compte DOUBLE sur les PV : le Zigzaton Chef du tuto (0,6)
+       reste battable par deux Pokémon tout neufs, quand un boss plein
+       (1) encaisse ses soixante-deux parts */
+    e.pv = e.pvMax = Math.round(e.pvMax * 62 * f * f);
     e.atq *= 2.8 * (0.75 + 0.25 * f);
     e.defs *= 1.8; e.taille = e.taille || 2.7;
   }
@@ -2873,7 +2876,7 @@ async function lancerBoss(){
   const entree = posSol(brut.x, brut.y, D.invasion ? null : s);
   const e = await creerEnt(b.espece, 'ennemi', entree.x, entree.y, b.niv,
     {boss: true, taille: b.taille || 2.7, titre: b.titre, force: b.force,
-     ultBoss: b.ult || null, motifs: b.motifs || ['ecrase', 'salve', 'onde']});
+     ultBoss: b.ult || null, motifs: repertoireDe(b)});
   e.flash = 0.5;
   /* il RUGIT : une seconde d'intimidation avant la danse */
   e.anim = 'Attack'; e.verrou = 1.0; e.animT = 0;
@@ -2940,7 +2943,14 @@ function frapperD(att, cible, coup, opts){
     c.flash = 0.14;
     const couleur = eff >= 2 ? '#ffd45e' : eff === 0 ? '#8a8a8a' : eff < 1 ? '#9fb0d8' : '#ff8b96';
     flotterD(c, '-' + Math.round(d), couleur);
-    poserFxD(c.x, c.y, coup.type);
+    /* l'impact : la planche du type, à défaut le petit rond */
+    const cid = fxTypeD(coup.type, 'coup');
+    if(!cid || !poserPlanche(cid, c.x, c.y - 0.25, {echelle: coup.estUlt ? 1.3 : 0.9, duree: 0.32}))
+      poserFxD(c.x, c.y, coup.type);
+    /* et le corps ACCUSE le coup : un pas en arrière, plus fort si c'est
+       super efficace ou un ult. Sans ça les sprites se tapent sans bouger */
+    reculerD(c, att.x, att.y, coup.estUlt ? 0.9 : eff >= 2 ? 0.45 : 0.2);
+    if(coup.estUlt) D.secousse = Math.max(D.secousse, 0.3);
     if(att.camp === 'equipe' && att.ultDef && !coup.estUlt)
       att.charge = Math.min(100, att.charge + d / att.atq * 2.8);
     if(c.pv <= 0) mourirD(c, att);
@@ -3093,6 +3103,135 @@ const MOTIFS = {
       return {duree: 1.2, invoque: 3, impacts: [], libre: true};
     }
   },
+  /* ================= LES SIGNATURES, une par famille de type =========
+     Le motif qu'on associe au boss quand on y repense : l'eau aspire, le
+     feu laisse une traînée, la foudre enchaîne, la plante retient. */
+
+  /* EAU — le siphon : un tourbillon sous lui qui tire tout le monde à lui,
+     puis trois geysers jaillissent là où on s'est fait traîner */
+  siphon: {
+    cri: 'SIPHON !', portee: 99, signature: 'eau',
+    faire(e){
+      const im = [];
+      for(let k = 0; k < 3; k++)
+        im.push({x: e.x + Math.cos(k * 2.1) * 1.6, y: e.y + Math.sin(k * 2.1) * 1.6,
+                 r: 1.7, forme: 'disque', t: 1.9 + k * 0.2, planche: 'geyser', recul: 1.4});
+      return {duree: 2.4, aspire: 1.7, aura: 'tourbillon', impacts: im};
+    }
+  },
+  /* FEU — le brasier : un couloir de flammes qui RESTE. Il brûle trois fois,
+     et laisse une brûlure à qui y traîne */
+  brasier: {
+    cri: 'trace un brasier !', portee: 99, signature: 'feu',
+    faire(e, c){
+      const dx = c.x - e.x, dy = c.y - e.y, l = Math.hypot(dx, dy) || 1, L = 7;
+      const im = [];
+      for(let n = 0; n < 3; n++)
+        im.push({x: e.x, y: e.y, x2: e.x + dx / l * L, y2: e.y + dy / l * L,
+                 r: 1.1, forme: 'couloir', t: 1.1 + n * 1.1, part: 0.8,
+                 planche: 'colonneFeu', brule: 3});
+      return {duree: 1.1 + 2 * 1.1, impacts: im, libre: true};
+    }
+  },
+  /* ÉLECTRIK — la foudre : cinq éclairs coup sur coup, un par proie, qui
+     PARALYSENT une demi-seconde. Le sixième tombe sur celui qui n'a pas bougé */
+  foudre: {
+    cri: 'appelle la foudre !', portee: 99, signature: 'electrik',
+    faire(e){
+      const proies = ennemisDe(e);
+      const im = [];
+      for(let k = 0; k < 5; k++){
+        const p = proies[k % Math.max(1, proies.length)] || e;
+        im.push({x: p.x + entre(-0.4, 0.4), y: p.y + entre(-0.4, 0.4), r: 1.25,
+                 forme: 'disque', t: 0.8 + k * 0.32, planche: 'eclair', entrave: 0.6});
+      }
+      return {duree: 0.8 + 4 * 0.32 + 0.2, impacts: im};
+    }
+  },
+  /* PLANTE / INSECTE — les racines : trois zones qui d'abord RETIENNENT
+     (deux secondes sans bouger), puis frappent. On sort avant, ou on subit */
+  racines: {
+    cri: 'lance ses racines !', portee: 99, signature: 'plante',
+    faire(e){
+      const proies = ennemisDe(e);
+      const im = [];
+      for(let k = 0; k < 3; k++){
+        const p = proies[k % Math.max(1, proies.length)] || e;
+        const x = p.x + entre(-0.3, 0.3), y = p.y + entre(-0.3, 0.3);
+        im.push({x, y, r: 1.6, forme: 'disque', t: 1.0, entrave: 2.2, doux: 1, planche: 'lianes'});
+        im.push({x, y, r: 1.6, forme: 'disque', t: 3.0, part: 2.0});
+      }
+      return {duree: 3.1, impacts: im, libre: true};
+    }
+  },
+  /* ROCHE / SOL — l'éboulement : dix rochers en deux vagues, gros et lents.
+     Ça laisse le temps de lire, pas celui d'hésiter */
+  eboulement: {
+    cri: 'fait tomber la montagne !', portee: 99, signature: 'roche',
+    faire(e){
+      const s = D.salles[D.salleIdx] || D.salles[D.salles.length - 1];
+      const im = [];
+      for(let k = 0; k < 10; k++){
+        const p = placeLibreDans(s);
+        im.push({x: p.x, y: p.y, r: 2.0, forme: 'disque', t: 1.4 + (k % 2) * 0.9,
+                 planche: 'rochers', recul: 1.2});
+      }
+      return {duree: 2.5, impacts: im};
+    }
+  },
+  /* GLACE — le blizzard : une onde qui RALENTIT trois secondes. Dangereux
+     surtout par ce qui vient juste après */
+  blizzard: {
+    cri: 'souffle le blizzard !', portee: 99, signature: 'glace',
+    faire(e){
+      const im = [];
+      for(let k = 0; k < 2; k++)
+        im.push({x: e.x, y: e.y, r: 3.0 + k * 2.2, r0: 1.2 + k * 2.2, forme: 'anneau',
+                 t: 1.1 + k * 0.5, lent: 3.5});
+      return {duree: 1.7, impacts: im};
+    }
+  },
+  /* SPECTRE / TÉNÈBRES — la terreur : un grand cercle autour de lui. Ceux
+     qui sont dedans FUIENT deux secondes, sans contrôle — et il en profite */
+  terreur: {
+    cri: 'hurle la terreur !', portee: 99, signature: 'spectre',
+    faire(e){
+      return {duree: 1.4, aura: 'vortex',
+              impacts: [{x: e.x, y: e.y, r: 4.2, forme: 'disque', t: 1.4, terreur: 2.2, doux: 1}]};
+    }
+  },
+  /* VOL — la rafale : trois couloirs parallèles, décalés. Le seul refuge
+     est entre deux — et il bouge */
+  rafale: {
+    cri: 'déchaîne la rafale !', portee: 99, signature: 'vol',
+    faire(e, c){
+      const dx = c.x - e.x, dy = c.y - e.y, l = Math.hypot(dx, dy) || 1;
+      const nx = -dy / l, ny = dx / l, L = 7.5;
+      const im = [];
+      for(let k = -1; k <= 1; k++)
+        im.push({x: e.x + nx * k * 2.2, y: e.y + ny * k * 2.2,
+                 x2: e.x + dx / l * L + nx * k * 2.2, y2: e.y + dy / l * L + ny * k * 2.2,
+                 r: 0.9, forme: 'couloir', t: 1.0 + (k + 1) * 0.35, planche: 'lameAir', recul: 1.0});
+      return {duree: 1.8, impacts: im};
+    }
+  },
+  /* PSY — la pression : un grand disque qui met deux secondes à tomber.
+     Long à lire, mais il FIGE une seconde ceux qu'il attrape */
+  pression: {
+    cri: 'concentre sa pression !', portee: 99, signature: 'psy',
+    faire(e, c){
+      return {duree: 2.1,
+              impacts: [{x: c.x, y: c.y, r: 3.2, forme: 'disque', t: 2.1, entrave: 1.0, planche: 'onde'}]};
+    }
+  },
+  /* COMBAT et le reste — le fracas : un seul coup, mais qui ENVOIE VALSER */
+  fracas: {
+    cri: 'FRACASSE !', portee: 99, signature: 'combat',
+    faire(e, c){
+      return {duree: 1.0, impacts: [{x: c.x, y: c.y, r: 2.0, forme: 'disque', t: 1.0, recul: 2.4}]};
+    }
+  },
+
   /* la fureur : il ne frappe pas, il s'enrage. Le vrai danger vient après */
   fureur: {
     cri: 'entre en fureur !', portee: 99,
@@ -3101,6 +3240,28 @@ const MOTIFS = {
     }
   }
 };
+
+/* la signature qui va avec un type : ce que le boss a en propre */
+function signatureDe(type){
+  return {eau: 'siphon', feu: 'brasier', electrik: 'foudre', plante: 'racines',
+          insecte: 'racines', poison: 'racines', roche: 'eboulement', sol: 'eboulement',
+          acier: 'eboulement', glace: 'blizzard', spectre: 'terreur', tenebres: 'terreur',
+          vol: 'rafale', psy: 'pression', fee: 'pression', dragon: 'rafale'}[type] || 'fracas';
+}
+
+/* le répertoire complet d'un boss : ses motifs, PLUS sa signature de type
+   glissée en deuxième — un boss eau siphonne, un boss feu trace un brasier,
+   quoi qu'on ait écrit dans sa fiche. Le premier motif reste celui qu'on
+   voit d'abord ; la signature arrive juste après, quand on a compris. */
+function repertoireDe(b){
+  const rep = (b.motifs || ['ecrase', 'salve', 'onde']).slice();
+  const type = b.ult || (ESPECES[b.espece] && ESPECES[b.espece].types[0]) || 'normal';
+  const sig = signatureDe(type);
+  /* le siphon remplace l'aspiration générique : même idée, en mieux */
+  if(sig === 'siphon' && rep.includes('aspiration')) rep[rep.indexOf('aspiration')] = 'siphon';
+  if(!rep.includes(sig)) rep.splice(Math.min(1, rep.length), 0, sig);
+  return rep;
+}
 
 /* le boss lance un motif : on prépare les impacts et on peint le sol */
 function lancerMotif(e, nom, cible){
@@ -3116,6 +3277,13 @@ function lancerMotif(e, nom, cible){
     else
       D.fx.push({t: 0, duree: im.t, coul: im.forme === 'anneau' ? '#ffb347' : '#ef4444',
                  x: im.x, y: im.y, cercle: im.r, anneau: im.forme === 'anneau' ? im.r0 : 0});
+  }
+  /* l'AURA : une planche qui tourne sous lui le temps de l'incantation
+     (le tourbillon du siphon, le vortex de la terreur) */
+  if(p.aura){
+    const pid = VFX.pret && VFX.manif.extras && VFX.manif.extras[p.aura];
+    if(pid) poserPlanche(pid, e.x, e.y + 0.3, {echelle: 5.5 * Math.max(1, (e.taille || 2.7) / 2.7),
+                                              duree: p.duree, rejoue: 4});
   }
   banniereD('⚠ ' + (e.titre || e.espece) + ' — ' + m.cri, '#ef6b6b');
   D.secousse = 0.45;
@@ -3141,11 +3309,51 @@ function fraireImpact(e, im){
       if(d <= im.r && (im.forme !== 'anneau' || d >= im.r0)) dedans.push(o);
     }
   }
-  const zid = fxTypeD(type, 'zone');
-  if(zid) poserPlanche(zid, im.x, im.y, {echelle: 1.6 + im.r * 0.4, duree: 0.5});
+  /* la planche : celle de la signature si l'impact en a une, sinon celle
+     du type. Un couloir en pose une tous les deux pas */
+  const sid = im.planche && VFX.pret && VFX.manif.extras && VFX.manif.extras[im.planche];
+  const zid = sid || fxTypeD(type, 'zone');
+  if(im.forme === 'couloir' && zid){
+    const n = Math.max(2, Math.round(Math.hypot(im.x2 - im.x, im.y2 - im.y) / 1.6));
+    for(let k = 0; k <= n; k++)
+      poserPlanche(zid, im.x + (im.x2 - im.x) * k / n, im.y + (im.y2 - im.y) * k / n,
+                   {echelle: 1.3, duree: 0.55});
+  } else if(zid) poserPlanche(zid, im.x, im.y, {echelle: 1.6 + im.r * 0.4, duree: 0.55});
   else poserFxD(im.x, im.y, type);
-  D.secousse = 0.4;
-  for(const o of dedans) frapperD(e, o, coup);
+  D.secousse = im.doux ? 0.25 : 0.5;
+  for(const o of dedans){
+    if(!im.doux) frapperD(e, o, coup);
+    /* LES STATUTS : ce que l'impact laisse derrière lui */
+    if(im.entrave) o.entrave = Math.max(o.entrave || 0, im.entrave);
+    if(im.lent)    o.lent    = Math.max(o.lent || 0, im.lent);
+    if(im.brule)   o.brule   = Math.max(o.brule || 0, im.brule);
+    if(im.terreur){ o.terreur = Math.max(o.terreur || 0, im.terreur); o.peurDe = e; }
+    if(im.entrave) flotterD(o, 'figé !', '#ffd45e');
+    else if(im.lent) flotterD(o, 'ralenti', '#9fd8ff');
+    else if(im.terreur) flotterD(o, 'terrorisé !', '#c9b6ff');
+    /* LE RECUL : un impact de boss envoie valser, pas seulement mal */
+    reculerD(o, im.x, im.y, im.recul != null ? im.recul : (im.doux ? 0 : 0.7));
+  }
+}
+
+/* envoyer valser : on recule dans l'axe de l'impact, sans traverser un mur */
+function reculerD(o, x, y, force){
+  if(!force || o.cristal || o.boss) return;
+  let dx = o.x - x, dy = o.y - y;
+  const l = Math.hypot(dx, dy);
+  if(l < 0.05){ const a = rngD() * 6.28; dx = Math.cos(a); dy = Math.sin(a); }
+  else { dx /= l; dy /= l; }
+  for(let k = 0; k < 6; k++){
+    const nx = o.x + dx * force / 6, ny = o.y + dy * force / 6;
+    if(!solEn(nx, ny)) break;
+    o.x = nx; o.y = ny;
+  }
+  /* un vrai choc coupe l'élan ; un petit coup fait juste reculer le corps,
+     sinon on enchaînerait les étourdissements et plus personne ne frappe */
+  if(force >= 0.6){
+    o.verrou = Math.max(o.verrou || 0, 0.25);
+    o.anim = 'Hurt' in (o.sp && o.sp.anims || {}) ? 'Hurt' : o.anim; o.animT = 0;
+  }
 }
 
 /* distance d'un point à un segment — pour les couloirs */
@@ -3280,7 +3488,7 @@ function bougerVers(e, tx, ty, dt, vitesse){
   const dx = tx - e.x, dy = ty - e.y;
   const l = Math.hypot(dx, dy);
   if(l < 0.05) return;
-  const v = (vitesse || e.vit) * dt;
+  const v = (vitesse || e.vit) * dt * (e.lent > 0 ? 0.5 : 1);
   let nx = e.x + dx / l * v, ny = e.y + dy / l * v;
   /* on glisse le long des murs plutôt que de s'y coller bêtement */
   if(!solEn(nx, e.y)) nx = e.x;
@@ -3332,14 +3540,37 @@ function attaquer(e, cible){
 
 function iaEquipe(e, dt){
   const p = e.pensionnaire;
-  /* le cercle rouge du boss ? ON DÉGAGE — le réflexe passe avant tout */
-  const danger = D.fx.find(f => f.cercle && !f.doux
-    && Math.hypot(e.x - f.x, e.y - f.y) < f.cercle + 0.35);
-  if(danger){
-    let fx2 = e.x - danger.x, fy2 = e.y - danger.y;
+  /* la marque rouge du boss ? ON DÉGAGE — le réflexe passe avant tout.
+     Chaque forme a sa sortie : un disque on s'en éloigne, un anneau on se
+     colle au centre si on y est déjà (sinon on fuit), un couloir on s'en
+     écarte de côté. L'équipe n'est pas parfaite : elle réagit, elle ne
+     prévoit pas — c'est ce qui laisse au boss une chance de toucher. */
+  const fuirVers = (fx2, fy2) => {
     if(Math.abs(fx2) + Math.abs(fy2) < 0.05){ fx2 = rngD() - 0.5; fy2 = rngD() - 0.5; }
     bougerVers(e, e.x + fx2 * 3, e.y + fy2 * 3, dt, e.vit * 1.25);
-    return;
+  };
+  for(const f of D.fx){
+    if(f.doux) continue;
+    if(f.couloir){
+      const d = distSegment(e.x, e.y, f.x, f.y, f.x2, f.y2);
+      if(d < f.larg + 0.35){
+        const dx = f.x2 - f.x, dy = f.y2 - f.y, l = Math.hypot(dx, dy) || 1;
+        let nx = -dy / l, ny = dx / l;
+        /* de quel côté est-on déjà ? on continue par là */
+        if((e.x - f.x) * nx + (e.y - f.y) * ny < 0){ nx = -nx; ny = -ny; }
+        fuirVers(nx, ny); return;
+      }
+    } else if(f.cercle){
+      const d = Math.hypot(e.x - f.x, e.y - f.y);
+      if(f.anneau){
+        if(d >= f.anneau - 0.3 && d < f.cercle + 0.35){
+          /* près du centre : on s'y blottit ; sinon on sort */
+          if(d < (f.anneau + f.cercle) / 2) fuirVers(f.x - e.x, f.y - e.y);
+          else fuirVers(e.x - f.x, e.y - f.y);
+          return;
+        }
+      } else if(d < f.cercle + 0.35){ fuirVers(e.x - f.x, e.y - f.y); return; }
+    }
   }
   /* le SIFFLET : tout le monde converge, sauf ceux déjà au corps-à-corps */
   if(D.ralliement){
@@ -3739,6 +3970,28 @@ function tickDonjon(dt){
     e.cd -= dt;
     if(e.flash > 0) e.flash -= dt;
     if(e.verrou > 0){ e.verrou -= dt; if(e.verrou <= 0){ e.anim = 'Idle'; e.animT = 0; } continue; }
+    /* --- LES STATUTS laissés par les boss ------------------------------ */
+    if(e.brule > 0){
+      e.brule -= dt;
+      e.tBrule = (e.tBrule || 0) - dt;
+      if(e.tBrule <= 0){
+        e.tBrule = 0.7;
+        const d = Math.max(1, Math.round(e.pvMax * 0.025));
+        e.pv -= d; e.flash = 0.08;
+        flotterD(e, '-' + d + ' 🔥', '#ff9b6e');
+        if(e.pv <= 0) mourirD(e, D.ents.find(b => b.boss) || e);
+      }
+    }
+    if(e.lent > 0) e.lent -= dt;
+    if(e.entrave > 0){ e.entrave -= dt; continue; }          // figé sur place
+    if(e.terreur > 0){
+      e.terreur -= dt;
+      const de = e.peurDe && !e.peurDe.ko ? e.peurDe : null;
+      if(de){
+        bougerVers(e, e.x + (e.x - de.x), e.y + (e.y - de.y), dt, e.vit * 1.1);
+        continue;                                            // il court, c'est tout
+      }
+    }
     if(e.enMarche !== undefined && e.enMarche > 0){
       e.enMarche -= dt;
       if(e.anim !== 'Walk' && e.sp && e.sp.anims && e.sp.anims.Walk){ e.anim = 'Walk'; }
