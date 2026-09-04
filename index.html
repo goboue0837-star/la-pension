@@ -2395,13 +2395,19 @@ function chargerVfx(){
 const fxTypeD = (type, quoi) => VFX.pret && VFX.manif.types[type]
   ? VFX.manif.types[type][quoi] : null;
 /* pose une planche typée : un impact, un tir qui voyage, une grosse zone */
+/* `tuiles` : la largeur que l'effet doit COUVRIR, en cases. C'est la
+   règle d'or : un tourbillon qui aspire sur sept cases fait sept cases
+   de large, une explosion couvre exactement son disque, une flamme de
+   couloir a la largeur du couloir. Sans ça, une grosse attaque n'était
+   qu'un petit dessin au milieu d'un grand cercle rouge. */
 function poserPlanche(id, x, y, opts){
   const m = VFX.pret && VFX.manif.planches[id];
   if(!m) return false;
   const o = opts || {};
   D.fx.push({planche: id, m, x, y, x2: o.x2 ?? x, y2: o.y2 ?? y, t: 0,
              duree: o.duree || m.n / (VFX.manif.cadence * 1.3),
-             echelle: o.echelle || 1, rejoue: o.rejoue || 1, dir: o.dir || 0});
+             echelle: o.echelle || 1, tuiles: o.tuiles || 0,
+             rejoue: o.rejoue || 1, dir: o.dir || 0, sol: !!o.sol});
   return true;
 }
 
@@ -2945,7 +2951,8 @@ function frapperD(att, cible, coup, opts){
     flotterD(c, '-' + Math.round(d), couleur);
     /* l'impact : la planche du type, à défaut le petit rond */
     const cid = fxTypeD(coup.type, 'coup');
-    if(!cid || !poserPlanche(cid, c.x, c.y - 0.25, {echelle: coup.estUlt ? 1.3 : 0.9, duree: 0.32}))
+    if(!cid || !poserPlanche(cid, c.x, c.y - 0.25,
+        {tuiles: (coup.estUlt ? 1.9 : 1.25) * Math.min(2.2, c.taille || 1), duree: 0.32}))
       poserFxD(c.x, c.y, coup.type);
     /* et le corps ACCUSE le coup : un pas en arrière, plus fort si c'est
        super efficace ou un ult. Sans ça les sprites se tapent sans bouger */
@@ -3129,7 +3136,7 @@ const MOTIFS = {
       for(let n = 0; n < 3; n++)
         im.push({x: e.x, y: e.y, x2: e.x + dx / l * L, y2: e.y + dy / l * L,
                  r: 1.1, forme: 'couloir', t: 1.1 + n * 1.1, part: 0.8,
-                 planche: 'colonneFeu', brule: 3});
+                 brule: 3});
       return {duree: 1.1 + 2 * 1.1, impacts: im, libre: true};
     }
   },
@@ -3143,7 +3150,7 @@ const MOTIFS = {
       for(let k = 0; k < 5; k++){
         const p = proies[k % Math.max(1, proies.length)] || e;
         im.push({x: p.x + entre(-0.4, 0.4), y: p.y + entre(-0.4, 0.4), r: 1.25,
-                 forme: 'disque', t: 0.8 + k * 0.32, planche: 'eclair', entrave: 0.6});
+                 forme: 'disque', t: 0.8 + k * 0.32, entrave: 0.6});
       }
       return {duree: 0.8 + 4 * 0.32 + 0.2, impacts: im};
     }
@@ -3282,8 +3289,10 @@ function lancerMotif(e, nom, cible){
      (le tourbillon du siphon, le vortex de la terreur) */
   if(p.aura){
     const pid = VFX.pret && VFX.manif.extras && VFX.manif.extras[p.aura];
-    if(pid) poserPlanche(pid, e.x, e.y + 0.3, {echelle: 5.5 * Math.max(1, (e.taille || 2.7) / 2.7),
-                                              duree: p.duree, rejoue: 4});
+    /* aussi large que ce qu'elle touche : le siphon tire jusqu'à sept
+       cases, la terreur porte à 4,2 de rayon */
+    const portee = p.aspire ? 7 : (p.impacts[0] ? p.impacts[0].r : 3);
+    if(pid) poserPlanche(pid, e.x, e.y + 0.3, {tuiles: portee * 2, duree: p.duree, rejoue: 4, sol: true});
   }
   banniereD('⚠ ' + (e.titre || e.espece) + ' — ' + m.cri, '#ef6b6b');
   D.secousse = 0.45;
@@ -3314,12 +3323,17 @@ function fraireImpact(e, im){
   const sid = im.planche && VFX.pret && VFX.manif.extras && VFX.manif.extras[im.planche];
   const zid = sid || fxTypeD(type, 'zone');
   if(im.forme === 'couloir' && zid){
-    const n = Math.max(2, Math.round(Math.hypot(im.x2 - im.x, im.y2 - im.y) / 1.6));
+    /* une planche tous les ~0,8 rayon, chacune de la largeur du couloir :
+       le couloir est PLEIN d'effet, pas jalonné de petits pétards */
+    const L = Math.hypot(im.x2 - im.x, im.y2 - im.y);
+    const n = Math.max(2, Math.round(L / (im.r * 0.9)));
     for(let k = 0; k <= n; k++)
       poserPlanche(zid, im.x + (im.x2 - im.x) * k / n, im.y + (im.y2 - im.y) * k / n,
-                   {echelle: 1.3, duree: 0.55});
-  } else if(zid) poserPlanche(zid, im.x, im.y, {echelle: 1.6 + im.r * 0.4, duree: 0.55});
-  else poserFxD(im.x, im.y, type);
+                   {tuiles: im.r * 2.2, duree: 0.5 + k * 0.03, sol: true});
+  } else if(zid){
+    /* l'anneau : la planche couvre tout le disque extérieur */
+    poserPlanche(zid, im.x, im.y, {tuiles: im.r * 2.1, duree: 0.6, sol: true});
+  } else poserFxD(im.x, im.y, type);
   D.secousse = im.doux ? 0.25 : 0.5;
   for(const o of dedans){
     if(!im.doux) frapperD(e, o, coup);
@@ -3897,7 +3911,7 @@ function lancerUlt(e){
   const zoneId = fxTypeD(e.ultType, 'zone');
   if(u.forme === 'zone'){
     const c = proche(e, enn);
-    if(zoneId) poserPlanche(zoneId, c.x, c.y, {echelle: 2.4, duree: 0.55});
+    if(zoneId) poserPlanche(zoneId, c.x, c.y, {tuiles: 2.6 * 2, duree: 0.6, sol: true});
     frapperD(e, c, coup, {zone: 2.6});
   } else if(u.forme === 'ligne'){
     const c = proche(e, enn);
@@ -3907,10 +3921,11 @@ function lancerUlt(e){
     const tirId = fxTypeD(e.ultType, 'tir');
     if(tirId) poserPlanche(tirId, e.x, e.y - 0.3,
       {x2: e.x + dd.dx * 7, y2: e.y + dd.dy * 7 - 0.3, duree: 0.4, dir: e.dir,
-       rejoue: 3, echelle: 1.6});
-    for(const k of [2, 4.5, 7])
+       rejoue: 3, tuiles: 2.4});
+    /* la ligne fait 1,2 de demi-largeur sur 7 cases : on la remplit */
+    for(const k of [1.2, 2.6, 4.0, 5.4, 6.8])
       if(zoneId) poserPlanche(zoneId, e.x + dd.dx * k, e.y + dd.dy * k,
-        {echelle: 1.5, duree: 0.5});
+        {tuiles: 2.4, duree: 0.5, sol: true});
     for(const o of enn){
       const t = (o.x - e.x) * dd.dx + (o.y - e.y) * dd.dy;   // projection
       if(t < 0 || t > 7) continue;
@@ -3922,7 +3937,7 @@ function lancerUlt(e){
   } else {
     const gros = enn.filter(o => o.boss || o.elite);
     const c = gros.length ? proche(e, gros) : proche(e, enn);
-    if(zoneId) poserPlanche(zoneId, c.x, c.y, {echelle: 1.9, duree: 0.55});
+    if(zoneId) poserPlanche(zoneId, c.x, c.y, {tuiles: 2.6 * Math.min(2, c.taille || 1), duree: 0.55});
     frapperD(e, c, coup);
   }
   e.enUlt = false;
@@ -4149,6 +4164,36 @@ function finDonjon(victoire){
 
 /* --- le rendu --------------------------------------------------------- */
 function hacheD(x, y){ return ((x * 73856093) ^ (y * 19349663)) >>> 0; }
+
+/* une planche d'effet, à sa taille : en tuiles quand on la connaît (la
+   zone qu'on frappe), sinon le vieux plafond d'une tuile et demie pour les
+   petits coups. Pixel art net, jamais flou — et celles qui vivent AU SOL
+   (tourbillon, brasier, lianes) restent translucides pour ne pas cacher
+   ceux qui se battent dedans. */
+function dessinerPlanche(ctx, f, px, py, T){
+  const im = VFX.cache.get(f.planche);
+  if(!im) return;
+  const m = f.m;
+  const av = Math.min(1, f.t / f.duree);
+  const ex = f.x + (f.x2 - f.x) * av, ey = f.y + (f.y2 - f.y) * av;
+  const fr = Math.min(m.n - 1, Math.floor(av * m.n * f.rejoue) % m.n);
+  const ligne = m.dirs ? Math.min(m.dirs - 1, f.dir || 0) : 0;
+  let ech;
+  if(f.tuiles) ech = f.tuiles * T / Math.max(m.w, m.h);
+  else { const lim = 1.6 * T / Math.max(m.w, m.h); ech = Math.min(1.2, lim) * (f.echelle || 1); }
+  ctx.save();
+  /* pixel net pour les coups ; une grande nappe au sol (tourbillon, onde)
+     supporte mieux le lissage que des blocs de la taille d'une case */
+  ctx.imageSmoothingEnabled = !!(f.sol && f.tuiles >= 6);
+  ctx.translate(px(ex), py(ey) - (f.sol ? 0 : T * 0.25));
+  let a = av > .75 ? (1 - av) * 4 : 1;
+  if(f.sol) a *= 0.72;
+  ctx.globalAlpha = a;
+  ctx.drawImage(im, fr * m.w, ligne * m.h, m.w, m.h,
+                -m.w * ech / 2, -m.h * ech / 2, m.w * ech, m.h * ech);
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
 function rendreDonjon(cv){
   const ctx = cv.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
@@ -4190,6 +4235,9 @@ function rendreDonjon(cv){
     ctx.textAlign = 'center';
     ctx.fillText(s.quoi === 'sous' ? '🪙' : '🫐', px(s.x), py(s.y));
   }
+
+  /* les effets AU SOL d'abord : sous les pattes de tout le monde */
+  for(const f of D.fx) if(f.planche && f.sol) dessinerPlanche(ctx, f, px, py, T);
 
   /* les entités, du fond vers l'avant */
   const tri = [...D.ents].sort((a, b) => a.y - b.y);
@@ -4260,22 +4308,7 @@ function rendreDonjon(cv){
   for(const f of D.fx){
     const a = 1 - f.t / f.duree;
     if(f.planche){
-      const im = VFX.cache.get(f.planche);
-      if(!im) continue;
-      const m = f.m;
-      const av = Math.min(1, f.t / f.duree);
-      const ex = f.x + (f.x2 - f.x) * av, ey = f.y + (f.y2 - f.y) * av;
-      const fr = Math.min(m.n - 1, Math.floor(av * m.n * f.rejoue) % m.n);
-      const ligne = m.dirs ? Math.min(m.dirs - 1, f.dir || 0) : 0;
-      const lim = 1.6 * T / Math.max(m.w, m.h);
-      const ech = Math.min(1.2, lim) * (f.echelle || 1);
-      ctx.save();
-      ctx.translate(px(ex), py(ey) - T * 0.25);
-      ctx.globalAlpha = av > .75 ? (1 - av) * 4 : 1;
-      ctx.drawImage(im, fr * m.w, ligne * m.h, m.w, m.h,
-                    -m.w * ech / 2, -m.h * ech / 2, m.w * ech, m.h * ech);
-      ctx.restore();
-      ctx.globalAlpha = 1;
+      if(!f.sol) dessinerPlanche(ctx, f, px, py, T);   // celles du sol sont déjà peintes
       continue;
     }
     if(f.couloir){
