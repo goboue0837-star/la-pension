@@ -1455,26 +1455,26 @@ const ZONES_DONJON = {
     donjons: [
 {cle:'zigzaton', zd:'pre', rang:1, horde:5, nom:'Le Donjon Zigzaton', zone:'Le Pré du Grand Départ',
    salles:3, niv:2, sbires:['Zigzaton'], elites:[],
-   boss:{espece:'Zigzaton', niv:5, titre:'Zigzaton Chef', taille:1.95, force:0.6,
+   boss:{motifs: ['ecrase', 'appel'], espece:'Zigzaton', niv:5, titre:'Zigzaton Chef', taille:2.75, force:0.6,
     escorte:[{espece:'Zigzaton', niv:3}, {espece:'Zigzaton', niv:3}]},
    vagues:2, decor:['AmpPlains','TinyWoods','SkyPeak1stPass','BeachCave']},
   {cle:'prairie', zd:'pre', rang:2, horde:6, nom:'La Prairie Venteuse', zone:'Le Pré du Grand Départ',
    salles:3, niv:3, sbires:['Zigzaton','Rattata'], elites:[],
-   boss:{espece:'Linéon', niv:8, titre:'Linéon le Balafré', taille:1.95, force:0.8, ult:'normal'},
+   boss:{motifs: ['ecrase', 'charge'], espece:'Linéon', niv:8, titre:'Linéon le Balafré', taille:2.75, force:0.8, ult:'normal'},
    vagues:2, decor:['AmpPlains','TinyWoods','SkyPeak1stPass','BeachCave']},
   {cle:'verger', zd:'pre', rang:3, horde:7, nom:'Le Vieux Verger', zone:'Le Pré du Grand Départ',
    salles:4, niv:5, sbires:['Rattata','Roucool'], elites:['Linéon'],
-   boss:{espece:'Rattatac', niv:12, titre:'Rattatac le Vorace', taille:2.05,
+   boss:{motifs: ['salve', 'ecrase', 'appel'], espece:'Rattatac', niv:12, titre:'Rattatac le Vorace', taille:2.95,
     escorte:[{espece:'Rattata', niv:8}, {espece:'Rattata', niv:8}]},
    vagues:3, decor:['TinyWoods','AmpPlains','LushPrairie','BeachCave']},
   {cle:'taupes', zd:'pre', rang:4, horde:8, nom:'La Colline aux Taupes', zone:'Le Pré du Grand Départ',
    salles:4, niv:7, sbires:['Roucool','Piafabec'], elites:['Rattatac'],
-   boss:{espece:'Rapasdepic', niv:13, titre:'Rapasdepic l\'Ouragan', taille:2.05, ult:'vol'},
+   boss:{motifs: ['ecrase', 'balayage', 'onde'], espece:'Rapasdepic', niv:13, titre:'Rapasdepic l\'Ouragan', taille:2.95, ult:'vol'},
    vagues:3, decor:['SkyPeak1stPass','AmpPlains','TinyWoods','BeachCave']},
   {cle:'grandpre', zd:'pre', rang:5, horde:9, nom:'Le Grand Pré', zone:'Le Pré du Grand Départ',
    salles:5, niv:9, sbires:['Zigzaton','Rattata','Roucool','Piafabec'],
    elites:['Linéon','Rattatac'],
-   boss:{espece:'Tauros', niv:16, titre:'Tauros le Doyen', taille:2.25, ult:'sol',
+   boss:{motifs: ['charge', 'onde', 'salve', 'pluie'], espece:'Tauros', niv:16, titre:'Tauros le Doyen', taille:3.2, ult:'sol',
     escorte:[{espece:'Linéon', niv:10}, {espece:'Linéon', niv:10}]},
    vagues:4, decor:['AmpPlains','LushPrairie','TinyWoods','BeachCave'], final:1}
     ]
@@ -1485,57 +1485,57 @@ const ZONES_DONJON = {
     donjons: [
   {cle: 'foret_sentier', zd: 'foret', rang: 1, horde: 5, nom: 'Le Sentier Mousseux',
    salles: 3, niv: 10, sbires: ['Chenipan', 'Chenipotte'], elites: [],
-   boss: {espece: 'Papilusion', niv: 15, titre: 'Papilusion la Poudreuse', taille: 1.95, ult: 'insecte'},
+   boss: {motifs: ['ecrase', 'pluie'], espece: 'Papilusion', niv: 15, titre: 'Papilusion la Poudreuse', taille: 2.75, ult: 'insecte'},
    vagues: 2, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_fougeres', zd: 'foret', rang: 2, horde: 6, nom: 'Le Tapis de Fougères',
    salles: 3, niv: 12, sbires: ['Paras', 'Mimitoss'], elites: ['Papilusion'],
-   boss: {espece: 'Parasect', niv: 17, titre: 'Parasect le Spore', taille: 1.95, ult: 'plante'},
+   boss: {motifs: ['piege', 'ecrase'], espece: 'Parasect', niv: 17, titre: 'Parasect le Spore', taille: 2.75, ult: 'plante'},
    vagues: 2, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_grillons', zd: 'foret', rang: 3, horde: 7, nom: 'Le Pré aux Grillons',
    salles: 4, niv: 14, sbires: ['Crikzik', 'Chenipan'], elites: ['Parasect'],
-   boss: {espece: 'Mélokrik', niv: 20, titre: 'Mélokrik le Crieur', taille: 2.0, ult: 'insecte',
+   boss: {motifs: ['onde', 'ecrase'], espece: 'Mélokrik', niv: 20, titre: 'Mélokrik le Crieur', taille: 2.85, ult: 'insecte',
      escorte: [{espece: 'Crikzik', niv: 14}, {espece: 'Crikzik', niv: 14}]},
    vagues: 2, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_dormant', zd: 'foret', rang: 4, horde: 8, nom: 'Le Bois Dormant',
    salles: 4, niv: 17, sbires: ['Chenipotte', 'Armulys'], elites: ['Mélokrik', 'Papinox'],
-   boss: {espece: 'Charmillon', niv: 24, titre: 'Charmillon des Songes', taille: 2.0, ult: 'insecte',
+   boss: {motifs: ['pluie', 'ecrase', 'aspiration'], espece: 'Charmillon', niv: 24, titre: 'Charmillon des Songes', taille: 2.85, ult: 'insecte',
      escorte: [{espece: 'Papinox', niv: 18}]},
    vagues: 3, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_souches', zd: 'foret', rang: 5, horde: 10, nom: 'Les Souches Creuses',
    salles: 4, niv: 21, sbires: ['Aspicot', 'Coconfort'], elites: ['Charmillon'],
-   boss: {espece: 'Dardargnan', niv: 29, titre: 'Dardargnan l\'Aiguillon', taille: 2.05, ult: 'poison',
+   boss: {motifs: ['charge', 'salve', 'fureur'], espece: 'Dardargnan', niv: 29, titre: 'Dardargnan l\'Aiguillon', taille: 2.95, ult: 'poison',
      escorte: [{espece: 'Coconfort', niv: 22}, {espece: 'Coconfort', niv: 22}]},
    vagues: 3, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_toiles', zd: 'foret', rang: 6, horde: 11, nom: 'La Clairière aux Toiles',
    salles: 5, niv: 25, sbires: ['Tissenboule', 'Mimigal'], elites: ['Dardargnan', 'Filentrappe'],
-   boss: {espece: 'Migalos', niv: 35, titre: 'Migalos la Fileuse', taille: 2.1, ult: 'insecte',
+   boss: {motifs: ['piege', 'aspiration', 'salve'], espece: 'Migalos', niv: 35, titre: 'Migalos la Fileuse', taille: 3.0, ult: 'insecte',
      escorte: [{espece: 'Mimigal', niv: 27}, {espece: 'Mimigal', niv: 27}]},
    vagues: 3, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_nid', zd: 'foret', rang: 7, horde: 13, nom: 'Le Nid Suspendu',
    salles: 5, niv: 30, sbires: ['Ningale', 'Larveyette'], elites: ['Migalos', 'Prismillon'],
-   boss: {espece: 'Ninjask', niv: 41, titre: 'Ninjask l\'Éclair', taille: 2.15, ult: 'insecte',
+   boss: {motifs: ['charge', 'balayage', 'fureur'], espece: 'Ninjask', niv: 41, titre: 'Ninjask l\'Éclair', taille: 3.1, ult: 'insecte',
      escorte: [{espece: 'Munja', niv: 35}, {espece: 'Munja', niv: 35}]},
    vagues: 4, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_ronces', zd: 'foret', rang: 8, horde: 14, nom: 'Les Ronces Basses',
    salles: 5, niv: 34, sbires: ['Venipatte', 'Scobolide'], elites: ['Ninjask', 'Manternel'],
-   boss: {espece: 'Brutapode', niv: 47, titre: 'Brutapode le Rouleur', taille: 2.2, ult: 'poison'},
+   boss: {motifs: ['charge', 'onde', 'balayage'], espece: 'Brutapode', niv: 47, titre: 'Brutapode le Rouleur', taille: 3.15, ult: 'poison'},
    vagues: 4, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_cathedrale', zd: 'foret', rang: 9, horde: 16, nom: 'La Cathédrale de Feuilles',
    salles: 6, niv: 38, sbires: ['Pomdepik', 'Coxy'], elites: ['Brutapode', 'Coxyclaque'],
-   boss: {espece: 'Foretress', niv: 53, titre: 'Foretress la Coque', taille: 2.3, ult: 'acier'},
+   boss: {motifs: ['onde', 'piege', 'appel', 'pluie'], espece: 'Foretress', niv: 53, titre: 'Foretress la Coque', taille: 3.3, ult: 'acier'},
    vagues: 4, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1']},
 
   {cle: 'foret_coeur', zd: 'foret', rang: 10, horde: 18, nom: 'Le Cœur du Bois',
    salles: 6, niv: 42, sbires: ['Scarabrute', 'Scarhino', 'Yanma'], elites: ['Foretress', 'Migalos'],
-   boss: {espece: 'Lucanon', niv: 60, titre: 'Lucanon le Gardien', taille: 2.45, ult: 'insecte',
+   boss: {motifs: ['charge', 'onde', 'salve', 'balayage', 'fureur'], espece: 'Lucanon', niv: 60, titre: 'Lucanon le Gardien', taille: 3.5, ult: 'insecte',
      escorte: [{espece: 'Scarabrute', niv: 50}, {espece: 'Scarhino', niv: 50}]},
    vagues: 5, decor: ['AppleWoods', 'ForestPath', 'FoggyForest', 'MysteryJungle1'], final: 1}
     ]
@@ -1546,57 +1546,57 @@ const ZONES_DONJON = {
     donjons: [
   {cle: 'gorges_bassins', zd: 'gorges', rang: 1, horde: 5, nom: 'Les Bassins Calmes',
    salles: 3, niv: 10, sbires: ['Azurill', 'Marill'], elites: [],
-   boss: {espece: 'Azumarill', niv: 15, titre: 'Azumarill la Digue', taille: 1.95, ult: 'fee'},
+   boss: {motifs: ['ecrase', 'onde'], espece: 'Azumarill', niv: 15, titre: 'Azumarill la Digue', taille: 2.75, ult: 'fee'},
    vagues: 2, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_nenuphars', zd: 'gorges', rang: 2, horde: 6, nom: 'Le Champ de Nénuphars',
    salles: 3, niv: 12, sbires: ['Nénupiot', 'Lombre'], elites: ['Azumarill'],
-   boss: {espece: 'Ludicolo', niv: 17, titre: 'Ludicolo le Danseur', taille: 1.95, ult: 'plante',
+   boss: {motifs: ['balayage', 'ecrase'], espece: 'Ludicolo', niv: 17, titre: 'Ludicolo le Danseur', taille: 2.75, ult: 'plante',
      escorte: [{espece: 'Lombre', niv: 10}, {espece: 'Lombre', niv: 10}]},
    vagues: 2, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_cascade', zd: 'gorges', rang: 3, horde: 7, nom: 'La Cascade Basse',
    salles: 4, niv: 14, sbires: ['Psykokwak', 'Azurill'], elites: ['Ludicolo'],
-   boss: {espece: 'Akwakwak', niv: 20, titre: 'Akwakwak le Migraineux', taille: 2.0, ult: 'psy'},
+   boss: {motifs: ['salve', 'ecrase', 'aspiration'], espece: 'Akwakwak', niv: 20, titre: 'Akwakwak le Migraineux', taille: 2.85, ult: 'psy'},
    vagues: 2, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_recifs', zd: 'gorges', rang: 4, horde: 8, nom: 'Les Récifs de Sel',
    salles: 4, niv: 17, sbires: ['Écrapince', 'Poissirène'], elites: ['Akwakwak', 'Poissoroy'],
-   boss: {espece: 'Colhomard', niv: 24, titre: 'Colhomard la Pince', taille: 2.0, ult: 'eau',
+   boss: {motifs: ['ecrase', 'charge', 'salve'], espece: 'Colhomard', niv: 24, titre: 'Colhomard la Pince', taille: 2.85, ult: 'eau',
      escorte: [{espece: 'Écrapince', niv: 17}, {espece: 'Écrapince', niv: 17}]},
    vagues: 3, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_grotte', zd: 'gorges', rang: 5, horde: 10, nom: 'La Grotte Ruisselante',
    salles: 4, niv: 21, sbires: ['Ptitard', 'Têtarte'], elites: ['Colhomard'],
-   boss: {espece: 'Tartard', niv: 29, titre: 'Tartard le Tourbillon', taille: 2.05, ult: 'combat'},
+   boss: {motifs: ['aspiration', 'onde', 'balayage'], espece: 'Tartard', niv: 29, titre: 'Tartard le Tourbillon', taille: 2.95, ult: 'combat'},
    vagues: 3, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_marais', zd: 'gorges', rang: 6, horde: 11, nom: 'Le Marais Somnolent',
    salles: 5, niv: 25, sbires: ['Ramoloss', 'Flagadoss'], elites: ['Tartard'],
-   boss: {espece: 'Roigada', niv: 35, titre: 'Roigada le Somnolent', taille: 2.1, ult: 'psy',
+   boss: {motifs: ['piege', 'aspiration', 'pluie'], espece: 'Roigada', niv: 35, titre: 'Roigada le Somnolent', taille: 3.0, ult: 'psy',
      escorte: [{espece: 'Flagadoss', niv: 27}]},
    vagues: 3, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_barrage', zd: 'gorges', rang: 7, horde: 13, nom: 'Le Barrage Rompu',
    salles: 5, niv: 30, sbires: ['Kaiminus', 'Crocrodil'], elites: ['Roigada', 'Torgamord'],
-   boss: {espece: 'Aligatueur', niv: 41, titre: 'Aligatueur la Mâchoire', taille: 2.15, ult: 'eau',
+   boss: {motifs: ['charge', 'salve', 'fureur'], espece: 'Aligatueur', niv: 41, titre: 'Aligatueur la Mâchoire', taille: 3.1, ult: 'eau',
      escorte: [{espece: 'Crocrodil', niv: 33}, {espece: 'Crocrodil', niv: 33}]},
    vagues: 4, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_chenal', zd: 'gorges', rang: 8, horde: 14, nom: 'Le Chenal Profond',
    salles: 5, niv: 34, sbires: ['Carapuce', 'Carabaffe'], elites: ['Aligatueur'],
-   boss: {espece: 'Tortank', niv: 47, titre: 'Tortank le Canonnier', taille: 2.2, ult: 'eau'},
+   boss: {motifs: ['salve', 'pluie', 'balayage'], espece: 'Tortank', niv: 47, titre: 'Tortank le Canonnier', taille: 3.15, ult: 'eau'},
    vagues: 4, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_fosse', zd: 'gorges', rang: 9, horde: 16, nom: 'La Fosse aux Écailles',
    salles: 6, niv: 38, sbires: ['Magicarpe', 'Khélocrok'], elites: ['Tortank', 'Torgamord'],
-   boss: {espece: 'Léviator', niv: 53, titre: 'Léviator l\'Abysse', taille: 2.3, ult: 'dragon',
+   boss: {motifs: ['onde', 'charge', 'pluie', 'fureur'], espece: 'Léviator', niv: 53, titre: 'Léviator l\'Abysse', taille: 3.3, ult: 'dragon',
      escorte: [{espece: 'Magicarpe', niv: 45}, {espece: 'Magicarpe', niv: 45}]},
    vagues: 4, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1']},
 
   {cle: 'gorges_source', zd: 'gorges', rang: 10, horde: 18, nom: 'La Source',
    salles: 6, niv: 42, sbires: ['Gobou', 'Flobio', 'Barpau'], elites: ['Léviator', 'Laggron'],
-   boss: {espece: 'Milobellus', niv: 60, titre: 'Milobellus la Source', taille: 2.45, ult: 'eau',
+   boss: {motifs: ['aspiration', 'onde', 'pluie', 'salve', 'fureur'], espece: 'Milobellus', niv: 60, titre: 'Milobellus la Source', taille: 3.5, ult: 'eau',
      escorte: [{espece: 'Laggron', niv: 50}, {espece: 'Aligatueur', niv: 50}]},
    vagues: 5, decor: ['WaterfallPond', 'DrenchedBluff', 'WaterMaze', 'StormySea1'], final: 1}
     ]
@@ -1625,7 +1625,7 @@ const INVASIONS = {
     sbires: ['Zigzaton', 'Rattata', 'Roucool', 'Piafabec'],
     elites: ['Linéon', 'Rattatac'],
     miniBoss: {espece: 'Rapasdepic', titre: 'Rapasdepic l\'Éclaireur'},
-    boss: {espece: 'Tauros', titre: 'Tauros le Vengeur', taille: 2.45, ult: 'sol',
+    boss: {motifs: ['charge', 'onde', 'salve', 'pluie', 'fureur'], espece: 'Tauros', titre: 'Tauros le Vengeur', taille: 3.5, ult: 'sol',
            escorte: [{espece: 'Rattatac'}, {espece: 'Linéon'}]}
   },
   foret: {
@@ -1634,7 +1634,7 @@ const INVASIONS = {
     sbires: ['Chenipan', 'Aspicot', 'Venipatte', 'Ningale'],
     elites: ['Migalos', 'Foretress'],
     miniBoss: {espece: 'Charmillon', titre: 'Charmillon l\'Éclaireur'},
-    boss: {espece: 'Lucanon', titre: 'Lucanon le Vengeur', taille: 2.45, ult: 'insecte',
+    boss: {motifs: ['charge', 'piege', 'onde', 'balayage', 'fureur'], espece: 'Lucanon', titre: 'Lucanon le Vengeur', taille: 3.5, ult: 'insecte',
            escorte: [{espece: 'Scarabrute'}, {espece: 'Scarhino'}]}
   },
   gorges: {
@@ -1643,7 +1643,7 @@ const INVASIONS = {
     sbires: ['Magicarpe', 'Azurill', 'Ptitard', 'Khélocrok'],
     elites: ['Tartard', 'Tortank'],
     miniBoss: {espece: 'Colhomard', titre: 'Colhomard l\'Éclaireur'},
-    boss: {espece: 'Milobellus', titre: 'Milobellus la Vengeresse', taille: 2.45, ult: 'eau',
+    boss: {motifs: ['aspiration', 'onde', 'pluie', 'salve', 'fureur'], espece: 'Milobellus', titre: 'Milobellus la Vengeresse', taille: 3.5, ult: 'eau',
            escorte: [{espece: 'Laggron'}, {espece: 'Aligatueur'}]}
   }
 };
@@ -2444,15 +2444,17 @@ async function creerEnt(espece, camp, x, y, niveau, extra){
     e.pv = e.pvMax = Math.round(e.pvMax * D.durete);
     e.atq *= 1 + (D.durete - 1) * 0.2;
   }
-  if(e.elite){ e.pv = e.pvMax = Math.round(e.pvMax * 3.2); e.atq *= 2.1;
-               e.defs *= 1.6; e.taille = 1.32; }
+  if(e.elite){ e.pv = e.pvMax = Math.round(e.pvMax * 4.5); e.atq *= 2.1;
+               e.defs *= 1.6; e.taille = 1.45; }
   if(e.boss){
     /* `force` adoucit les premiers boss : le tuto doit rester gagnable
        avec une équipe toute neuve — l'épique grandit avec toi */
     const f = e.force || 1;
-    e.pv = e.pvMax = Math.round(e.pvMax * 18 * f);
+    /* un boss doit TENIR : le combat est une épreuve, pas un échange de
+       deux coups. Il encaisse quarante fois un Pokémon de son niveau. */
+    e.pv = e.pvMax = Math.round(e.pvMax * 62 * f);
     e.atq *= 2.8 * (0.75 + 0.25 * f);
-    e.defs *= 1.8; e.taille = e.taille || 1.95;
+    e.defs *= 1.8; e.taille = e.taille || 2.7;
   }
   e.sp = await chargerSprite(espece, e.shiny);
   return e;
@@ -2870,8 +2872,8 @@ async function lancerBoss(){
   const brut = D.invasion ? D.breches[0] : {x: s.cx, y: s.y + 2};
   const entree = posSol(brut.x, brut.y, D.invasion ? null : s);
   const e = await creerEnt(b.espece, 'ennemi', entree.x, entree.y, b.niv,
-    {boss: true, taille: b.taille || 1.95, titre: b.titre, force: b.force,
-     ultBoss: b.ult || null});
+    {boss: true, taille: b.taille || 2.7, titre: b.titre, force: b.force,
+     ultBoss: b.ult || null, motifs: b.motifs || ['ecrase', 'salve', 'onde']});
   e.flash = 0.5;
   /* il RUGIT : une seconde d'intimidation avant la danse */
   e.anim = 'Attack'; e.verrou = 1.0; e.animT = 0;
@@ -2969,6 +2971,245 @@ function poserFxD(x, y, type, opts){
   D.fx.push({x, y, t: 0, coul: COULEURS[type] || '#fff', duree: 0.35});
 }
 function banniereD(txt, coul){ D.banniere = {txt, coul, t: 2.2}; }
+
+
+/* =====================================================================
+   LES MOTIFS DE BOSS
+   Un boss ne doit pas être un gros mob qui tape plus fort. Il doit poser
+   une QUESTION au joueur : où se mettre, quand s'écarter, qui protéger.
+   Chaque motif dessine son danger au sol AVANT de frapper — c'est le
+   télégraphe qui rend le combat lisible, et donc juste.
+
+   Un motif produit une liste d'IMPACTS. Chaque impact a une forme (un
+   disque, un anneau, un couloir), un retard, et sa propre marque au sol.
+   Le boss reste sur place pendant l'incantation, sauf quand le motif le
+   déplace lui-même (la charge).
+   ===================================================================== */
+const MOTIFS = {
+  /* le classique : un disque sur la proie la plus proche */
+  ecrase: {
+    cri: 'écrase !', portee: 99,
+    faire(e, c){
+      return {duree: 1.15, impacts: [{x: c.x, y: c.y, r: 2.2, forme: 'disque', t: 1.15}]};
+    }
+  },
+  /* TROIS disques, l'un après l'autre, sur trois proies : on ne peut pas
+     tous les esquiver au même endroit — il faut se disperser */
+  salve: {
+    cri: 'salve !', portee: 99,
+    faire(e){
+      const proies = ennemisDe(e).slice(0, 3);
+      const im = [];
+      for(let k = 0; k < 3; k++){
+        const p = proies[k % Math.max(1, proies.length)] || {x: e.x, y: e.y};
+        im.push({x: p.x + entre(-0.5, 0.5), y: p.y + entre(-0.5, 0.5),
+                 r: 1.9, forme: 'disque', t: 0.9 + k * 0.55});
+      }
+      return {duree: 0.9 + 2 * 0.55, impacts: im};
+    }
+  },
+  /* l'onde : trois anneaux qui s'écartent de lui. Le refuge est SUR lui
+     ou très loin — rester à mi-distance, c'est mourir trois fois */
+  onde: {
+    cri: 'onde de choc !', portee: 99,
+    faire(e){
+      const im = [];
+      for(let k = 0; k < 3; k++)
+        im.push({x: e.x, y: e.y, r: 2.4 + k * 1.7, r0: 1.1 + k * 1.7,
+                 forme: 'anneau', t: 1.0 + k * 0.45});
+      return {duree: 1.0 + 2 * 0.45, impacts: im};
+    }
+  },
+  /* la pluie : sept disques au hasard dans la salle, tous en même temps.
+     Il faut bouger tôt, pas réagir tard */
+  pluie: {
+    cri: 'ça tombe de partout !', portee: 99,
+    faire(e){
+      const s = D.salles[D.salleIdx] || D.salles[D.salles.length - 1];
+      const im = [];
+      for(let k = 0; k < 7; k++){
+        const p = placeLibreDans(s);
+        im.push({x: p.x, y: p.y, r: 1.7, forme: 'disque', t: 1.35});
+      }
+      return {duree: 1.35, impacts: im};
+    }
+  },
+  /* la charge : il TRAVERSE la salle en ligne droite. Le couloir est
+     annoncé, il faut en sortir latéralement */
+  charge: {
+    cri: 'CHARGE !', portee: 99, mobile: true,
+    faire(e, c){
+      const dx = c.x - e.x, dy = c.y - e.y;
+      const l = Math.hypot(dx, dy) || 1;
+      const d = 7.5;
+      return {duree: 1.5, fonce: {x: e.x + dx / l * d, y: e.y + dy / l * d, t0: 0.9},
+              impacts: [{x: e.x, y: e.y, x2: e.x + dx / l * d, y2: e.y + dy / l * d,
+                         r: 1.35, forme: 'couloir', t: 1.5}]};
+    }
+  },
+  /* le balayage : deux couloirs en croix, décalés dans le temps */
+  balayage: {
+    cri: 'balaye tout !', portee: 99,
+    faire(e){
+      const a0 = rngD() * 6.28, L = 6.5;
+      const im = [];
+      for(let k = 0; k < 2; k++){
+        const a = a0 + k * 1.05;
+        im.push({x: e.x - Math.cos(a) * L, y: e.y - Math.sin(a) * L,
+                 x2: e.x + Math.cos(a) * L, y2: e.y + Math.sin(a) * L,
+                 r: 1.2, forme: 'couloir', t: 1.1 + k * 0.6});
+      }
+      return {duree: 1.7, impacts: im};
+    }
+  },
+  /* le piège : quatre braises posées au sol qui frappent trois fois.
+     La salle rétrécit, on se bat dans ce qu'il reste */
+  piege: {
+    cri: 'sème le danger !', portee: 99,
+    faire(e){
+      const s = D.salles[D.salleIdx] || D.salles[D.salles.length - 1];
+      const im = [];
+      for(let k = 0; k < 4; k++){
+        const p = placeLibreDans(s);
+        for(let n = 0; n < 3; n++)
+          im.push({x: p.x, y: p.y, r: 1.5, forme: 'disque',
+                   t: 1.2 + n * 1.5, part: 0.55});
+      }
+      return {duree: 1.2 + 2 * 1.5, impacts: im, libre: true};
+    }
+  },
+  /* l'aspiration : il tire tout le monde à lui, PUIS explose */
+  aspiration: {
+    cri: 'aspire !', portee: 99,
+    faire(e){
+      return {duree: 1.6, aspire: 1.1,
+              impacts: [{x: e.x, y: e.y, r: 3.4, forme: 'disque', t: 1.6}]};
+    }
+  },
+  /* l'appel : il siffle ses sbires au lieu de frapper */
+  appel: {
+    cri: 'appelle du renfort !', portee: 99,
+    faire(e){
+      return {duree: 1.2, invoque: 3, impacts: [], libre: true};
+    }
+  },
+  /* la fureur : il ne frappe pas, il s'enrage. Le vrai danger vient après */
+  fureur: {
+    cri: 'entre en fureur !', portee: 99,
+    faire(e){
+      return {duree: 1.4, fureur: 1, impacts: [], libre: true};
+    }
+  }
+};
+
+/* le boss lance un motif : on prépare les impacts et on peint le sol */
+function lancerMotif(e, nom, cible){
+  const m = MOTIFS[nom] || MOTIFS.ecrase;
+  const p = m.faire(e, cible || proche(e, ennemisDe(e)) || e);
+  p.motif = nom;
+  p.t = 0;
+  for(const im of p.impacts){
+    const av = Math.max(0.25, im.t - (im.part || 0));
+    if(im.forme === 'couloir')
+      D.fx.push({t: 0, duree: im.t, coul: '#ef4444', couloir: 1,
+                 x: im.x, y: im.y, x2: im.x2, y2: im.y2, larg: im.r});
+    else
+      D.fx.push({t: 0, duree: im.t, coul: im.forme === 'anneau' ? '#ffb347' : '#ef4444',
+                 x: im.x, y: im.y, cercle: im.r, anneau: im.forme === 'anneau' ? im.r0 : 0});
+  }
+  banniereD('⚠ ' + (e.titre || e.espece) + ' — ' + m.cri, '#ef6b6b');
+  D.secousse = 0.45;
+  e.anim = (e.sp && e.sp.anims && e.sp.anims.Charge) ? 'Charge' : 'Attack';
+  e.verrou = Math.min(1.4, p.duree); e.animT = 0;
+  e.prep = p;
+}
+
+/* l'impact tombe : on frappe ce qui est dedans */
+function fraireImpact(e, im){
+  const uB = e.ultBoss ? ULTS[e.ultBoss] : null;
+  const type = e.ultBoss || e.sig.type;
+  const coup = {nom: uB ? uB.nom : 'Fracas', type,
+                puiss: Math.round((uB ? uB.puiss * 0.8 : 90) * (im.forme === 'anneau' ? 0.8 : 1)),
+                estUlt: 1};
+  const dedans = [];
+  for(const o of D.ents){
+    if(o.camp === e.camp || o.ko) continue;
+    if(im.forme === 'couloir'){
+      if(distSegment(o.x, o.y, im.x, im.y, im.x2, im.y2) <= im.r) dedans.push(o);
+    } else {
+      const d = Math.hypot(o.x - im.x, o.y - im.y);
+      if(d <= im.r && (im.forme !== 'anneau' || d >= im.r0)) dedans.push(o);
+    }
+  }
+  const zid = fxTypeD(type, 'zone');
+  if(zid) poserPlanche(zid, im.x, im.y, {echelle: 1.6 + im.r * 0.4, duree: 0.5});
+  else poserFxD(im.x, im.y, type);
+  D.secousse = 0.4;
+  for(const o of dedans) frapperD(e, o, coup);
+}
+
+/* distance d'un point à un segment — pour les couloirs */
+function distSegment(px0, py0, ax, ay, bx, by){
+  const dx = bx - ax, dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  if(!l2) return Math.hypot(px0 - ax, py0 - ay);
+  let t = ((px0 - ax) * dx + (py0 - ay) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px0 - (ax + t * dx), py0 - (ay + t * dy));
+}
+
+/* le déroulé d'un motif, une image après l'autre */
+function tickMotif(e, dt){
+  const p = e.prep;
+  p.t += dt;
+  /* l'aspiration tire les proies vers le boss avant l'explosion */
+  if(p.aspire && p.t < p.aspire)
+    for(const o of D.ents){
+      if(o.camp === e.camp || o.ko || o.cristal) continue;
+      const d = dist(e, o);
+      if(d > 0.8 && d < 7) bougerVers(o, e.x, e.y, dt, 2.6);
+    }
+  /* la charge : il fonce vraiment, et le couloir suit son nez */
+  if(p.fonce && p.t >= p.fonce.t0){
+    bougerVers(e, p.fonce.x, p.fonce.y, dt, (e.vit || 2) * 3.2);
+    e.enMarche = 0.2;
+  }
+  for(const im of p.impacts)
+    if(!im.fait && p.t >= im.t){ im.fait = 1; fraireImpact(e, im); }
+  if(p.invoque && !p.faitInvoque){
+    p.faitInvoque = 1;
+    appelerSbires(e, p.invoque);
+  }
+  if(p.fureur && !p.faitFureur && p.t >= p.duree * 0.7){
+    p.faitFureur = 1;
+    e.enrage = true; e.atq *= 1.22; e.vit *= 1.18;
+    flotterD(e, 'FUREUR', '#ff6b5e');
+    D.secousse = 0.7;
+  }
+  if(p.t >= p.duree && p.impacts.every(i => i.fait)){
+    e.prep = null;
+    e.tSpecial = (e.enrage ? 2.6 : 4.2) + rngD() * 2;
+  }
+  return !p.libre && !p.fonce;              // immobile pendant l'incantation ?
+}
+
+/* il siffle ses sbires */
+function appelerSbires(e, n){
+  const s = D.salles[D.salles.length - 1];
+  (async () => {
+    for(let k = 0; k < n; k++){
+      let p;
+      if(D.invasion){ const br = parmi(D.breches);
+        p = posSol(br.x + entre(-1, 1), br.y + entre(-0.5, 0.5)); }
+      else p = placeLibreDans(s);
+      const sb = await creerEnt(parmi(D.def.sbires), 'ennemi', p.x, p.y,
+        D.def.niv + 2, {eveille: true});
+      sb.flash = 0.3;
+      if(!D.invasion) degagerEnt(sb, s);
+      D.ents.push(sb);
+    }
+  })();
+}
 
 /* --- l'IA : chaque caractère joue à sa façon -------------------------- */
 /* Tout le donjon est peuplé d'avance. Sans garde-fou, l'équipe visait le
@@ -3226,58 +3467,28 @@ function iaEnnemi(e, dt){
   const c = e.cible;
   if(!c) return;
   if(e.boss){
-    /* --- l'ATTAQUE DE ZONE télégraphiée : le cercle rouge, PUIS le boum.
-       Le joueur a une seconde pour voir ses Pokémon s'écarter… ou pas. */
+    /* --- SON RÉPERTOIRE. Il enchaîne ses motifs dans l'ordre, pour qu'on
+       puisse les APPRENDRE : un boss qu'on relit est un boss qu'on bat. */
     if(e.prep){
-      e.prep.t -= dt;
-      if(e.prep.t <= 0){
-        D.secousse = 0.5;
-        const uB = e.ultBoss ? ULTS[e.ultBoss] : null;
-        const typeCoup = e.ultBoss || e.sig.type;
-        const zid = fxTypeD(typeCoup, 'zone');
-        if(zid) poserPlanche(zid, e.prep.x, e.prep.y, {echelle: 2.2, duree: 0.55});
-        else poserFxD(e.prep.x, e.prep.y, typeCoup);
-        if(uB) banniereD((e.titre || e.espece) + ' — ' + uB.nom + ' !!', '#ef6b6b');
-        frapperD(e, {x: e.prep.x, y: e.prep.y},
-                 {nom: uB ? uB.nom : 'Onde de Choc', type: typeCoup,
-                  puiss: uB ? Math.round(uB.puiss * 0.85) : 95, estUlt: 1},
-                 {zone: e.prep.r});
-        e.prep = null;
-        e.tSpecial = 5 + rngD() * 3;
-      }
-      return;                                  // immobile pendant la charge
-    }
-    e.tSpecial = (e.tSpecial ?? 4) - dt;
-    if(e.tSpecial <= 0){
-      const v = proche(e, ennemisDe(e));
-      if(v){
-        e.prep = {x: v.x, y: v.y, r: e.ultBoss ? 2.1 : 1.9, t: 1.15};
-        e.anim = 'Charge' in (e.sp && e.sp.anims || {}) ? 'Charge' : 'Attack';
-        e.verrou = 1.1; e.animT = 0;
-        D.fx.push({x: v.x, y: v.y, t: 0, duree: 1.15,
-                   cercle: e.ultBoss ? 2.1 : 1.9, coul: '#ef4444'});
+      if(tickMotif(e, dt)) return;             // immobile pendant l'incantation
+    } else {
+      e.tSpecial = (e.tSpecial ?? 3.5) - dt;
+      if(e.tSpecial <= 0){
+        const rep = (e.motifs && e.motifs.length) ? e.motifs : ['ecrase'];
+        /* à mi-vie il ouvre son SECOND souffle : le dernier motif de la
+           liste ne sort qu'à partir de là */
+        const jusqu = e.pv < e.pvMax * 0.5 ? rep.length : Math.max(1, rep.length - 1);
+        e.iMotif = ((e.iMotif ?? -1) + 1) % jusqu;
+        lancerMotif(e, rep[e.iMotif], proche(e, ennemisDe(e)));
+        return;
       }
     }
-    /* --- à mi-vie, il APPELLE SES SBIRES */
+    /* --- à mi-vie, il APPELLE SES SBIRES, une fois */
     if(!e.aAppele && e.pv < e.pvMax * 0.5){
       e.aAppele = true;
       banniereD((e.titre || e.espece) + ' appelle ses sbires !', '#c78fdd');
       D.secousse = 0.4;
-      const s = D.salles[D.salles.length - 1];
-      (async () => {
-        const nApp = D.invasion ? 3 : 4;
-        for(let k = 0; k < nApp; k++){
-          let ax, ay;
-          if(D.invasion){ const br = parmi(D.breches);
-            const pr = posSol(br.x + entre(-1, 1), br.y + entre(-0.5, 0.5));
-            ax = pr.x; ay = pr.y; }
-          else { ax = entre(s.x + 1, s.x + s.w - 1); ay = entre(s.y + 1, s.y + 3); }
-          const sb = await creerEnt(parmi(D.def.sbires), 'ennemi', ax, ay,
-            D.def.niv + 2, {eveille: true});
-          sb.flash = 0.3;
-          D.ents.push(sb);
-        }
-      })();
+      appelerSbires(e, D.invasion ? 3 : 4);
     }
     /* --- sous 30 %, la RAGE : plus vite, plus fort, plus rouge */
     if(!e.enrage && e.pv < e.pvMax * 0.3){
@@ -3814,12 +4025,42 @@ function rendreDonjon(cv){
       ctx.globalAlpha = 1;
       continue;
     }
+    if(f.couloir){
+      /* LE COULOIR : un chemin de danger annoncé. On en sort par le côté. */
+      const p = f.t / f.duree;
+      const ax = px(f.x), ay = py(f.y), bx = px(f.x2), by = py(f.y2);
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.16 + p * 0.3;
+      ctx.strokeStyle = f.coul; ctx.lineWidth = f.larg * 2 * T;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+      /* le remplissage avance vers la sortie : on voit d'où ça vient */
+      ctx.globalAlpha = 0.3 + p * 0.35;
+      ctx.lineWidth = f.larg * 2 * T * p;
+      ctx.beginPath(); ctx.moveTo(ax, ay);
+      ctx.lineTo(ax + (bx - ax) * p, ay + (by - ay) * p); ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      continue;
+    }
     if(f.cercle){
       /* le télégraphe : le danger pulse au sol AVANT de frapper */
       const p = f.t / f.duree;
       ctx.globalAlpha = 0.25 + p * 0.35;
       ctx.strokeStyle = f.coul; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(px(f.x), py(f.y), f.cercle * T, 0, 7); ctx.stroke();
+      if(f.anneau){
+        /* L'ANNEAU : le centre est SÛR, c'est la couronne qui frappe */
+        ctx.beginPath(); ctx.arc(px(f.x), py(f.y), f.anneau * T, 0, 7); ctx.stroke();
+        ctx.globalAlpha = 0.14 + p * 0.3;
+        ctx.fillStyle = f.coul;
+        ctx.beginPath();
+        ctx.arc(px(f.x), py(f.y), f.anneau * T + (f.cercle - f.anneau) * T * p, 0, 7);
+        ctx.arc(px(f.x), py(f.y), f.anneau * T, 0, 7, true);
+        ctx.fill('evenodd');
+        ctx.globalAlpha = 1;
+        continue;
+      }
       ctx.globalAlpha = 0.12 + p * 0.25;
       ctx.fillStyle = f.coul;
       ctx.beginPath(); ctx.arc(px(f.x), py(f.y), f.cercle * T * p, 0, 7); ctx.fill();
@@ -3900,12 +4141,33 @@ function rendreDonjon(cv){
     ctx.strokeText(nomB, W / 2, by - 6);
     ctx.fillStyle = boss.enrage ? '#ff6b5e' : '#f2c14e';
     ctx.fillText(nomB, W / 2, by - 6);
+    const bh = 13;
     ctx.fillStyle = '#10100e';
-    ctx.fillRect(bx - 2, by - 2, bw + 4, 12);
+    ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4);
+    const part = Math.max(0, boss.pv / boss.pvMax);
     ctx.fillStyle = boss.enrage ? '#ff5347' : '#ef6b6b';
-    ctx.fillRect(bx, by, bw * Math.max(0, boss.pv / boss.pvMax), 8);
+    ctx.fillRect(bx, by, bw * part, bh);
+    /* LES CRANS : une barre de boss doit se lire d'un coup d'œil, sinon
+       elle a l'air de ne pas bouger. Cinq quartiers, et deux repères —
+       à mi-vie il ouvre son second souffle, à 30 % il entre en rage. */
+    ctx.fillStyle = '#00000055';
+    for(let k = 1; k < 5; k++) ctx.fillRect(bx + bw * k / 5, by, 1.5, bh);
+    for(const [seuil, coul] of [[0.5, '#ffd45e'], [0.3, '#ff9b6e']]){
+      ctx.fillStyle = part > seuil ? coul : '#ffffff33';
+      ctx.fillRect(bx + bw * seuil - 1, by - 3, 2, bh + 6);
+    }
     ctx.strokeStyle = '#00000088'; ctx.lineWidth = 1;
-    ctx.strokeRect(bx - 2, by - 2, bw + 4, 12);
+    ctx.strokeRect(bx - 2, by - 2, bw + 4, bh + 4);
+    /* et ce qu'il prépare, écrit sous la barre */
+    if(boss.prep && MOTIFS[boss.prep.motif]){
+      ctx.font = 'bold ' + Math.round(T * 0.34) + 'px "Pixelify Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+      const txt = '⚠ ' + MOTIFS[boss.prep.motif].cri;
+      ctx.strokeText(txt, W / 2, by + bh + 16);
+      ctx.fillStyle = '#ffd45e';
+      ctx.fillText(txt, W / 2, by + bh + 16);
+    }
   }
 
   /* la bannière */
@@ -4993,7 +5255,8 @@ async function lancerModeInvasion(){
       recTickets: 4,
       boss: Object.assign({}, bossSrc, {
         niv: niv + 7, force: 0.75 + P.invasion.victoires * 0.08,
-        taille: (bossSrc.taille || 1.4) + 0.25,
+        taille: (bossSrc.taille || 2.7) + 0.35,
+        motifs: src.boss.motifs || bossSrc.motifs,
         titre: (bossSrc.titre || bossSrc.espece) + ' — ' + (src.nom || 'LA REVANCHE').toUpperCase(),
         escorte: bossSrc.escorte || src.boss.escorte
       })
