@@ -8,8 +8,271 @@
 <link rel="icon" href="/icone.png">
 <title>La Pension</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+
+</head>
+<body>
+
+  <!-- ============ PENSION ============ -->
+  <section class="ecran actif" data-nom="pension">
+    <div class="statut">
+      <span class="titre">La Pension</span>
+      <span class="jeton">🪙 <b class="jSous">0</b></span>
+      <span class="jeton">🫐 <b class="jBaies">x0</b></span>
+      <button class="jeton rouage" onclick="montrer('compte')" aria-label="Mon compte et les options">⚙</button>
+    </div>
+    <div class="corps">
+      <div class="ongletsZone" hidden></div>
+      <div id="alerteInvasion" hidden></div>
+      <div style="position:relative;">
+        <canvas id="cvJardin"></canvas>
+        <button id="btnGrand" class="btnBois" aria-label="Voir la pension en grand">⤢</button>
+      </div>
+      <div class="panneau">
+        <div class="titrePanneau">D'un coup d'œil</div>
+        <div class="puces" id="coupDoeil"></div>
+        <p class="mini" style="margin-top:10px;">Glisse pour te balader · tape un Pokémon pour sa fiche.</p>
+      </div>
+    </div>
+    <div class="barreAction">
+      <button class="btnOr" onclick="montrer('equipe')">⚔ Préparer une expédition</button>
+    </div>
+  </section>
+
+  <!-- ============ LA PENSION EN GRAND ============ -->
+  <div id="grandDomaine" hidden>
+    <canvas id="cvGrand"></canvas>
+    <button id="fermerGrand" aria-label="Fermer">✕</button>
+    <div id="bandePokes"></div>
+  </div>
+
+  <!-- ============ ÉQUIPE ============ -->
+  <section class="ecran" data-nom="equipe">
+    <div class="statut">
+      <span class="titre">Mon équipe</span>
+      <button class="jeton" onclick="ouvrirTableTypes()" style="cursor:pointer;">📖 Types</button>
+    </div>
+    <div class="corps">
+      <div class="panneau">
+        <div class="titrePanneau">Choisis jusqu'à 3 Pokémon</div>
+        <div id="rangEquipe"></div>
+      </div>
+    </div>
+    <div class="barreAction">
+      <div class="compteur">équipe<b class="compteEquipe">0/3</b></div>
+      <button class="btnOr" onclick="montrer('carte')">🗺 Choisir le donjon</button>
+    </div>
+  </section>
+
+  <!-- ============ LE CHOIX DU DONJON ============ -->
+  <section class="ecran" data-nom="carte">
+    <div class="statut">
+      <span class="titre">Le Grand Départ</span>
+      <button class="jeton" onclick="montrer('equipe')" style="cursor:pointer;">⚔ Mon équipe</button>
+    </div>
+    <div class="corps">
+      <div class="ongletsZone" id="ongletsZD" hidden></div>
+      <div id="colereZone" hidden>
+        <div class="panneau">
+          <div class="vengBloc" style="margin:0;">
+            <span class="vengIco">🌋</span>
+            <span class="vengBarre zone" style="max-width:none;"><i id="colereBarre" style="width:0%"></i></span>
+            <span class="vengPct" id="colerePct"></span>
+          </div>
+        </div>
+      </div>
+      <div class="panneau">
+        <div class="titrePanneau" id="titreZD">Où part l'équipe ?</div>
+        <p class="mini" id="pitchZD" style="margin:-4px 0 10px;"></p>
+        <div class="lignesButin" id="listeDonjons"></div>
+      </div>
+    </div>
+    <div class="barreAction">
+      <div class="compteur">équipe<b class="compteEquipe">0/3</b></div>
+      <button class="btnOr" onclick="partirEnDonjon()">🎲 C'est parti !</button>
+    </div>
+  </section>
+
+  <!-- ============ DONJON ============ -->
+  <section class="ecran" data-nom="donjon">
+    <div class="donjonScene">
+      <canvas id="cvDonjon"></canvas>
+      <div class="donjonHaut">
+        <span id="dTitre"></span>
+        <span id="dInfo" style="color:#f4e8d0; font-size:13px;"></span>
+        <span class="droite" id="dSous"></span>
+      </div>
+    </div>
+    <div id="pupitre"></div>
+  </section>
+
+  <!-- ============ BUTIN ============ -->
+  <section class="ecran" data-nom="butin">
+    <div class="statut"><span class="titre">Retour au bercail</span></div>
+    <div class="corps">
+      <div class="panneau" style="text-align:center;">
+        <b class="px" style="font-size:26px; color:var(--encre); display:block;" id="butinTitre">…</b>
+        <p class="discret" id="butinSousTitre"></p>
+      </div>
+      <div class="panneau lignesButin" id="lignesButin"></div>
+    </div>
+    <div class="barreAction">
+      <button class="btnOr" onclick="montrer('pension')">💛 Retour à la pension</button>
+    </div>
+  </section>
+
+  <!-- ============ SPINS ============ -->
+  <section class="ecran" data-nom="spins">
+    <div class="statut">
+      <span class="titre">La Machine</span>
+      <span class="jeton">🎟 <b class="jTickets">x0</b></span>
+      <span class="jeton">🪙 <b class="jSous">0</b></span>
+    </div>
+    <div class="corps">
+      <div class="ongletsZone" hidden></div>
+      <div class="panneau machine">
+        <div class="gros">🎰</div>
+        <b class="px" id="titrePortail">🌾 La Grande Plaine</b>
+        <p class="discret" id="pitchPortail">25 familles · une famille = un tirage, tu reçois la forme de base.</p>
+        <button class="btnBois" style="width:100%; margin-top:12px;" onclick="ouvrirRaretes()">📊 Les raretés et les familles</button>
+      </div>
+      <div class="panneau" id="resultatSpin" hidden></div>
+      <p class="mini" style="text-align:center; padding:0 8px;">Les autres portails s'ouvrent avec les zones de pension.</p>
+    </div>
+    <div class="barreAction">
+      <div class="compteur">tickets<b id="nbTickets">0</b></div>
+      <button class="btnOr" onclick="faireSpin()">🎟 SPIN !</button>
+    </div>
+  </section>
+
+  <!-- ============ BOUTIQUE ============ -->
+  <section class="ecran" data-nom="boutique">
+    <div class="statut">
+      <span class="titre">Boutique</span>
+      <span class="jeton">🪙 <b class="jSous">0</b></span>
+    </div>
+    <div class="corps">
+      <div id="rayons"></div>
+    </div>
+  </section>
+
+  <!-- ============ ÉCRAN COMPTE ============ -->
+  <section class="ecran" data-nom="compte">
+    <div class="statut">
+      <button class="jeton" onclick="montrer('pension')" style="cursor:pointer;">← Retour</button>
+      <span class="titre">Compte</span>
+    </div>
+    <div class="corps">
+      <div class="panneau">
+        <h3>Mon élevage</h3>
+        <div id="statsCompte" class="grilleCompte"></div>
+      </div>
+      <div class="panneau">
+        <h3>Sauvegarde</h3>
+        <p class="noteCompte">Ta partie est sauvegardée automatiquement sur cet appareil.
+        Pour la transférer sur un autre téléphone, copie le code ici et colle-le là-bas.</p>
+        <button id="btnExporter" class="btnReset">📋 Copier mon code de sauvegarde</button>
+        <button id="btnMontrerImport" class="btnReset">📥 Importer un code</button>
+        <div id="zoneImport" hidden>
+          <textarea id="champImport" placeholder="Colle le code de sauvegarde ici…"></textarea>
+          <button id="btnImporter" class="btnReset rouge">Remplacer ma partie par ce code</button>
+        </div>
+      </div>
+      <div class="panneau">
+        <h3>Zone dangereuse</h3>
+        <div id="zoneReset">
+          <button id="btnReset" class="btnReset rouge">🗑 Réinitialiser le compte</button>
+          <div id="confReset" hidden>
+            <p>Tout effacer ? Pokémon, pièces, progression — <b>irréversible</b>.</p>
+            <button id="btnResetOui" class="btnReset rouge">Oui, tout effacer</button>
+            <button id="btnResetNon" class="btnReset">Annuler</button>
+          </div>
+        </div>
+      </div>
+      <p class="mini" style="text-align:center;">La Pension · sprites PMD Sprite Collab</p>
+    </div>
+  </section>
+
+  <!-- ============ NAV + FICHE + JOURNAL ============ -->
+  <div id="navbas">
+    <button data-vers="pension" class="actif"><span class="ico">🏡</span>Pension</button>
+    <button data-vers="equipe"><span class="ico">⚔</span>Équipe</button>
+    <button data-vers="carte"><span class="ico">🗺</span>Donjon</button>
+    <button data-vers="spins"><span class="ico">🎰</span>Spins</button>
+    <button data-vers="boutique"><span class="ico">🛒</span>Boutique</button>
+  </div>
+
+  <div id="voileFiche">
+    <div class="fiche">
+      <img id="fichePortrait" alt="">
+      <h3 id="ficheNom">…</h3>
+      <p class="discret" id="ficheCarac"></p>
+      <div id="ficheTypes"></div>
+      <div class="panneau" id="ficheAtk"></div>
+      <div id="ficheActions"></div>
+      <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerFiche()">Fermer</button>
+    </div>
+  </div>
+
+  <!-- le conseil de défense : qui défend, quels renforts payés -->
+  <div id="voileDefense" class="voileHaut">
+    <div class="fiche">
+      <h3 style="color:var(--danger)" id="consTitre">🛡 Conseil de défense</h3>
+      <p class="discret" id="consTexte" style="margin-top:2px;"></p>
+      <div class="panneau">
+        <div class="titrePanneau">Les défenseurs de la Grande Plaine</div>
+        <p class="discret" id="consDefenseurs"></p>
+      </div>
+      <div class="panneau">
+        <div class="titrePanneau">Les renforts d'ailleurs <span class="mini">· 10 places max</span></div>
+        <div id="consRenforts"></div>
+        <div id="consChoix" hidden></div>
+      </div>
+      <button class="btnDanger" id="btnLancerDef" style="margin-top:12px;">⚔ Lancer la défense</button>
+      <button class="btnBois" style="width:100%; margin-top:8px;" onclick="fermerConseil()">Pas maintenant</button>
+    </div>
+  </div>
+
+  <div id="voileRaretes" class="voileHaut">
+    <div class="fiche">
+      <h3 id="titreRaretes">📊 Les raretés</h3>
+      <p class="discret" style="margin-top:2px;">Ce que la machine peut sortir, et à quelle fréquence.
+        Tu tires le chef de famille, l'évolution se fait à la pension.</p>
+      <div id="tauxRaretes" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+      <p class="mini" style="margin-top:10px;">✨ Et 0,1 % de shiny sur chaque tirage — n'importe lequel, stats ×1,5.
+        Un doublon n'est jamais perdu : il monte d'un niveau celui que tu as déjà.</p>
+      <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerRaretes()">Fermer</button>
+    </div>
+  </div>
+
+  <div id="voileTypes" class="voileHaut">
+    <div class="fiche">
+      <h3>📖 La table des types</h3>
+      <p class="discret" style="margin-top:2px;">Ce que chaque type d'attaque vaut
+        contre les autres — généré depuis les vraies règles du jeu.</p>
+      <div id="corpsTypes" style="margin-top:8px;"></div>
+      <button class="btnBois" style="width:100%; margin-top:8px;" onclick="fermerTableTypes()">Fermer</button>
+    </div>
+  </div>
+
+  <div id="journal"></div>
+  <span id="version"></span>
+
+  <!-- l'écran de chargement : on prépare le terrain avant d'ouvrir -->
+  <div id="chargement">
+    <div class="logo">🏡</div>
+    <div class="nom px">La Pension</div>
+    <div class="rail"><i id="chargeBarre"></i></div>
+    <div class="ligne" id="chargeTexte">Ouverture de la pension…</div>
+  </div>
+<script>window.BASE_RES = "assets/";</script>
 <style>
-  /* =====================================================================
+/* =====================================================================
+   LA PENSION — la feuille de style
+   Palette « Le Crépuscule » et tout l'habillage des menus. Le seul
+   endroit où vivent les couleurs : outils/page.py la réinjecte dans
+   la page au moment de l'assemblage.
+   ===================================================================== */
+/* =====================================================================
      LA PENSION — le système de design des menus.
      « Le Crépuscule » : indigo nocturne, or et pêche. Sombre sans noir pur,
      texte cassé plutôt que blanc, relief par éclaircissement. Une seule
@@ -399,272 +662,15 @@
     transition:.25s; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.25); text-align:center; }
   #journal.vu{ opacity:1; transform:none; }
   #version{ position:fixed; right:8px; top:2px; font-size:9px; color:#00000000; }
+
 </style>
-</head>
-<body>
-
-  <!-- ============ PENSION ============ -->
-  <section class="ecran actif" data-nom="pension">
-    <div class="statut">
-      <span class="titre">La Pension</span>
-      <span class="jeton">🪙 <b class="jSous">0</b></span>
-      <span class="jeton">🫐 <b class="jBaies">x0</b></span>
-      <button class="jeton rouage" onclick="montrer('compte')" aria-label="Mon compte et les options">⚙</button>
-    </div>
-    <div class="corps">
-      <div class="ongletsZone" hidden></div>
-      <div id="alerteInvasion" hidden></div>
-      <div style="position:relative;">
-        <canvas id="cvJardin"></canvas>
-        <button id="btnGrand" class="btnBois" aria-label="Voir la pension en grand">⤢</button>
-      </div>
-      <div class="panneau">
-        <div class="titrePanneau">D'un coup d'œil</div>
-        <div class="puces" id="coupDoeil"></div>
-        <p class="mini" style="margin-top:10px;">Glisse pour te balader · tape un Pokémon pour sa fiche.</p>
-      </div>
-    </div>
-    <div class="barreAction">
-      <button class="btnOr" onclick="montrer('equipe')">⚔ Préparer une expédition</button>
-    </div>
-  </section>
-
-  <!-- ============ LA PENSION EN GRAND ============ -->
-  <div id="grandDomaine" hidden>
-    <canvas id="cvGrand"></canvas>
-    <button id="fermerGrand" aria-label="Fermer">✕</button>
-    <div id="bandePokes"></div>
-  </div>
-
-  <!-- ============ ÉQUIPE ============ -->
-  <section class="ecran" data-nom="equipe">
-    <div class="statut">
-      <span class="titre">Mon équipe</span>
-      <button class="jeton" onclick="ouvrirTableTypes()" style="cursor:pointer;">📖 Types</button>
-    </div>
-    <div class="corps">
-      <div class="panneau">
-        <div class="titrePanneau">Choisis jusqu'à 3 Pokémon</div>
-        <div id="rangEquipe"></div>
-      </div>
-    </div>
-    <div class="barreAction">
-      <div class="compteur">équipe<b class="compteEquipe">0/3</b></div>
-      <button class="btnOr" onclick="montrer('carte')">🗺 Choisir le donjon</button>
-    </div>
-  </section>
-
-  <!-- ============ LE CHOIX DU DONJON ============ -->
-  <section class="ecran" data-nom="carte">
-    <div class="statut">
-      <span class="titre">Le Grand Départ</span>
-      <button class="jeton" onclick="montrer('equipe')" style="cursor:pointer;">⚔ Mon équipe</button>
-    </div>
-    <div class="corps">
-      <div class="ongletsZone" id="ongletsZD" hidden></div>
-      <div id="colereZone" hidden>
-        <div class="panneau">
-          <div class="vengBloc" style="margin:0;">
-            <span class="vengIco">🌋</span>
-            <span class="vengBarre zone" style="max-width:none;"><i id="colereBarre" style="width:0%"></i></span>
-            <span class="vengPct" id="colerePct"></span>
-          </div>
-        </div>
-      </div>
-      <div class="panneau">
-        <div class="titrePanneau" id="titreZD">Où part l'équipe ?</div>
-        <p class="mini" id="pitchZD" style="margin:-4px 0 10px;"></p>
-        <div class="lignesButin" id="listeDonjons"></div>
-      </div>
-    </div>
-    <div class="barreAction">
-      <div class="compteur">équipe<b class="compteEquipe">0/3</b></div>
-      <button class="btnOr" onclick="partirEnDonjon()">🎲 C'est parti !</button>
-    </div>
-  </section>
-
-  <!-- ============ DONJON ============ -->
-  <section class="ecran" data-nom="donjon">
-    <div class="donjonScene">
-      <canvas id="cvDonjon"></canvas>
-      <div class="donjonHaut">
-        <span id="dTitre"></span>
-        <span id="dInfo" style="color:#f4e8d0; font-size:13px;"></span>
-        <span class="droite" id="dSous"></span>
-      </div>
-    </div>
-    <div id="pupitre"></div>
-  </section>
-
-  <!-- ============ BUTIN ============ -->
-  <section class="ecran" data-nom="butin">
-    <div class="statut"><span class="titre">Retour au bercail</span></div>
-    <div class="corps">
-      <div class="panneau" style="text-align:center;">
-        <b class="px" style="font-size:26px; color:var(--encre); display:block;" id="butinTitre">…</b>
-        <p class="discret" id="butinSousTitre"></p>
-      </div>
-      <div class="panneau lignesButin" id="lignesButin"></div>
-    </div>
-    <div class="barreAction">
-      <button class="btnOr" onclick="montrer('pension')">💛 Retour à la pension</button>
-    </div>
-  </section>
-
-  <!-- ============ SPINS ============ -->
-  <section class="ecran" data-nom="spins">
-    <div class="statut">
-      <span class="titre">La Machine</span>
-      <span class="jeton">🎟 <b class="jTickets">x0</b></span>
-      <span class="jeton">🪙 <b class="jSous">0</b></span>
-    </div>
-    <div class="corps">
-      <div class="ongletsZone" hidden></div>
-      <div class="panneau machine">
-        <div class="gros">🎰</div>
-        <b class="px" id="titrePortail">🌾 La Grande Plaine</b>
-        <p class="discret" id="pitchPortail">25 familles · une famille = un tirage, tu reçois la forme de base.</p>
-        <button class="btnBois" style="width:100%; margin-top:12px;" onclick="ouvrirRaretes()">📊 Les raretés et les familles</button>
-      </div>
-      <div class="panneau" id="resultatSpin" hidden></div>
-      <p class="mini" style="text-align:center; padding:0 8px;">Les autres portails s'ouvrent avec les zones de pension.</p>
-    </div>
-    <div class="barreAction">
-      <div class="compteur">tickets<b id="nbTickets">0</b></div>
-      <button class="btnOr" onclick="faireSpin()">🎟 SPIN !</button>
-    </div>
-  </section>
-
-  <!-- ============ BOUTIQUE ============ -->
-  <section class="ecran" data-nom="boutique">
-    <div class="statut">
-      <span class="titre">Boutique</span>
-      <span class="jeton">🪙 <b class="jSous">0</b></span>
-    </div>
-    <div class="corps">
-      <div id="rayons"></div>
-    </div>
-  </section>
-
-  <!-- ============ ÉCRAN COMPTE ============ -->
-  <section class="ecran" data-nom="compte">
-    <div class="statut">
-      <button class="jeton" onclick="montrer('pension')" style="cursor:pointer;">← Retour</button>
-      <span class="titre">Compte</span>
-    </div>
-    <div class="corps">
-      <div class="panneau">
-        <h3>Mon élevage</h3>
-        <div id="statsCompte" class="grilleCompte"></div>
-      </div>
-      <div class="panneau">
-        <h3>Sauvegarde</h3>
-        <p class="noteCompte">Ta partie est sauvegardée automatiquement sur cet appareil.
-        Pour la transférer sur un autre téléphone, copie le code ici et colle-le là-bas.</p>
-        <button id="btnExporter" class="btnReset">📋 Copier mon code de sauvegarde</button>
-        <button id="btnMontrerImport" class="btnReset">📥 Importer un code</button>
-        <div id="zoneImport" hidden>
-          <textarea id="champImport" placeholder="Colle le code de sauvegarde ici…"></textarea>
-          <button id="btnImporter" class="btnReset rouge">Remplacer ma partie par ce code</button>
-        </div>
-      </div>
-      <div class="panneau">
-        <h3>Zone dangereuse</h3>
-        <div id="zoneReset">
-          <button id="btnReset" class="btnReset rouge">🗑 Réinitialiser le compte</button>
-          <div id="confReset" hidden>
-            <p>Tout effacer ? Pokémon, pièces, progression — <b>irréversible</b>.</p>
-            <button id="btnResetOui" class="btnReset rouge">Oui, tout effacer</button>
-            <button id="btnResetNon" class="btnReset">Annuler</button>
-          </div>
-        </div>
-      </div>
-      <p class="mini" style="text-align:center;">La Pension · sprites PMD Sprite Collab</p>
-    </div>
-  </section>
-
-  <!-- ============ NAV + FICHE + JOURNAL ============ -->
-  <div id="navbas">
-    <button data-vers="pension" class="actif"><span class="ico">🏡</span>Pension</button>
-    <button data-vers="equipe"><span class="ico">⚔</span>Équipe</button>
-    <button data-vers="carte"><span class="ico">🗺</span>Donjon</button>
-    <button data-vers="spins"><span class="ico">🎰</span>Spins</button>
-    <button data-vers="boutique"><span class="ico">🛒</span>Boutique</button>
-  </div>
-
-  <div id="voileFiche">
-    <div class="fiche">
-      <img id="fichePortrait" alt="">
-      <h3 id="ficheNom">…</h3>
-      <p class="discret" id="ficheCarac"></p>
-      <div id="ficheTypes"></div>
-      <div class="panneau" id="ficheAtk"></div>
-      <div id="ficheActions"></div>
-      <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerFiche()">Fermer</button>
-    </div>
-  </div>
-
-  <!-- le conseil de défense : qui défend, quels renforts payés -->
-  <div id="voileDefense" class="voileHaut">
-    <div class="fiche">
-      <h3 style="color:var(--danger)" id="consTitre">🛡 Conseil de défense</h3>
-      <p class="discret" id="consTexte" style="margin-top:2px;"></p>
-      <div class="panneau">
-        <div class="titrePanneau">Les défenseurs de la Grande Plaine</div>
-        <p class="discret" id="consDefenseurs"></p>
-      </div>
-      <div class="panneau">
-        <div class="titrePanneau">Les renforts d'ailleurs <span class="mini">· 10 places max</span></div>
-        <div id="consRenforts"></div>
-        <div id="consChoix" hidden></div>
-      </div>
-      <button class="btnDanger" id="btnLancerDef" style="margin-top:12px;">⚔ Lancer la défense</button>
-      <button class="btnBois" style="width:100%; margin-top:8px;" onclick="fermerConseil()">Pas maintenant</button>
-    </div>
-  </div>
-
-  <div id="voileRaretes" class="voileHaut">
-    <div class="fiche">
-      <h3 id="titreRaretes">📊 Les raretés</h3>
-      <p class="discret" style="margin-top:2px;">Ce que la machine peut sortir, et à quelle fréquence.
-        Tu tires le chef de famille, l'évolution se fait à la pension.</p>
-      <div id="tauxRaretes" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
-      <p class="mini" style="margin-top:10px;">✨ Et 0,1 % de shiny sur chaque tirage — n'importe lequel, stats ×1,5.
-        Un doublon n'est jamais perdu : il monte d'un niveau celui que tu as déjà.</p>
-      <button class="btnBois" style="width:100%; margin-top:10px;" onclick="fermerRaretes()">Fermer</button>
-    </div>
-  </div>
-
-  <div id="voileTypes" class="voileHaut">
-    <div class="fiche">
-      <h3>📖 La table des types</h3>
-      <p class="discret" style="margin-top:2px;">Ce que chaque type d'attaque vaut
-        contre les autres — généré depuis les vraies règles du jeu.</p>
-      <div id="corpsTypes" style="margin-top:8px;"></div>
-      <button class="btnBois" style="width:100%; margin-top:8px;" onclick="fermerTableTypes()">Fermer</button>
-    </div>
-  </div>
-
-  <div id="journal"></div>
-  <span id="version"></span>
-
-  <!-- l'écran de chargement : on prépare le terrain avant d'ouvrir -->
-  <div id="chargement">
-    <div class="logo">🏡</div>
-    <div class="nom px">La Pension</div>
-    <div class="rail"><i id="chargeBarre"></i></div>
-    <div class="ligne" id="chargeTexte">Ouverture de la pension…</div>
-  </div>
-<script>window.BASE_RES = "assets/";</script>
 <script>
 /* =====================================================================
-   LA PENSION — les données.
-   Tout le contenu validé sur la maquette : le roster de la Plaine avec
-   stats, signatures et caractères, la table des types, les ults (une
-   par type), les raretés de la machine, et les 5 donjons du tuto avec
-   leur escalade de sbires.
+   LA PENSION — Les règles du jeu
+   Ce qui ne change jamais : la table des types, les caractères (qui sont
+   de vraies personnalités d'IA, pas des décorations), et les ULT — une
+   par type. Rien ici ne dépend du contenu ; tout le reste s'y appuie.
    ===================================================================== */
-
 /* --- la table des types (multiplicateurs ≠ 1 seulement) --------------- */
 const TABLE_TYPES = {
   normal:   {roche:.5, spectre:0, acier:.5},
@@ -733,6 +739,15 @@ const ULTS = {
   fee:      {nom:'Pouvoir Lunaire',puiss:110, forme:'cible'}
 };
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Les espèces
+   Les 200 Pokémon du jeu : leurs stats de base, leur type, leur caractère,
+   leur attaque signature, leur évolution, et la zone de pension où ils
+   vivent. C'est le plus gros fichier de données, et il n'a AUCUNE logique
+   dedans — que des faits.
+   ===================================================================== */
 /* --- les espèces ------------------------------------------------------
    base : les stats au niveau 1 ; elles grimpent de 7 % par niveau.
    sig : la signature — auto, spammée en combat. por 1 = au contact,
@@ -1330,6 +1345,13 @@ const ESPECES = {
     base:{pv:60, atq:24, def:13, vit:4.3}, sig:{nom:'Pied Brûleur', type:'feu', puiss:100, cd:1.25, por:1.2}}
 };
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — La roue et ses raretés
+   Comment on décrit une attaque au joueur, et les cinq paliers de la
+   Machine. Les taux vivent ici, en un seul endroit.
+   ===================================================================== */
 /* --- décrire une attaque : ce qu'elle FAIT, exactement ----------------
    Généré depuis les vraies stats — la description ne peut pas mentir. */
 function decrireSig(sig){
@@ -1367,6 +1389,14 @@ const RARETES = [
 const TAUX_SHINY = 0.001;          // 0,1 % — et ses stats sont ×1,5
 const BONUS_SHINY = 1.5;
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Les zones de PENSION
+   Où vivent les Pokémon, et ce que leur portail peut tirer. À ne pas
+   confondre avec les zones de DONJON (voir donjons.js) : la pension
+   héberge, le donjon est l'endroit où on envoie taper.
+   ===================================================================== */
 /* --- LES ZONES DE PENSION : un terrain + son portail ------------------
    Chacune s'achète en boutique. Le terrain est le décor du domaine, le
    portail est ce que la machine à spins peut sortir dans cette zone. */
@@ -1416,6 +1446,13 @@ const ZONES = {
 /* les zones qu'on peut acheter après le tuto — le Grand Choix */
 const ZONES_CHOIX = ['bois', 'riviere'];
 const PORTAIL_PLAINE = ZONES.plaine.portail;   /* compatibilité */
+
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — La courbe d'expérience
+   Combien coûte chaque niveau, et jusqu'où on peut monter.
+   ===================================================================== */
 /* --- les niveaux ------------------------------------------------------ */
 /* plus c'est rare, plus c'est fort — mais DOUCEMENT : un commun bien
    monté reste jouable, la rareté donne l'avantage, pas la victoire */
@@ -1432,6 +1469,14 @@ function statsDe(espece, niveau, shiny){
           def: e.base.def * k, vit: e.base.vit};
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Les zones de DONJON
+   Les étages, les donjons, leurs habitants et leurs boss — répertoire de
+   motifs compris. Plus les invasions : ce que la zone envoie quand elle
+   se venge, et l'économie du jeu.
+   ===================================================================== */
 /* --- le tuto : le Pré du Grand Départ, 5 donjons, l'escalade ---------- */
 /* --- les zones de donjon ----------------------------------------------
    ATTENTION : une zone de DONJON n'a rien à voir avec une zone de
@@ -1656,6 +1701,10 @@ const SOUS_SBIRE = [2, 4], SOUS_ELITE = [8, 14], SOUS_BOSS = [25, 45];
 
 </script>
 <script>
+/* =====================================================================
+   LA PENSION — Les icônes de type
+   Les 18 pastilles, en data-URI pour ne rien avoir à charger.
+   ===================================================================== */
 /* Les icônes de type — recréation vectorielle des icônes DÉPS / Légendes Arceus / ÉV
    par James Watkins (github.com/partywhale/pokemon-type-icons, licence MIT). */
 const TYPE_IMG = {
@@ -1682,12 +1731,73 @@ const TYPE_IMG = {
 </script>
 <script>
 /* =====================================================================
-   LA PENSION — le lecteur de sprites PMD (format AnimData), repris
-   d'Expédition Mystère. Un Pokémon a un dossier NOMMÉ (rangé à la main)
-   ou un NUMÉRO (RawAsset, 0025 = Pikachu) : le nommé gagne.
-   Chaque planche -Shadow.png porte un pixel blanc par image : l'ANCRE,
-   le point où le Pokémon touche le sol — c'est elle qui évite que le
-   sprite saute d'un cran en passant de Idle à Walk.
+   LA PENSION — Les objets de décor
+   Les planches PMD qu'on peut poser au sol. Plus utilisées dans les
+   donjons depuis qu'on les a jugées mal placées, gardées pour la suite.
+   ===================================================================== */
+const OBJETS = {
+  /* nom : [cases de large, haut ?, poids du tirage] */
+  'Flowers_Town_1': {w: 1.0, haut: 0, poids: 26},
+  'Logs_Small':     {w: 0.9, haut: 1, poids: 14},
+  'Pot':            {w: 0.7, haut: 1, poids: 7},
+  'Stump_Chair':    {w: 0.8, haut: 1, poids: 8},
+  'Hedge':          {w: 1.0, haut: 1, poids: 14},
+  'Logs_Large':     {w: 1.5, haut: 1, poids: 9},
+  'Trunk_Small':    {w: 1.2, haut: 1, poids: 9},
+  'Trunk_Large':    {w: 1.5, haut: 1, poids: 6},
+  'Logs_Stacked':   {w: 1.7, haut: 1, poids: 4},
+  'Tree_Town':      {w: 2.6, haut: 1, poids: 3}
+};
+const OBJ = {images: {}, pret: false, promesse: null};
+
+function chargerObjets(){
+  if(OBJ.promesse) return OBJ.promesse;
+  const base = (typeof window !== 'undefined' && window.BASE_RES) || '/';
+  OBJ.promesse = Promise.all(Object.keys(OBJETS).map(nom => new Promise(ok => {
+    if(window.RESSOURCES && RESSOURCES.objets && RESSOURCES.objets[nom]){
+      const im = new Image();
+      im.onload = () => { OBJ.images[nom] = im; ok(); };
+      im.onerror = () => ok();
+      im.src = RESSOURCES.objets[nom];
+      return;
+    }
+    const im = new Image();
+    im.onload = () => { OBJ.images[nom] = im; ok(); };
+    im.onerror = () => ok();
+    im.src = base + 'objets/' + nom + '.png';
+  }))).then(() => { OBJ.pret = true; });
+  return OBJ.promesse;
+}
+
+/* tire un objet au hasard, pondéré — les fleurs souvent, l'arbre rarement */
+function objetAuHasard(alea, hautSeulement){
+  const cands = Object.entries(OBJETS).filter(([, o]) => !hautSeulement || o.haut);
+  let tot = cands.reduce((s, [, o]) => s + o.poids, 0);
+  let r = alea() * tot;
+  for(const [nom, o] of cands){ r -= o.poids; if(r <= 0) return nom; }
+  return cands[0][0];
+}
+
+/* dessine un objet posé en (px, py), la base sur le sol */
+function dessinerObjet(ctx, d, px, py, T){
+  const im = OBJ.images[d.nom];
+  const o = OBJETS[d.nom];
+  if(!im || !o) return;
+  const n = im.width > im.height && im.width % im.height === 0
+          ? (im.width / im.height) | 0 : 1;
+  const cw = im.width / n, ch = im.height;
+  const l = T * o.w * (d.ech || 1);
+  const h = l * (ch / cw);
+  ctx.drawImage(im, (d.cadre % n) * cw, 0, cw, ch,
+                px - l / 2, py - h + T * 0.18, l, h);
+}
+
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Le lecteur de sprites PMD
+   Lit le format AnimData de PMD Sprite Collab : les planches d'animation,
+   les ancres au sol, les portraits, et les versions BRILLANTES.
    ===================================================================== */
 /* Où vivent les ressources quand elles ne sont pas embarquées :
    '/sprites/...' avec le serveur de dev, 'assets/...' sur le site statique.
@@ -1960,7 +2070,11 @@ function dessinerSprite(ctx, e, px, py, echelle){
 
 </script>
 <script>
-/* ==================================================================== */
+/* =====================================================================
+   LA PENSION — Le lecteur de décors DTEF
+   Les tuiles de donjon : sol, murs, et le choix de la bonne variante
+   selon ce qu'il y a autour.
+   ===================================================================== */
 /*  LES DÉCORS DE DONJON — format DTEF                                  */
 /*                                                                      */
 /*  Une planche DTEF fait 18 x 8 tuiles de 24 px : trois blocs de 6 x 8 */
@@ -2157,14 +2271,11 @@ if(typeof module !== 'undefined' && module.exports) module.exports = (typeof win
 </script>
 <script>
 /* =====================================================================
-   LA PENSION — le donjon.
-   EN LIGNE DROITE et ON MONTE : les salles s'empilent du bas vers le
-   haut, reliées par des couloirs, et la salle du BOSS est au sommet.
-   Chaque salle est une HORDE en TEMPS RÉEL : plein de sbires bien plus
-   faibles que l'équipe, qui joue toute seule — chacun selon son
-   CARACTÈRE. Toi : les ULT, les baies, et le repli.
+   LA PENSION — La génération des donjons
+   Des salles empilées du bas vers le haut, reliées par des couloirs qui
+   serpentent. Le contour des salles ondule d'un bloc — jamais de bout de
+   mur isolé — et une veine vitale garantit qu'on ne s'enferme jamais.
    ===================================================================== */
-
 const DIRS = [
   {dx: 0, dy: 1}, {dx: 1, dy: 1}, {dx: 1, dy: 0}, {dx: 1, dy:-1},
   {dx: 0, dy:-1}, {dx:-1, dy:-1}, {dx:-1, dy: 0}, {dx:-1, dy: 1}
@@ -2368,6 +2479,13 @@ function pasVersChamp(e){
   return best;
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Les planches d'effets
+   Les vraies animations d'attaque de PMD. Une planche connaît la taille
+   qu'elle doit COUVRIR : un siphon de sept cases fait sept cases.
+   ===================================================================== */
 /* --- les effets PMD : les vraies planches VFX du jeu ------------------ */
 const VFX = {manif: null, cache: new Map(), pret: false, promesse: null};
 function chargerVfx(){
@@ -2411,6 +2529,13 @@ function poserPlanche(id, x, y, opts){
   return true;
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Créer un combattant, lancer une expédition
+   Un Pokémon de donjon : ses stats dérivées, son rôle dans la meute, sa
+   taille. Et la mise en place d'un donjon, salle par salle.
+   ===================================================================== */
 /* --- les entités ------------------------------------------------------ */
 let idEnt = 1;
 async function creerEnt(espece, camp, x, y, niveau, extra){
@@ -2512,6 +2637,14 @@ async function lancerDonjon(def, equipe){
   D.actif = true;                    // SEULEMENT maintenant : tout est en place
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — L'invasion et le flux continu
+   Quand la zone se venge SUR la pension : les brèches, le cristal à
+   défendre, et l'assaut — un flux ininterrompu au lieu de vagues
+   numérotées.
+   ===================================================================== */
 /* --- L'INVASION : la zone se venge SUR la pension --------------------- */
 async function lancerInvasion(def, defenseurs, positions){
   rngD = Alea((Date.now() % 100000) | 0);
@@ -2904,6 +3037,13 @@ async function lancerBoss(){
   D.phase = 'boss';
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Les dégâts
+   Qui touche qui, combien, et ce que ça laisse : le recul, les statuts,
+   la mort. Garde Merveille comprise.
+   ===================================================================== */
 /* --- les dégâts ------------------------------------------------------- */
 function degatsD(att, cible, coup){
   const eff = efficacite(coup.type, cible.def.types);
@@ -2989,18 +3129,13 @@ function poserFxD(x, y, type, opts){
 }
 function banniereD(txt, coul){ D.banniere = {txt, coul, t: 2.2}; }
 
-
+</script>
+<script>
 /* =====================================================================
-   LES MOTIFS DE BOSS
-   Un boss ne doit pas être un gros mob qui tape plus fort. Il doit poser
-   une QUESTION au joueur : où se mettre, quand s'écarter, qui protéger.
-   Chaque motif dessine son danger au sol AVANT de frapper — c'est le
-   télégraphe qui rend le combat lisible, et donc juste.
-
-   Un motif produit une liste d'IMPACTS. Chaque impact a une forme (un
-   disque, un anneau, un couloir), un retard, et sa propre marque au sol.
-   Le boss reste sur place pendant l'incantation, sauf quand le motif le
-   déplace lui-même (la charge).
+   LA PENSION — LE RÉPERTOIRE DES BOSS
+   Un boss ne doit pas être un gros mob qui tape plus fort : il doit poser
+   une question au joueur. Où se mettre, quand s'écarter, qui protéger.
+   Dix motifs génériques, dix signatures de type, et leur mise en scène.
    ===================================================================== */
 const MOTIFS = {
   /* le classique : un disque sur la proie la plus proche */
@@ -3433,6 +3568,14 @@ function appelerSbires(e, n){
   })();
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — L'IA et les ults
+   Chaque caractère joue à sa façon : la meute encercle, le tireur
+   canarde, l'assassin file au plus fragile, le soigneur reste derrière.
+   Et les ults de l'équipe, la baie, le ralliement.
+   ===================================================================== */
 /* --- l'IA : chaque caractère joue à sa façon -------------------------- */
 /* Tout le donjon est peuplé d'avance. Sans garde-fou, l'équipe visait le
    dormeur le plus proche — souvent deux salles plus haut — et traversait
@@ -3958,6 +4101,13 @@ function donnerBaie(){
   return true;
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Le tour de jeu
+   Ce qui avance à chaque image : les statuts, les déplacements, le
+   passage d'une salle à l'autre, la fin du donjon.
+   ===================================================================== */
 /* --- la boucle -------------------------------------------------------- */
 /* LE TEMPS DE SOUFFLER. Tuer le dernier ennemi ne renvoie plus à l'écran
    de butin dans la même image : on laisse l'animation de mort finir, les
@@ -4162,6 +4312,14 @@ function finDonjon(victoire){
   D.invasion = false;
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Le dessin
+   Tout ce qui apparaît à l'écran : le sol, les murs, les entités triées
+   par profondeur, les effets, l'éclairage à la torche, et la barre du
+   boss.
+   ===================================================================== */
 /* --- le rendu --------------------------------------------------------- */
 function hacheD(x, y){ return ((x * 73856093) ^ (y * 19349663)) >>> 0; }
 
@@ -4473,11 +4631,10 @@ function rendreDonjon(cv){
 </script>
 <script>
 /* =====================================================================
-   LA PENSION — le jeu.
-   La pension et ses soins, l'équipe, la machine à spins, la boutique,
-   la sauvegarde, et le fil qui relie tout ça au donjon (donjon.js).
+   LA PENSION — La partie
+   La sauvegarde et sa version, les pensionnaires, la montée de niveau et
+   l'évolution. Plus les helpers des zones de donjon.
    ===================================================================== */
-
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
@@ -4619,6 +4776,12 @@ function evoluer(p, vers){
   ouvrirFiche(p);
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — La Machine
+   Le tirage : rareté, shiny, doublons.
+   ===================================================================== */
 /* --- la machine à spins ----------------------------------------------- */
 function tirerRarete(){
   let r = Math.random() * 100;
@@ -4680,6 +4843,13 @@ function spin(){
   return {p, espece};
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — L'écran Pension
+   Le domaine où se baladent les pensionnaires, son décor, ses onglets de
+   zone, et le mode plein écran.
+   ===================================================================== */
 /* --- l'écran pension : LE DOMAINE -------------------------------------
    Un vrai terrain en tuiles PMD : l'étang, les bosquets, la haie qui
    ferme le domaine — et tes Pokémon qui y vivent leur vie. Ça se
@@ -5045,6 +5215,13 @@ function ouvrirGrand(){
 }
 function fermerGrand(){ $('#grandDomaine').hidden = true; }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Les fiches
+   La table des types, générée depuis les vraies données, et la fiche
+   détaillée d'un pensionnaire.
+   ===================================================================== */
 /* --- la table des types, générée depuis les vraies données ------------ */
 function ouvrirTableTypes(){
   const v = $('#voileTypes');
@@ -5163,6 +5340,13 @@ function portraitDe(p){
   return p && p.shiny ? urlPortraitBrillant(p.espece) : urlPortrait(p.espece);
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Préparer et partir
+   Le choix de l'équipe, le choix du donjon avec ses onglets de zone, et
+   le pupitre qui pilote le combat.
+   ===================================================================== */
 /* --- l'écran équipe --------------------------------------------------- */
 let selection = [];
 function majEquipe(){
@@ -5354,6 +5538,13 @@ function majPupitre(){
   $('#dSous').textContent = '🪙 +' + D.butin.sous + '  ⚔ ' + D.tues;
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — La défense de la pension
+   L'invasion vue du joueur : l'alerte, le conseil de défense, les
+   renforts payés, et la fin de l'assaut.
+   ===================================================================== */
 /* --- l'invasion : lancement et fin ------------------------------------ */
 /* les espèces de la Grande Plaine : le portail + toutes leurs évolutions.
    Ce sont ELLES qui défendent quand la zone est attaquée. */
@@ -5634,6 +5825,13 @@ function finInvasion(r){
   montrer('butin');
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — La fin d'expédition
+   Ce qu'on ramène : les pièces, l'xp, les clés, et l'ouverture d'un
+   nouvel étage.
+   ===================================================================== */
 /* --- la fin d'expédition ---------------------------------------------- */
 function finExpedition(r){
   const zd = (D.def && D.def.zd) || 'pre';
@@ -5722,6 +5920,13 @@ function finExpedition(r){
   montrer('butin');
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — Les autres écrans
+   Les spins, la boutique, le compte, et la navigation entre les cinq
+   destinations.
+   ===================================================================== */
 /* --- les spins -------------------------------------------------------- */
 function majSpins(){
   $('#nbTickets').textContent = P.sacs.tickets;
@@ -5980,6 +6185,13 @@ function ajusterCanvas(cv){
   if(cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
 }
 
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — L'amorçage
+   Ce qui se passe au lancement : le chargement, le tutoriel, la boucle
+   principale.
+   ===================================================================== */
 /* --- le départ -------------------------------------------------------- */
 async function demarrer(){
   charger();
