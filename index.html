@@ -2542,7 +2542,7 @@ function poserPlanche(id, x, y, opts){
   const o = opts || {};
   D.fx.push({planche: id, m, x, y, x2: o.x2 ?? x, y2: o.y2 ?? y, t: 0,
              duree: o.duree || m.n / (VFX.manif.cadence * 1.3),
-             echelle: o.echelle || 1, tuiles: o.tuiles || 0,
+             echelle: o.echelle || 1, tuiles: o.tuiles || 0, haut: o.haut || 0,
              rejoue: o.rejoue || 1, dir: o.dir || 0, sol: !!o.sol});
   return true;
 }
@@ -4058,52 +4058,7 @@ function iaEnnemi(e, dt){
 }
 
 /* --- l'ULT ------------------------------------------------------------ */
-function lancerUlt(e){
-  if(!e || e.ko || !e.ultDef || e.charge < 100) return false;
-  e.charge = 0;
-  const u = e.ultDef;
-  banniereD(e.espece + ' — ' + u.nom + ' !', '#f2c14e');
-  D.secousse = 0.45;
-  e.anim = 'Attack'; e.verrou = 0.4; e.animT = 0;
-  const enn = ennemisDe(e);
-  if(!enn.length) return true;
-  const coup = {nom: u.nom, type: e.ultType, puiss: u.puiss, estUlt: 1};
-  e.enUlt = true;
-  const zoneId = fxTypeD(e.ultType, 'zone');
-  if(u.forme === 'zone'){
-    const c = proche(e, enn);
-    if(zoneId) poserPlanche(zoneId, c.x, c.y, {tuiles: 2.6 * 2, duree: 0.6, sol: true});
-    frapperD(e, c, coup, {zone: 2.6});
-  } else if(u.forme === 'ligne'){
-    const c = proche(e, enn);
-    e.dir = dirVers(c.x - e.x, c.y - e.y);
-    const dd = DIRS[e.dir];
-    /* la grosse animation : le souffle voyage, et la zone éclate en chemin */
-    const tirId = fxTypeD(e.ultType, 'tir');
-    if(tirId) poserPlanche(tirId, e.x, e.y - 0.3,
-      {x2: e.x + dd.dx * 7, y2: e.y + dd.dy * 7 - 0.3, duree: 0.4, dir: e.dir,
-       rejoue: 3, tuiles: 2.4});
-    /* la ligne fait 1,2 de demi-largeur sur 7 cases : on la remplit */
-    for(const k of [1.2, 2.6, 4.0, 5.4, 6.8])
-      if(zoneId) poserPlanche(zoneId, e.x + dd.dx * k, e.y + dd.dy * k,
-        {tuiles: 2.4, duree: 0.5, sol: true});
-    for(const o of enn){
-      const t = (o.x - e.x) * dd.dx + (o.y - e.y) * dd.dy;   // projection
-      if(t < 0 || t > 7) continue;
-      const ec = Math.abs((o.x - e.x) * dd.dy - (o.y - e.y) * dd.dx);
-      if(ec <= 1.2) frapperD(e, o, coup);
-    }
-    if(!tirId) D.fx.push({x: e.x, y: e.y - 0.3, x2: e.x + dd.dx * 7,
-      y2: e.y + dd.dy * 7 - 0.3, t: 0, duree: 0.3, trait: 2, coul: '#f2c14e'});
-  } else {
-    const gros = enn.filter(o => o.boss || o.elite);
-    const c = gros.length ? proche(e, gros) : proche(e, enn);
-    if(zoneId) poserPlanche(zoneId, c.x, c.y, {tuiles: 2.6 * Math.min(2, c.taille || 1), duree: 0.55});
-    frapperD(e, c, coup);
-  }
-  e.enUlt = false;
-  return true;
-}
+/* lancerUlt vit dans ults.js : chaque ult a sa mise en scène */
 
 /* la baie : soigne le plus mal en point de l'équipe */
 function donnerBaie(){
@@ -4116,6 +4071,382 @@ function donnerBaie(){
   e.pv = Math.min(e.pvMax, e.pv + soin);
   flotterD(e, '+' + soin + ' 🫐', '#8ff0a4');
   poserFxD(e.x, e.y, 'plante');
+  return true;
+}
+
+</script>
+<script>
+/* =====================================================================
+   LA PENSION — LES ULTS, mises en scène
+   Une ult n'est pas un coup plus fort : c'est LE moment du combat. Chaque
+   attaque ultime a sa propre scène, déroulée dans le temps — la charge,
+   le voyage, l'impact, le contrecoup. Un Draco-Météore fait TOMBER des
+   météores, l'un après l'autre ; un Close Combat fonce sur sa cible ; un
+   Séisme fait trembler la salle entière.
+
+   Le mécanisme : une scène est une file d'étapes datées. La boucle les
+   joue au fil du temps (tickScenes). Les dégâts se répartissent entre les
+   impacts pour que le total dépasse toujours la puissance annoncée — une
+   ult qui s'étale ne doit jamais frapper moins qu'une ult sèche.
+   ===================================================================== */
+
+/* une étape : {a: instant relatif, fn}. On pousse la scène, la boucle joue. */
+function jouerScene(etapes){
+  etapes.sort((x, y) => x.a - y.a);
+  (D.scenes = D.scenes || []).push({t: 0, etapes});
+}
+function tickScenes(dt){
+  if(!D.scenes) return;
+  for(const s of D.scenes){
+    s.t += dt;
+    while(s.etapes.length && s.etapes[0].a <= s.t) s.etapes.shift().fn();
+  }
+  D.scenes = D.scenes.filter(s => s.etapes.length);
+}
+
+/* --- les briques communes ---------------------------------------------- */
+const extraD = nom => (VFX.pret && VFX.manif.extras && VFX.manif.extras[nom]) || null;
+
+/* la planche d'un extra, ou celle du type en secours */
+function planche(nomExtra, type, quoi, x, y, opts){
+  const id = extraD(nomExtra) || fxTypeD(type, quoi || 'zone');
+  if(id) poserPlanche(id, x, y, opts || {});
+  else poserFxD(x, y, type);
+}
+
+/* un cercle qui s'étend au sol : l'onde de choc, dessinée par le rendu */
+function ondeD(x, y, r, duree, coul){
+  D.fx.push({x, y, t: 0, duree, onde: r, coul: coul || '#ffd45e'});
+}
+
+/* frapper tout ce qui est dans un disque, avec une part de la puissance */
+function frapperZone(e, x, y, r, coup, part, recul){
+  const c2 = Object.assign({}, coup, {puiss: Math.round(coup.puiss * part)});
+  for(const o of ennemisDe(e))
+    if(Math.hypot(o.x - x, o.y - y) <= r){
+      frapperD(e, o, c2);
+      if(recul) reculerD(o, x, y, recul);
+    }
+}
+/* frapper tout ce qui est dans un couloir depuis le lanceur */
+function frapperLigne(e, dd, L, larg, coup, part, recul){
+  const c2 = Object.assign({}, coup, {puiss: Math.round(coup.puiss * part)});
+  for(const o of ennemisDe(e)){
+    const t = (o.x - e.x) * dd.dx + (o.y - e.y) * dd.dy;
+    if(t < 0 || t > L) continue;
+    const ec = Math.abs((o.x - e.x) * dd.dy - (o.y - e.y) * dd.dx);
+    if(ec <= larg){ frapperD(e, o, c2); if(recul) reculerD(o, e.x, e.y, recul); }
+  }
+}
+/* la pose : le lanceur charge, brille, et tout le monde le regarde */
+function poseD(e, duree, coul){
+  e.anim = (e.sp && e.sp.anims && e.sp.anims.Charge) ? 'Charge' : 'Attack';
+  e.verrou = duree; e.animT = 0; e.flash = duree * 0.6;
+  D.fx.push({x: e.x, y: e.y, t: 0, duree, aura: 1.1, coul: coul || '#ffd45e'});
+}
+/* le dash : le lanceur fonce jusqu'au contact */
+function foncerD(e, c){
+  const dx = c.x - e.x, dy = c.y - e.y, l = Math.hypot(dx, dy) || 1;
+  const d = Math.max(0, l - 0.9);
+  const nx = e.x + dx / l * d, ny = e.y + dy / l * d;
+  if(solEn(nx, ny)){ e.x = nx; e.y = ny; }
+  e.dir = dirVers(dx, dy);
+  D.fx.push({x: e.x - dx / l * d, y: e.y - dy / l * d, x2: e.x, y2: e.y,
+             t: 0, duree: 0.18, trait: 3, coul: '#ffffff'});
+}
+
+/* --- LES SCÈNES, une par ult ------------------------------------------ */
+const SCENES = {
+  /* DRACO-MÉTÉORE — cinq météores tombent l'un après l'autre autour de la
+     cible. Chacun est annoncé par un rayon qui descend du ciel. */
+  'Draco-Météore': (e, c, coup) => {
+    poseD(e, 0.5, '#b49cff');
+    const pts = [[0, 0], [1.6, -1.1], [-1.5, 1.0], [1.2, 1.4], [-1.3, -1.5]];
+    const et = [];
+    pts.forEach(([dx, dy], k) => {
+      const x = c.x + dx, y = c.y + dy, a = 0.45 + k * 0.22;
+      et.push({a: a - 0.3, fn: () => {
+        D.fx.push({x, y, t: 0, duree: 0.3, cercle: 1.6, coul: '#b49cff', doux: 1});
+        planche('chuteCiel', 'dragon', 'tir', x, y - 3.0, {haut: 6.5, duree: 0.3});
+      }});
+      et.push({a, fn: () => {
+        planche('meteore', 'dragon', 'zone', x, y, {tuiles: 3.4, duree: 0.5, sol: true});
+        planche('explosionFeu', 'dragon', 'zone', x, y - 0.3, {tuiles: 3.0, duree: 0.45});
+        ondeD(x, y, 2.2, 0.35, '#c9a6ff');
+        D.secousse = 0.5;
+        frapperZone(e, x, y, 1.7, coup, 0.32, 0.8);
+      }});
+    });
+    jouerScene(et);
+  },
+
+  /* DÉFLAGRATION — une charge, puis la boule de feu et son onde de choc */
+  'Déflagration': (e, c, coup) => {
+    poseD(e, 0.55, '#ff9b54');
+    jouerScene([
+      {a: 0.55, fn: () => {
+        planche('explosionFeu', 'feu', 'zone', c.x, c.y - 0.3, {tuiles: 5.6, duree: 0.6});
+        planche('couronneFeu', 'feu', 'zone', c.x, c.y, {tuiles: 6.0, duree: 0.7, sol: true});
+        ondeD(c.x, c.y, 3.4, 0.5, '#ff9b54');
+        D.secousse = 0.8;
+        frapperZone(e, c.x, c.y, 2.8, coup, 1.0, 1.4);
+        for(const o of ennemisDe(e)) if(Math.hypot(o.x - c.x, o.y - c.y) <= 2.8) o.brule = 3;
+      }}
+    ]);
+  },
+
+  /* HYDROCANON — le jet part et VOYAGE, gerbes le long, geyser au bout */
+  'Hydrocanon': (e, c, coup) => rayonD(e, c, coup, {
+    tir: '0013', long: 'eau', bout: 'geyser', coul: '#6fc3ff', charge: 0.3, recul: 1.6}),
+
+  /* LANCE-SOLEIL — une seconde de lumière qui monte, puis le faisceau */
+  'Lance-Soleil': (e, c, coup) => {
+    poseD(e, 1.0, '#e8ffa0');
+    planche('colonneLumiere', 'plante', 'tir', e.x, e.y - 1.6, {haut: 4.2, duree: 1.0});
+    jouerScene([{a: 1.0, fn: () => faisceauD(e, c, coup, {long: 'plante', coul: '#e8ffa0', recul: 1.2})}]);
+  },
+
+  /* FATAL-FOUDRE — trois éclairs coup sur coup sur la zone, écran qui claque */
+  'Fatal-Foudre': (e, c, coup) => {
+    poseD(e, 0.4, '#ffe066');
+    const et = [];
+    for(let k = 0; k < 3; k++){
+      const x = c.x + (k ? entre(-1.4, 1.4) : 0), y = c.y + (k ? entre(-1.0, 1.0) : 0);
+      et.push({a: 0.4 + k * 0.25, fn: () => {
+        planche('flashJaune', 'electrik', 'zone', x, y - 0.3, {tuiles: 4.6, duree: 0.3});
+        planche(null, 'electrik', 'zone', x, y, {tuiles: 3.6, duree: 0.4, sol: true});
+        D.fx.push({t: 0, duree: 0.12, eclair: 1});
+        D.secousse = 0.45;
+        frapperZone(e, x, y, 2.0, coup, 0.45, 0.6);
+        for(const o of ennemisDe(e)) if(Math.hypot(o.x - x, o.y - y) <= 2.0) o.entrave = Math.max(o.entrave || 0, 0.5);
+      }});
+    }
+    jouerScene(et);
+  },
+
+  /* BLIZZARD — une nappe de givre qui grossit, frappe deux fois, ralentit */
+  'Blizzard': (e, c, coup) => {
+    poseD(e, 0.4, '#bfeaff');
+    jouerScene([
+      {a: 0.4, fn: () => {
+        planche('givre', 'glace', 'zone', c.x, c.y, {tuiles: 4.0, duree: 0.7, sol: true});
+        frapperZone(e, c.x, c.y, 2.0, coup, 0.55, 0.3);
+      }},
+      {a: 1.0, fn: () => {
+        planche(null, 'glace', 'zone', c.x, c.y, {tuiles: 6.4, duree: 0.7, sol: true});
+        ondeD(c.x, c.y, 3.4, 0.5, '#bfeaff');
+        D.secousse = 0.4;
+        frapperZone(e, c.x, c.y, 3.2, coup, 0.6, 0.4);
+        for(const o of ennemisDe(e)) if(Math.hypot(o.x - c.x, o.y - c.y) <= 3.2) o.lent = 4;
+      }}
+    ]);
+  },
+
+  /* CLOSE COMBAT — il fonce, et le poing part */
+  'Close Combat': (e, c, coup) => frappeD(e, c, coup, {impact: 'choc', coul: '#ff8f6b', recul: 2.6}),
+  /* GIGA IMPACT — pareil, plus gros, et le lanceur reste sonné une seconde */
+  'Giga Impact': (e, c, coup) => {
+    frappeD(e, c, coup, {impact: 'choc', coul: '#ffffff', recul: 3.2, tuiles: 5.0});
+    jouerScene([{a: 0.7, fn: () => { e.verrou = 1.0; flotterD(e, 'reprend son souffle', '#a8a7c2'); }}]);
+  },
+  /* RAPACE — il s'élève, puis plonge en piqué */
+  'Rapace': (e, c, coup) => {
+    poseD(e, 0.35, '#cfe0ff');
+    const y0 = e.y;
+    jouerScene([
+      {a: 0.1, fn: () => { e.y = y0 - 1.6; }},
+      {a: 0.35, fn: () => {
+        foncerD(e, c);
+        planche(null, 'vol', 'coup', c.x, c.y - 0.4, {tuiles: 3.6, duree: 0.4});
+        planche(null, 'vol', 'zone', c.x, c.y, {tuiles: 3.4, duree: 0.5, sol: true});
+        D.secousse = 0.6;
+        frapperD(e, c, coup); reculerD(c, e.x, e.y, 2.2);
+      }}
+    ]);
+  },
+
+  /* SÉISME — la salle entière tremble ; trois anneaux depuis le lanceur */
+  'Séisme': (e, c, coup) => {
+    poseD(e, 0.5, '#d8b078');
+    const et = [];
+    for(let k = 0; k < 3; k++)
+      et.push({a: 0.5 + k * 0.22, fn: () => {
+        planche(null, 'sol', 'zone', e.x, e.y, {tuiles: 3.5 + k * 3, duree: 0.5, sol: true});
+        ondeD(e.x, e.y, 2 + k * 1.6, 0.4, '#d8b078');
+        D.secousse = 0.9;
+        frapperZone(e, e.x, e.y, 1.8 + k * 1.5, coup, 0.4, 0.5);
+      }});
+    jouerScene(et);
+  },
+
+  /* PSYKO — des cercles qui se resserrent sur la cible, puis elle craque */
+  'Psyko': (e, c, coup) => {
+    poseD(e, 0.7, '#ff9bc8');
+    for(let k = 0; k < 3; k++)
+      D.fx.push({x: c.x, y: c.y, t: -k * 0.15, duree: 0.7, cercle: 2.6 - k * 0.7, coul: '#ff9bc8',
+                 doux: 1, retrecit: 1});
+    jouerScene([{a: 0.7, fn: () => {
+      planche('ondePsy', 'psy', 'zone', c.x, c.y - 0.3, {tuiles: 4.0, duree: 0.5});
+      planche(null, 'psy', 'coup', c.x, c.y - 0.5, {tuiles: 2.4, duree: 0.4});
+      D.secousse = 0.5;
+      frapperD(e, c, coup); c.entrave = Math.max(c.entrave || 0, 0.8);
+    }}]);
+  },
+
+  /* BOURDON — trois passages d'un essaim, rapides */
+  'Bourdon': (e, c, coup) => {
+    poseD(e, 0.3, '#c4d94e');
+    const et = [];
+    for(let k = 0; k < 3; k++)
+      et.push({a: 0.3 + k * 0.2, fn: () => {
+        planche(null, 'insecte', 'tir', c.x + entre(-1.2, 1.2), c.y + entre(-0.8, 0.8) - 0.4, {tuiles: 2.2, duree: 0.3});
+        if(k === 2) planche(null, 'insecte', 'zone', c.x, c.y, {tuiles: 5.2, duree: 0.5, sol: true});
+        D.secousse = 0.3;
+        frapperZone(e, c.x, c.y, 2.4, coup, 0.4, 0.3);
+      }});
+    jouerScene(et);
+  },
+
+  /* LAME DE ROC — quatre rochers convergent sur la cible */
+  'Lame de Roc': (e, c, coup) => {
+    poseD(e, 0.4, '#cbb891');
+    const et = [];
+    for(let k = 0; k < 4; k++){
+      const a = k * 1.57 + 0.4;
+      et.push({a: 0.4 + k * 0.12, fn: () => {
+        planche(null, 'roche', 'tir', c.x + Math.cos(a) * 2.6, c.y + Math.sin(a) * 2.6 - 0.3,
+                {x2: c.x, y2: c.y - 0.3, tuiles: 1.4, duree: 0.2});
+      }});
+      et.push({a: 0.6 + k * 0.12, fn: () => {
+        planche(null, 'roche', 'coup', c.x, c.y - 0.3, {tuiles: 2.6, duree: 0.3});
+        D.secousse = 0.3;
+        frapperD(e, c, Object.assign({}, coup, {puiss: Math.round(coup.puiss * 0.3)}));
+        if(k === 3) reculerD(c, e.x, e.y, 1.4);
+      }});
+    }
+    jouerScene(et);
+  },
+
+  /* BALL'OMBRE — la sphère voyage, puis le vortex avale */
+  'Ball\'Ombre': (e, c, coup) => {
+    poseD(e, 0.35, '#9a86c4');
+    jouerScene([
+      {a: 0.35, fn: () => planche(null, 'spectre', 'tir', e.x, e.y - 0.4,
+                                  {x2: c.x, y2: c.y - 0.4, tuiles: 1.8, duree: 0.35, rejoue: 2})},
+      {a: 0.7, fn: () => {
+        planche('vortex', 'spectre', 'zone', c.x, c.y - 0.3, {tuiles: 4.6, duree: 0.6});
+        ondeD(c.x, c.y, 2.4, 0.4, '#9a86c4');
+        D.secousse = 0.5;
+        frapperZone(e, c.x, c.y, 1.6, coup, 1.0, 0.8);
+      }}
+    ]);
+  },
+
+  /* POUVOIR LUNAIRE — la lune descend sur la cible */
+  'Pouvoir Lunaire': (e, c, coup) => {
+    poseD(e, 0.6, '#ffb3d9');
+    jouerScene([
+      {a: 0.1, fn: () => planche('lune', 'fee', 'zone', c.x, c.y - 3.5, {x2: c.x, y2: c.y - 0.6, tuiles: 3.0, duree: 0.5})},
+      {a: 0.6, fn: () => {
+        planche('fleurRose', 'fee', 'zone', c.x, c.y - 0.3, {tuiles: 4.6, duree: 0.6});
+        planche(null, 'fee', 'tir', c.x, c.y, {tuiles: 5.0, duree: 0.6, sol: true});
+        D.secousse = 0.45;
+        frapperZone(e, c.x, c.y, 1.8, coup, 1.0, 0.9);
+      }}
+    ]);
+  },
+
+  /* les rayons : Détricanon, Vibrobscur, Luminocanon */
+  'Détricanon':  (e, c, coup) => rayonD(e, c, coup, {long: 'poison', bout: 'nuageToxique', coul: '#c78fdd', charge: 0.3, recul: 1.0, poison: 1}),
+  'Vibrobscur':  (e, c, coup) => rayonD(e, c, coup, {long: 'tenebres', coul: '#8a7f96', charge: 0.35, recul: 1.2}),
+  'Luminocanon': (e, c, coup) => {
+    poseD(e, 0.7, '#c8ccd8');
+    jouerScene([{a: 0.7, fn: () => faisceauD(e, c, coup, {long: 'acier', coul: '#ffffff', recul: 1.5})}]);
+  },
+};
+
+/* un RAYON : le projectile voyage le long de la ligne, ça éclate en chemin */
+function rayonD(e, c, coup, o){
+  poseD(e, o.charge, o.coul);
+  const dd = DIRS[e.dir = dirVers(c.x - e.x, c.y - e.y)];
+  const L = 7;
+  jouerScene([{a: o.charge, fn: () => {
+    const tirId = o.tir || fxTypeD(coup.type, 'tir');
+    if(tirId) poserPlanche(tirId, e.x, e.y - 0.3,
+      {x2: e.x + dd.dx * L, y2: e.y + dd.dy * L - 0.3, duree: 0.45, dir: e.dir, rejoue: 3, tuiles: 2.6});
+    /* les éclats le long, décalés : on VOIT le jet avancer */
+    for(let k = 0; k < 5; k++){
+      const d = 1.2 + k * 1.4;
+      D.scenes[D.scenes.length - 1].etapes.push({a: o.charge + 0.05 + k * 0.08, fn: () =>
+        planche(null, o.long, 'coup', e.x + dd.dx * d, e.y + dd.dy * d - 0.2, {tuiles: 2.4, duree: 0.35})});
+    }
+    D.scenes[D.scenes.length - 1].etapes.push({a: o.charge + 0.45, fn: () => {
+      if(o.bout) planche(o.bout, o.long, 'zone', e.x + dd.dx * L, e.y + dd.dy * L, {tuiles: 3.6, duree: 0.6, sol: true});
+      D.secousse = 0.6;
+      frapperLigne(e, dd, L, 1.2, coup, 1.0, o.recul);
+      if(o.poison) for(const t of ennemisDe(e)) if(distSegment(t.x, t.y, e.x, e.y, e.x + dd.dx * L, e.y + dd.dy * L) <= 1.2) t.brule = 4;
+    }});
+    D.scenes[D.scenes.length - 1].etapes.sort((x, y) => x.a - y.a);
+  }}]);
+}
+/* un FAISCEAU : instantané, toute la ligne s'allume d'un coup */
+function faisceauD(e, c, coup, o){
+  const dd = DIRS[e.dir = dirVers(c.x - e.x, c.y - e.y)];
+  const L = 7.5;
+  D.fx.push({x: e.x, y: e.y - 0.4, x2: e.x + dd.dx * L, y2: e.y + dd.dy * L - 0.4,
+             t: 0, duree: 0.5, trait: 9, coul: o.coul});
+  D.fx.push({x: e.x, y: e.y - 0.4, x2: e.x + dd.dx * L, y2: e.y + dd.dy * L - 0.4,
+             t: 0, duree: 0.5, trait: 3, coul: '#ffffff'});
+  for(let k = 0; k < 5; k++)
+    planche(null, o.long, 'zone', e.x + dd.dx * (1.3 + k * 1.5), e.y + dd.dy * (1.3 + k * 1.5),
+            {tuiles: 2.8, duree: 0.5, sol: true});
+  D.secousse = 0.7;
+  frapperLigne(e, dd, L, 1.3, coup, 1.0, o.recul);
+}
+/* une FRAPPE : le dash, puis l'impact */
+function frappeD(e, c, coup, o){
+  poseD(e, 0.3, o.coul);
+  jouerScene([{a: 0.3, fn: () => {
+    foncerD(e, c);
+    planche(o.impact, coup.type, 'coup', c.x, c.y - 0.5, {tuiles: o.tuiles || 4.0, duree: 0.45});
+    planche(null, coup.type, 'zone', c.x, c.y, {tuiles: 3.0, duree: 0.4, sol: true});
+    ondeD(c.x, c.y, 1.8, 0.3, o.coul);
+    D.secousse = 0.8;
+    frapperD(e, c, coup); reculerD(c, e.x, e.y, o.recul);
+  }}]);
+}
+
+/* --- le point d'entrée -------------------------------------------------- */
+function lancerUlt(e){
+  if(!e || e.ko || !e.ultDef || e.charge < 100) return false;
+  e.charge = 0;
+  const u = e.ultDef;
+  banniereD(e.espece + ' — ' + u.nom + ' !', '#f2c14e');
+  D.secousse = 0.45;
+  const enn = ennemisDe(e);
+  if(!enn.length) return true;
+  const coup = {nom: u.nom, type: e.ultType, puiss: u.puiss, estUlt: 1};
+  /* la cible : les gros d'abord pour un coup ciblé, le plus proche sinon */
+  const gros = enn.filter(o => o.boss || o.elite);
+  const c = u.forme === 'cible' && gros.length ? proche(e, gros) : proche(e, enn);
+  e.enUlt = true;
+  const scene = SCENES[u.nom];
+  if(scene) scene(e, c, coup);
+  else {
+    /* pas de scène écrite : la version sobre, par forme */
+    poseD(e, 0.3, '#ffd45e');
+    jouerScene([{a: 0.3, fn: () => {
+      if(u.forme === 'zone'){ planche(null, coup.type, 'zone', c.x, c.y, {tuiles: 5.2, duree: 0.6, sol: true});
+        frapperZone(e, c.x, c.y, 2.6, coup, 1.0, 0.9); }
+      else if(u.forme === 'ligne') faisceauD(e, c, coup, {long: coup.type, coul: '#ffd45e', recul: 1.0});
+      else { planche(null, coup.type, 'coup', c.x, c.y - 0.4, {tuiles: 3.4, duree: 0.5}); frapperD(e, c, coup); reculerD(c, e.x, e.y, 1.5); }
+      D.secousse = 0.6;
+    }}]);
+  }
+  /* le lanceur retrouve sa liberté à la fin de la scène */
+  const derniere = D.scenes && D.scenes.length ? D.scenes[D.scenes.length - 1] : null;
+  const fin = derniere && derniere.etapes.length ? derniere.etapes[derniere.etapes.length - 1].a : 0.3;
+  jouerScene([{a: fin + 0.05, fn: () => { e.enUlt = false; }}]);
   return true;
 }
 
@@ -4315,6 +4646,7 @@ function tickDonjon(dt){
     D.cam.x += (mx - D.cam.x) * Math.min(1, dt * 3);
     D.cam.y += (my - 1.2 - D.cam.y) * Math.min(1, dt * 3);
   }
+  tickScenes(dt);                       // les ults qui se déroulent
   for(const f of D.fx) f.t += dt;
   D.fx = D.fx.filter(f => f.t < f.duree);
   for(const f of D.flottants) f.t += dt;
@@ -4355,7 +4687,8 @@ function dessinerPlanche(ctx, f, px, py, T){
   const fr = Math.min(m.n - 1, Math.floor(av * m.n * f.rejoue) % m.n);
   const ligne = m.dirs ? Math.min(m.dirs - 1, f.dir || 0) : 0;
   let ech;
-  if(f.tuiles) ech = f.tuiles * T / Math.max(m.w, m.h);
+  if(f.haut) ech = f.haut * T / m.h;                 // une planche VERTICALE (rayon, colonne)
+  else if(f.tuiles) ech = f.tuiles * T / Math.max(m.w, m.h);
   else { const lim = 1.6 * T / Math.max(m.w, m.h); ech = Math.min(1.2, lim) * (f.echelle || 1); }
   ctx.save();
   /* pixel net pour les coups ; une grande nappe au sol (tourbillon, onde)
@@ -4482,9 +4815,35 @@ function rendreDonjon(cv){
 
   /* les effets */
   for(const f of D.fx){
+    if(f.t < 0) continue;                    // pas encore commencé (décalé)
     const a = 1 - f.t / f.duree;
     if(f.planche){
       if(!f.sol) dessinerPlanche(ctx, f, px, py, T);   // celles du sol sont déjà peintes
+      continue;
+    }
+    if(f.eclair){
+      /* LE CLAQUEMENT : l'écran blanchit un instant */
+      ctx.fillStyle = 'rgba(255,255,230,' + (0.55 * (1 - f.t / f.duree)).toFixed(3) + ')';
+      ctx.fillRect(0, 0, W, H);
+      continue;
+    }
+    if(f.onde){
+      /* L'ONDE DE CHOC : un anneau qui s'élargit et s'efface */
+      const p = f.t / f.duree;
+      ctx.globalAlpha = (1 - p) * 0.85;
+      ctx.strokeStyle = f.coul; ctx.lineWidth = Math.max(2, (1 - p) * 9);
+      ctx.beginPath(); ctx.arc(px(f.x), py(f.y), f.onde * T * (0.2 + 0.8 * p), 0, 7); ctx.stroke();
+      ctx.globalAlpha = 1;
+      continue;
+    }
+    if(f.aura){
+      /* L'AURA DE CHARGE : le lanceur brille, le halo palpite */
+      const p = f.t / f.duree;
+      const r = f.aura * T * (1 + Math.sin(p * 12) * 0.08);
+      const g = ctx.createRadialGradient(px(f.x), py(f.y) - T * 0.5, r * 0.2, px(f.x), py(f.y) - T * 0.5, r);
+      g.addColorStop(0, f.coul + 'aa'); g.addColorStop(1, f.coul + '00');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(px(f.x), py(f.y) - T * 0.5, r, 0, 7); ctx.fill();
       continue;
     }
     if(f.couloir){
@@ -4525,7 +4884,10 @@ function rendreDonjon(cv){
       }
       ctx.globalAlpha = 0.12 + p * 0.25;
       ctx.fillStyle = f.coul;
-      ctx.beginPath(); ctx.arc(px(f.x), py(f.y), f.cercle * T * p, 0, 7); ctx.fill();
+      /* d'habitude le disque se remplit vers l'extérieur ; les cercles
+         psy se RESSERRENT sur leur proie */
+      const rr = f.retrecit ? f.cercle * T * (1 - p) : f.cercle * T * p;
+      ctx.beginPath(); ctx.arc(px(f.x), py(f.y), Math.max(0, rr), 0, 7); ctx.fill();
       ctx.globalAlpha = 1;
       continue;
     }
