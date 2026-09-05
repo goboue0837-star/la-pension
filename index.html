@@ -1715,7 +1715,7 @@ INVASIONS.pre = INVASIONS.plaine;   // le Pré, côté zone de donjon
 
 /* --- l'économie -------------------------------------------------------- */
 const PRIX = {baie:18, ticket:400, ult:900};
-const SOUS_SBIRE = [2, 4], SOUS_ELITE = [8, 14], SOUS_BOSS = [25, 45];
+const SOUS_SBIRE = [2, 4], SOUS_ELITE = [8, 14], SOUS_BOSS = [25, 45];   // × (1 + niveau/4) au ramassage
 
 </script>
 <script>
@@ -2668,7 +2668,7 @@ async function lancerInvasion(def, defenseurs, positions){
   rngD = Alea((Date.now() % 100000) | 0);
   const W = DOMAINE.W, H = DOMAINE.H;
   const carte = new Uint8Array(W * H);
-  for(let i = 0; i < W * H; i++) carte[i] = DOMAINE.carte[i] === 0 ? 1 : 0;
+  for(let i = 0; i < W * H; i++) carte[i] = MARCHABLE[DOMAINE.carte[i]] ? 1 : 0;
   /* les BRÈCHES : la haie cède en trois points */
   const breches = [{x: W / 2, y: 2}, {x: 3, y: H / 2}, {x: W - 3, y: H / 2}];
   for(const b of breches)
@@ -3125,8 +3125,10 @@ function mourirD(e, par){
   e.ko = true; e.anim = 'Idle'; e.mortT = 0.5;
   if(e.camp === 'ennemi'){
     D.tues++;
+    /* la bourse suit le niveau : un sbire niveau 40 vaut dix fois celui du Pré */
     const bourse = e.boss ? SOUS_BOSS : e.elite ? SOUS_ELITE : SOUS_SBIRE;
-    D.sols.push({x: e.x, y: e.y, quoi: 'sous', n: Math.round(entre(bourse[0], bourse[1]))});
+    const mult = 1 + (e.niveau || 1) / 4;
+    D.sols.push({x: e.x, y: e.y, quoi: 'sous', n: Math.round(entre(bourse[0], bourse[1]) * mult)});
     if(rngD() < (e.elite ? 0.12 : 0.025))
       D.sols.push({x: e.x + entre(-0.5, 0.5), y: e.y + entre(-0.4, 0.4), quoi: 'baie', n: 1});
     D.butin.xp += Math.round(e.niveau * (e.boss ? 14 : e.elite ? 4 : 1.6));
@@ -5254,7 +5256,7 @@ function construireDomaine(){
   DOMAINE.cibleCam = null; DOMAINE.ficheApres = null;
   const alea = Alea(T.graine);
   const W = DOMAINE.W, H = DOMAINE.H;
-  const c = new Uint8Array(W * H);          // 0 herbe · 1 eau · 2 haie
+  const c = new Uint8Array(W * H);          // 0 herbe · 1 eau · 2 haie · 3 pont
   for(let y = 0; y < H; y++)
     for(let x = 0; x < W; x++)
       if(x === 0 || y === 0 || x === W - 1 || y === H - 1
@@ -5269,14 +5271,23 @@ function construireDomaine(){
   /* la rivière : elle serpente du haut vers le bas et coupe le terrain */
   if(T.riviere){
     let rx = 8;
+    const lit = [];                           // le centre de la rivière, rangée par rangée
     for(let y = 1; y < H - 1; y++){
       rx += (alea() - 0.5) * 2.4;
       rx = Math.max(4, Math.min(W - 5, rx));
+      lit[y] = Math.round(rx);
       for(let d = -1; d <= 1; d++){
-        const x = Math.round(rx) + d;
+        const x = lit[y] + d;
         if(x > 1 && x < W - 2) c[y * W + x] = 1;
       }
     }
+    /* deux ponts de bois, pour que les pensionnaires passent d'une rive à l'autre */
+    for(const py of [Math.round(H * 0.3), Math.round(H * 0.68)])
+      for(let y = py; y <= py + 1; y++){
+        const cx = lit[y];
+        for(let x = cx - 2; x <= cx + 2; x++)
+          if(x > 1 && x < W - 2) c[y * W + x] = 3;
+      }
   }
   /* les bosquets et rochers, loin de l'eau */
   for(let k = 0; k < T.bosquets; k++){
@@ -5289,10 +5300,63 @@ function construireDomaine(){
         c[y * W + x] = 2;
     }
   }
+  /* pas de poche isolée : la plus grande étendue marchable gagne, le reste
+     devient haie — sinon un pensionnaire peut naître coincé dans un trou */
+  boucherPoches(c, W, H);
   DOMAINE.carte = c;
 }
+const MARCHABLE = [true, false, false, true];   // herbe et pont, oui · eau et haie, non
+function boucherPoches(c, W, H){
+  const comp = new Int16Array(W * H).fill(-1);
+  const tailles = [];
+  for(let i = 0; i < W * H; i++){
+    if(comp[i] >= 0 || !MARCHABLE[c[i]]) continue;
+    const id = tailles.length; let n = 0; const pile = [i]; comp[i] = id;
+    while(pile.length){
+      const j = pile.pop(); n++;
+      const x = j % W, y = (j / W) | 0;
+      for(const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+        const X = x + dx, Y = y + dy;
+        if(X < 0 || Y < 0 || X >= W || Y >= H) continue;
+        const k = Y * W + X;
+        if(comp[k] < 0 && MARCHABLE[c[k]]){ comp[k] = id; pile.push(k); }
+      }
+    }
+    tailles.push(n);
+  }
+  let grand = 0;
+  for(let i = 1; i < tailles.length; i++) if(tailles[i] > tailles[grand]) grand = i;
+  for(let i = 0; i < W * H; i++) if(comp[i] >= 0 && comp[i] !== grand) c[i] = 2;
+}
+/* le chemin d'une case à l'autre, en passant par les ponts : une simple
+   recherche en largeur sur la grille — 560 cases, c'est immédiat */
+function cheminVers(x0, y0, x1, y1){
+  const W = DOMAINE.W, H = DOMAINE.H, c = DOMAINE.carte;
+  const a = (x0 | 0) + (y0 | 0) * W, b = (x1 | 0) + (y1 | 0) * W;
+  if(!MARCHABLE[c[b]] || !MARCHABLE[c[a]]) return null;
+  if(a === b) return [];
+  const prec = new Int16Array(W * H).fill(-1);
+  const file = [a]; prec[a] = a;
+  for(let q = 0; q < file.length; q++){
+    const i = file[q];
+    if(i === b) break;
+    const x = i % W, y = (i / W) | 0;
+    for(const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+      const X = x + dx, Y = y + dy;
+      if(X < 1 || Y < 1 || X >= W - 1 || Y >= H - 1) continue;
+      const k = Y * W + X;
+      if(prec[k] < 0 && MARCHABLE[c[k]]){ prec[k] = i; file.push(k); }
+    }
+  }
+  if(prec[b] < 0) return null;
+  const chemin = [];
+  for(let i = b; i !== a; i = prec[i]) chemin.push({x: (i % W) + 0.5, y: ((i / W) | 0) + 0.5});
+  chemin.reverse();
+  chemin[chemin.length - 1] = {x: x1, y: y1};           // on finit exactement où on voulait
+  return chemin;
+}
 const herbeEn = (x, y) => x >= 1 && y >= 1 && x < DOMAINE.W - 1 && y < DOMAINE.H - 1
-  && DOMAINE.carte[(y | 0) * DOMAINE.W + (x | 0)] === 0;
+  && MARCHABLE[DOMAINE.carte[(y | 0) * DOMAINE.W + (x | 0)]];
 function placeHerbe(alea){
   for(let i = 0; i < 200; i++){
     const x = 2 + Math.random() * (DOMAINE.W - 4), y = 2 + Math.random() * (DOMAINE.H - 4);
@@ -5437,6 +5501,13 @@ function allerVoir(p){
   DOMAINE.ficheApres = p;
 }
 
+/* donner un but à un pensionnaire : il y va par le chemin, pas tout droit */
+function viserJardin(e, tx, ty){
+  const chemin = cheminVers(e.x, e.y, tx, ty);
+  if(!chemin){ e.tx = e.x; e.ty = e.y; e.chemin = null; return false; }
+  e.tx = tx; e.ty = ty; e.chemin = chemin;
+  return true;
+}
 function tickJardin(dt){
   for(const e of DOMAINE.ents){
     e.animT += dt;
@@ -5448,11 +5519,15 @@ function tickJardin(dt){
       if(e.sieste <= 0){ e.anim = 'Idle'; e.animT = 0; }
       continue;
     }
-    const dx = e.tx - e.x, dy = e.ty - e.y, l = Math.hypot(dx, dy);
+    /* l'étape en cours : le prochain coin du chemin, ou le but lui-même */
+    if(e.chemin && e.chemin.length && Math.hypot(e.chemin[0].x - e.x, e.chemin[0].y - e.y) < 0.12) e.chemin.shift();
+    const etape = (e.chemin && e.chemin[0]) || {x: e.tx, y: e.ty};
+    const dx = etape.x - e.x, dy = etape.y - e.y, l = Math.hypot(dx, dy);
     if(l > 0.12){
-      const nx = e.x + dx / l * dt * 1.2, ny = e.y + dy / l * dt * 1.2;
+      const pas = Math.min(l, dt * 1.2);
+      const nx = e.x + dx / l * pas, ny = e.y + dy / l * pas;
       if(herbeEn(nx, ny)){ e.x = nx; e.y = ny; }
-      else { e.tx = e.x; e.ty = e.y; }
+      else { e.tx = e.x; e.ty = e.y; e.chemin = null; }
       e.dir = dirVers(dx, dy);
       if(e.anim !== 'Walk'){ e.anim = 'Walk'; }
     } else if(e.anim === 'Walk'){ e.anim = 'Idle'; e.animT = 0; }
@@ -5463,10 +5538,15 @@ function tickJardin(dt){
       else if(r < 0.28){ e.bulle = {txt: ['🎵', '❤', '😋'][Math.random() * 3 | 0], t: 2}; }
       else {
         const but = placeHerbe();
-        /* on ne part pas à l'autre bout : de petites balades */
-        e.tx = e.x + Math.max(-4, Math.min(4, but.x - e.x));
-        e.ty = e.y + Math.max(-3, Math.min(3, but.y - e.y));
-        if(!herbeEn(e.tx, e.ty)){ e.tx = but.x; e.ty = but.y; }
+        /* de petites balades, et de temps en temps une vraie promenade
+           à l'autre bout — par le pont s'il y a une rivière */
+        let tx = but.x, ty = but.y;
+        if(r < 0.78){
+          tx = e.x + Math.max(-4, Math.min(4, but.x - e.x));
+          ty = e.y + Math.max(-3, Math.min(3, but.y - e.y));
+          if(!herbeEn(tx, ty)){ tx = but.x; ty = but.y; }
+        }
+        viserJardin(e, tx, ty);
       }
     }
   }
@@ -5484,6 +5564,23 @@ function tickJardin(dt){
   }
 }
 
+/* un pont de planches par-dessus la rivière : lattes, deux poutres, et une
+   rambarde sur les bords haut et bas du tablier */
+function dessinerPont(ctx, x, y, T, hautBord, basBord){
+  ctx.fillStyle = '#7a4f26';
+  ctx.fillRect(x, y, T + 1, T + 1);
+  const n = 4, l = T / n;
+  for(let i = 0; i < n; i++){
+    ctx.fillStyle = i % 2 ? '#9a6a35' : '#8a5c2d';
+    ctx.fillRect(x + i * l + 1, y, l - 1, T + 1);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.18)';
+  ctx.fillRect(x, y + T * 0.48, T + 1, 2);
+  if(hautBord){ ctx.fillStyle = '#5a3a1a'; ctx.fillRect(x, y, T + 1, Math.max(2, T * 0.14));
+    ctx.fillStyle = '#b48a55'; ctx.fillRect(x, y, T + 1, Math.max(1, T * 0.05)); }
+  if(basBord){ ctx.fillStyle = '#5a3a1a'; ctx.fillRect(x, y + T - Math.max(2, T * 0.14), T + 1, Math.max(2, T * 0.14));
+    ctx.fillStyle = '#b48a55'; ctx.fillRect(x, y + T - Math.max(2, T * 0.14), T + 1, Math.max(1, T * 0.05)); }
+}
 function rendreJardin(cv){
   construireDomaine();
   const ctx = cv.getContext('2d');
@@ -5501,7 +5598,7 @@ function rendreJardin(cv){
   const caseD = (x, y) => (x < 0 || y < 0 || x >= DOMAINE.W || y >= DOMAINE.H) ? 2
     : DOMAINE.carte[y * DOMAINE.W + x];
   const memeHaie = (x, y) => caseD(x, y) === 2;
-  const memeEau = (x, y) => caseD(x, y) === 1;
+  const memeEau = (x, y) => caseD(x, y) === 1 || caseD(x, y) === 3;
   const memeSol = (x, y) => caseD(x, y) !== 2;
   const x0 = Math.max(0, ((-ox) / T | 0) - 1), x1 = Math.min(DOMAINE.W, ((W - ox) / T | 0) + 2);
   const y0 = Math.max(0, ((-oy) / T | 0) - 1), y1 = Math.min(DOMAINE.H, ((H - oy) / T | 0) + 2);
@@ -5512,13 +5609,14 @@ function rendreJardin(cv){
         if(cse === 2) DTEF.poser(ctx, DTEF.MUR, DTEF.forme(memeHaie, x, y), hacheD(x, y), px(x), py(y), T);
         else {
           DTEF.poser(ctx, DTEF.SOL, DTEF.forme(memeSol, x, y), hacheD(x, y), px(x), py(y), T);
-          if(cse === 1) DTEF.poser(ctx, DTEF.DECOR, DTEF.forme(memeEau, x, y), hacheD(x, y), px(x), py(y), T);
+          if(cse === 1 || cse === 3) DTEF.poser(ctx, DTEF.DECOR, DTEF.forme(memeEau, x, y), hacheD(x, y), px(x), py(y), T);
         }
       } else {
-        ctx.fillStyle = cse === 2 ? '#3d5030' : cse === 1 ? '#3a6a8a'
+        ctx.fillStyle = cse === 2 ? '#3d5030' : (cse === 1 || cse === 3) ? '#3a6a8a'
           : (x + y) % 2 ? '#4a6238' : '#48602f';
         ctx.fillRect(px(x), py(y), T + 1, T + 1);
       }
+      if(cse === 3) dessinerPont(ctx, px(x), py(y), T, caseD(x, y - 1) !== 3, caseD(x, y + 1) !== 3);
     }
   /* une lumière douce, pour la vie */
   const soleil = ctx.createRadialGradient(W * 0.7, H * 0.15, T, W * 0.7, H * 0.15, W * 0.8);
@@ -5929,16 +6027,11 @@ function majPupitre(){
    renforts payés, et la fin de l'assaut.
    ===================================================================== */
 /* --- l'invasion : lancement et fin ------------------------------------ */
-/* les espèces de la Grande Plaine : le portail + toutes leurs évolutions.
-   Ce sont ELLES qui défendent quand la zone est attaquée. */
-let _setPlaine = null;
-function estDeLaPlaine(espece){
-  if(!_setPlaine){
-    _setPlaine = new Set();
-    for(const n of PORTAIL_PLAINE) for(const v of ligneDe(n)) _setPlaine.add(v);
-  }
-  return _setPlaine.has(espece);
-}
+/* la pension attaquée, c'est CELLE qu'on regarde : ce sont ses habitants
+   (les espèces de son portail et leurs évolutions) qui la défendent, et
+   les Pokémon des autres zones qui peuvent venir en renfort. */
+function estDIci(espece){ return zoneDe(espece) === zoneVue(); }
+const nomZoneVue = () => (ZONES[zoneVue()] || ZONES.plaine).nom;
 
 /* DEUX VENGEANCES, deux rythmes :
    — chaque DONJON a SA barre : +10 par victoire de CE donjon (lent, ~10
@@ -6007,16 +6100,16 @@ function ouvrirConseil(type, cle){
   $('#voileDefense').classList.add('actif');
 }
 function fermerConseil(){ $('#voileDefense').classList.remove('actif'); $('#consChoix').hidden = true; }
-function defenseursDeLaZone(){ return P.pensionnaires.filter(p => estDeLaPlaine(p.espece)); }
+function defenseursDeLaZone(){ return P.pensionnaires.filter(p => estDIci(p.espece)); }
 function aidesValides(){
   return P.invasion.aides.map(id => P.pensionnaires.find(p => p.id === id)).filter(Boolean);
 }
 function majConseil(){
   const defs = defenseursDeLaZone();
   $('#consDefenseurs').textContent = defs.length
-    ? defs.length + ' Pokémon de la Grande Plaine répondent à l\'appel : '
+    ? defs.length + ' Pokémon de ' + nomZoneVue() + ' répondent à l\'appel : '
       + defs.slice(0, 8).map(p => p.espece).join(', ') + (defs.length > 8 ? '…' : '')
-    : 'Aucun Pokémon de la Grande Plaine à la pension !';
+    : 'Aucun Pokémon de ' + nomZoneVue() + ' à la pension !';
   const box = $('#consRenforts');
   box.innerHTML = '';
   for(let i = 0; i < 10; i++){
@@ -6053,12 +6146,12 @@ function majConseil(){
 }
 function montrerChoixAide(){
   const z = $('#consChoix');
-  const dispo = P.pensionnaires.filter(p => !estDeLaPlaine(p.espece)
+  const dispo = P.pensionnaires.filter(p => !estDIci(p.espece)
     && !P.invasion.aides.includes(p.id));
   if(!dispo.length){
     z.hidden = false;
     z.innerHTML = '<p class="discret">Aucun Pokémon d\'une autre zone à la pension — '
-      + 'les renforts viennent des espèces qui ne sont PAS de la Grande Plaine.</p>';
+      + 'les renforts viennent des espèces qui ne sont PAS de ' + nomZoneVue() + '.</p>';
     return;
   }
   z.hidden = false;
@@ -6345,8 +6438,9 @@ function faireSpin(){
   if(machine) machine.classList.add('secoue');
   res.innerHTML = '<div class="carteSpin tourne"><img id="rouleauImg" src=""><b>…</b>'
     + '<span class="discret">la machine gronde…</span></div>';
+  const portail = (ZONES[zoneVue()] || ZONES.plaine).portail;   // les visages de CE portail
   const defilement = setInterval(() => {
-    const n = PORTAIL_PLAINE[(Math.random() * PORTAIL_PLAINE.length) | 0];
+    const n = portail[(Math.random() * portail.length) | 0];
     const port = urlPortrait(n);
     const im = $('#rouleauImg');
     if(im){ im.src = port.url;
